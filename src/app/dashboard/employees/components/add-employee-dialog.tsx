@@ -45,7 +45,7 @@ const formSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
   departmentId: z.string().min(1, 'Please select a department.'),
-  status: z.enum(['Active', 'Inactive']),
+  status: z.enum(['Active', 'Inactive', 'Suspended', 'On Leave', 'Sick']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
   workerType: z.enum(['Salaried', 'Hourly', 'Contractor']),
   salary: z.coerce.number().min(0, 'Salary must be a positive number.').optional(),
@@ -285,6 +285,9 @@ export function AddEmployeeDialog({
                             <SelectContent>
                                 <SelectItem value="Active">Active</SelectItem>
                                 <SelectItem value="Inactive">Inactive</SelectItem>
+                                <SelectItem value="Suspended">Suspended</SelectItem>
+                                <SelectItem value="On Leave">On Leave</SelectItem>
+                                <SelectItem value="Sick">Sick</SelectItem>
                             </SelectContent>
                             </Select>
                             <FormMessage />

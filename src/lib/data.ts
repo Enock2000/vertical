@@ -5,7 +5,7 @@ export type Employee = {
   name: string;
   email: string;
   role: string;
-  status: 'Active' | 'Inactive';
+  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick';
   avatar: string;
   location: string;
   departmentId: string;
