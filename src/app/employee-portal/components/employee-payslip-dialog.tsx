@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { Employee, PayrollDetails } from '@/lib/data';
 import { Printer, Loader2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EmployeePayslipDialogProps {
   employee: Employee;
@@ -41,6 +42,7 @@ export function EmployeePayslipDialog({ employee, payrollDetails, children }: Em
             Your payslip for {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="max-h-[60vh] pr-4">
         {payrollDetails ? (
           <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -124,6 +126,7 @@ export function EmployeePayslipDialog({ employee, payrollDetails, children }: Em
             <p className="ml-2">Calculating your payslip...</p>
           </div>
         )}
+        </ScrollArea>
         <DialogFooter className="sm:justify-start">
             <Button type="button" onClick={handlePrint} disabled={!payrollDetails}>
                 <Printer className="mr-2 h-4 w-4" />
