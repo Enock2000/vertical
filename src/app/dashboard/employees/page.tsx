@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,8 +18,10 @@ import { AddEmployeeDialog } from './components/add-employee-dialog';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
+    setIsClient(true);
     try {
         const storedEmployees = localStorage.getItem('employees');
         if (storedEmployees) {
@@ -29,20 +32,29 @@ export default function EmployeesPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (isClient) {
+        try {
+            localStorage.setItem('employees', JSON.stringify(employees));
+        } catch (error) {
+            console.error("Could not save employees to localStorage", error);
+        }
+    }
+  }, [employees, isClient]);
+
+
   const addEmployee = (employee: Omit<Employee, 'id' | 'avatar'>) => {
     const newEmployee: Employee = {
       ...employee,
       id: `${Date.now()}`,
       avatar: `https://avatar.vercel.sh/${employee.email}.png`,
     };
-    const updatedEmployees = [...employees, newEmployee];
-    setEmployees(updatedEmployees);
-    try {
-        localStorage.setItem('employees', JSON.stringify(updatedEmployees));
-    } catch (error) {
-        console.error("Could not save employees to localStorage", error);
-    }
+    setEmployees(prev => [...prev, newEmployee]);
   };
+
+  if (!isClient) {
+    return null; // or a loading spinner
+  }
 
   return (
     <Card>
@@ -56,7 +68,7 @@ export default function EmployeesPage() {
         <AddEmployeeDialog onAddEmployee={addEmployee}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+            <span className="sr-only sm:not-sr-only sm:whitespace-rap">
               Add Employee
             </span>
           </Button>

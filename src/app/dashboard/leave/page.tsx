@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,9 +20,11 @@ import { useToast } from '@/hooks/use-toast';
 export default function LeavePage() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    setIsClient(true);
     try {
         const storedRequests = localStorage.getItem('leaveRequests');
         if (storedRequests) {
@@ -36,19 +39,24 @@ export default function LeavePage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (isClient) {
+        try {
+            localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
+        } catch (error) {
+            console.error("Could not save leave requests to localStorage", error);
+        }
+    }
+  }, [leaveRequests, isClient]);
+
+
   const addLeaveRequest = (request: Omit<LeaveRequest, 'id' | 'status'>) => {
     const newRequest: LeaveRequest = {
       ...request,
       id: `${Date.now()}`,
       status: 'Pending',
     };
-    const updatedRequests = [...leaveRequests, newRequest];
-    setLeaveRequests(updatedRequests);
-    try {
-        localStorage.setItem('leaveRequests', JSON.stringify(updatedRequests));
-    } catch (error) {
-        console.error("Could not save leave requests to localStorage", error);
-    }
+    setLeaveRequests(prev => [...prev, newRequest]);
   };
 
   const handleStatusUpdate = (id: string, status: 'Approved' | 'Rejected') => {
@@ -56,15 +64,14 @@ export default function LeavePage() {
         req.id === id ? { ...req, status } : req
     );
     setLeaveRequests(updatedRequests);
-    try {
-        localStorage.setItem('leaveRequests', JSON.stringify(updatedRequests));
-        toast({
-            title: `Request ${status}`,
-            description: `The leave request has been successfully ${status.toLowerCase()}.`
-        })
-    } catch (error) {
-        console.error("Could not update leave requests in localStorage", error);
-    }
+    toast({
+        title: `Request ${status}`,
+        description: `The leave request has been successfully ${status.toLowerCase()}.`
+    })
+  }
+
+  if (!isClient) {
+    return null; // Or a loading spinner
   }
 
   return (

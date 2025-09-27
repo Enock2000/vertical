@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +12,10 @@ import { PayslipDialog } from './components/payslip-dialog';
 
 export default function PayrollPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
-    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [isClient, setIsClient] = useState(false);
 
-    // This is a placeholder. In a real app, you'd fetch this from your database.
-    // For now, we'll use the employees from the Employees page.
-    // To see data here, first add employees on the Employees page.
-    const getEmployees = () => {
+    useEffect(() => {
+        setIsClient(true);
         try {
             const storedEmployees = localStorage.getItem('employees');
             if (storedEmployees) {
@@ -25,15 +24,7 @@ export default function PayrollPage() {
         } catch (error) {
             console.error("Could not get employees from localStorage", error)
         }
-    }
-    
-    useState(() => {
-        getEmployees();
-    });
-
-    const handleGeneratePayslip = (employee: Employee) => {
-        setSelectedEmployee(employee);
-    };
+    }, []);
 
     const tableColumns = [
         ...columns.slice(0, columns.length - 1),
@@ -51,6 +42,10 @@ export default function PayrollPage() {
             )
         }
     ]
+
+    if (!isClient) {
+        return null; // Or a loading spinner
+    }
 
     return (
         <>
