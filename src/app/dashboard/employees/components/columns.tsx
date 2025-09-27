@@ -75,6 +75,10 @@ export const columns: ColumnDef<Employee>[] = [
     header: "Role",
   },
   {
+    accessorKey: "departmentName",
+    header: "Department",
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {

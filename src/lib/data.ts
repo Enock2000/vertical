@@ -8,6 +8,8 @@ export type Employee = {
   status: 'Active' | 'Inactive';
   avatar: string;
   location: string;
+  departmentId: string;
+  departmentName: string;
   workerType: WorkerType;
   salary: number; // For Salaried
   hourlyRate: number; // For Hourly

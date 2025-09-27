@@ -12,18 +12,30 @@ import {
 } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import { Employee } from '@/lib/data';
+import type { Employee, Department } from '@/lib/data';
 import { AddEmployeeDialog } from './components/add-employee-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const employeesRef = ref(db, 'employees');
-    const unsubscribe = onValue(employeesRef, (snapshot) => {
+    const departmentsRef = ref(db, 'departments');
+    
+    let employeesLoaded = false;
+    let deptsLoaded = false;
+
+    const checkLoading = () => {
+        if (employeesLoaded && deptsLoaded) {
+            setLoading(false);
+        }
+    };
+
+    const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         const employeeList = Object.keys(data).map(key => ({
@@ -34,13 +46,38 @@ export default function EmployeesPage() {
       } else {
         setEmployees([]);
       }
-      setLoading(false);
+      employeesLoaded = true;
+      checkLoading();
     }, (error) => {
-        console.error("Firebase read failed: " + error.name);
-        setLoading(false);
+        console.error("Firebase read failed (employees): " + error.name);
+        employeesLoaded = true;
+        checkLoading();
+    });
+    
+    const departmentsUnsubscribe = onValue(departmentsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            const deptList = Object.keys(data).map(key => ({
+                ...data[key],
+                id: key,
+            }));
+            setDepartments(deptList);
+        } else {
+            setDepartments([]);
+        }
+        deptsLoaded = true;
+        checkLoading();
+    }, (error) => {
+        console.error("Firebase read failed (departments): " + error.name);
+        deptsLoaded = true;
+        checkLoading();
     });
 
-    return () => unsubscribe();
+
+    return () => {
+        employeesUnsubscribe();
+        departmentsUnsubscribe();
+    };
   }, []);
 
   const handleEmployeeAdded = () => {
@@ -56,7 +93,7 @@ export default function EmployeesPage() {
             Manage your employees and their details.
           </CardDescription>
         </div>
-        <AddEmployeeDialog onEmployeeAdded={handleEmployeeAdded}>
+        <AddEmployeeDialog departments={departments} onEmployeeAdded={handleEmployeeAdded}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-rap">

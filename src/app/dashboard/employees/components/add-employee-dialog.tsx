@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee } from '@/lib/data';
+import type { Employee, Department } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -43,6 +43,7 @@ const formSchema = z.object({
   email: z.string().email('Invalid email address.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
+  departmentId: z.string().min(1, 'Please select a department.'),
   status: z.enum(['Active', 'Inactive']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
   workerType: z.enum(['Salaried', 'Hourly', 'Contractor']),
@@ -76,11 +77,13 @@ type AddEmployeeFormValues = z.infer<typeof formSchema>;
 
 interface AddEmployeeDialogProps {
   children: React.ReactNode;
+  departments: Department[];
   onEmployeeAdded: () => void;
 }
 
 export function AddEmployeeDialog({
   children,
+  departments,
   onEmployeeAdded,
 }: AddEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
@@ -94,6 +97,7 @@ export function AddEmployeeDialog({
       email: '',
       password: '',
       role: '',
+      departmentId: '',
       status: 'Active',
       location: '',
       workerType: 'Salaried',
@@ -119,8 +123,11 @@ export function AddEmployeeDialog({
       const user = userCredential.user;
 
       const { password, ...employeeData } = values;
+      const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
+      
       const newEmployee: Omit<Employee, 'id'> = {
           ...employeeData,
+          departmentName,
           avatar: `https://avatar.vercel.sh/${values.email}.png`,
           salary: values.salary || 0,
           hourlyRate: values.hourlyRate || 0,
@@ -233,6 +240,30 @@ export function AddEmployeeDialog({
                     />
                     <FormField
                         control={form.control}
+                        name="departmentId"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Department</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a department" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {departments.map(dept => (
+                                    <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
                         name="status"
                         render={({ field }) => (
                         <FormItem>
@@ -255,20 +286,21 @@ export function AddEmployeeDialog({
                         </FormItem>
                         )}
                     />
+                    <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Location</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Lusaka, Zambia" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                 </div>
-                <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Lusaka, Zambia" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                
                 <FormField
                     control={form.control}
                     name="workerType"
