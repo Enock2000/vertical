@@ -6,6 +6,7 @@ import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { AttendanceRecord } from "@/lib/data"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export const columns: ColumnDef<AttendanceRecord>[] = [
   {
@@ -21,6 +22,30 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
         </Button>
       )
     },
+    cell: ({ row }) => {
+        const record = row.original;
+        const nameInitial = record.employeeName.split(' ').map(n => n[0]).join('');
+        return (
+            <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                    <AvatarImage src={record.avatar} alt={record.employeeName} />
+                    <AvatarFallback>{nameInitial}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <div className="font-medium">{record.employeeName}</div>
+                    <div className="text-sm text-muted-foreground">{record.email}</div>
+                </div>
+            </div>
+        )
+    }
+  },
+  {
+    accessorKey: "role",
+    header: "Role",
+  },
+  {
+    accessorKey: "departmentName",
+    header: "Department",
   },
   {
     accessorKey: "checkInTime",

@@ -82,8 +82,7 @@ const processDailyAttendanceFlow = ai.defineFlow(
           }
         } else {
           // Employee did not clock in today, mark as absent
-          const absentRecord: AttendanceRecord = {
-            id: employeeId,
+          const absentRecord: Omit<AttendanceRecord, 'id'> = {
             employeeId: employeeId,
             employeeName: employee.name,
             date: todayString,

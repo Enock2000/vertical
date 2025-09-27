@@ -76,8 +76,7 @@ const attendanceFlow = ai.defineFlow(
              return { success: false, message: 'Employee not found.' };
         }
 
-        const record: AttendanceRecord = {
-            id: userId,
+        const record: Omit<AttendanceRecord, 'id'> = {
             employeeId: userId,
             employeeName: employee.name,
             date: todayString,

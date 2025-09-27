@@ -61,6 +61,11 @@ export type AttendanceRecord = {
     checkInTime: string; // ISO 8601 string
     checkOutTime: string | null; // ISO 8601 string, null if not checked out
     status: 'Present' | 'Late' | 'Absent' | 'Auto Clock-out';
+    // Enriched properties, not stored in DB
+    departmentName?: string;
+    role?: string;
+    avatar?: string;
+    email?: string;
 }
 
 export type Department = {

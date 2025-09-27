@@ -1,17 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import type { AttendanceRecord } from '@/lib/data';
+import type { AttendanceRecord, Employee } from '@/lib/data';
 
 export default function AttendancePage() {
     const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+    const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     
     // For now, we'll just fetch today's attendance.
@@ -20,8 +21,18 @@ export default function AttendancePage() {
 
     useEffect(() => {
         const attendanceRef = ref(db, `attendance/${todayString}`);
+        const employeesRef = ref(db, 'employees');
 
-        const unsubscribe = onValue(attendanceRef, (snapshot) => {
+        let attendanceLoaded = false;
+        let employeesLoaded = false;
+
+        const checkLoading = () => {
+            if (attendanceLoaded && employeesLoaded) {
+                setLoading(false);
+            }
+        };
+
+        const attendanceUnsubscribe = onValue(attendanceRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 const recordsList = Object.keys(data).map(key => ({
@@ -32,14 +43,53 @@ export default function AttendancePage() {
             } else {
                 setAttendanceRecords([]);
             }
-            setLoading(false);
+            attendanceLoaded = true;
+            checkLoading();
         }, (error) => {
             console.error("Firebase read failed (attendance): " + error.name);
-            setLoading(false);
+            attendanceLoaded = true;
+            checkLoading();
         });
 
-        return () => unsubscribe();
+        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const employeeList = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key,
+                }));
+                setEmployees(employeeList);
+            } else {
+                setEmployees([]);
+            }
+            employeesLoaded = true;
+            checkLoading();
+        }, (error) => {
+            console.error("Firebase read failed (employees): " + error.name);
+            employeesLoaded = true;
+            checkLoading();
+        });
+
+        return () => {
+            attendanceUnsubscribe();
+            employeesUnsubscribe();
+        };
     }, [todayString]);
+    
+    const enrichedAttendanceRecords = useMemo(() => {
+        const employeeMap = new Map(employees.map(e => [e.id, e]));
+        return attendanceRecords.map(record => {
+            const employee = employeeMap.get(record.employeeId);
+            return {
+                ...record,
+                role: employee?.role || '-',
+                departmentName: employee?.departmentName || '-',
+                avatar: employee?.avatar || '',
+                email: employee?.email || '',
+            };
+        });
+    }, [attendanceRecords, employees]);
+
 
     return (
         <Card>
@@ -55,7 +105,7 @@ export default function AttendancePage() {
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
-                    <DataTable columns={columns} data={attendanceRecords} />
+                    <DataTable columns={columns} data={enrichedAttendanceRecords} />
                 )}
             </CardContent>
         </Card>
