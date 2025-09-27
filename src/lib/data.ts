@@ -25,6 +25,18 @@ export type PayrollDetails = {
     netPay: number;
 }
 
+export type LeaveRequest = {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  leaveType: 'Annual' | 'Sick' | 'Unpaid' | 'Maternity';
+  startDate: string;
+  endDate: string;
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+};
+
+
 export const calculatePayroll = (employee: Employee): PayrollDetails => {
     let grossPay = 0;
     if (employee.workerType === 'Salaried') {

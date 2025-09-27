@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   PanelLeft,
   Search,
+  CalendarPlus,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -40,6 +41,7 @@ const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/employees", icon: Users, label: "Employees" },
   { href: "/dashboard/payroll", icon: FileText, label: "Payroll" },
+  { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance" },
 ];
 
