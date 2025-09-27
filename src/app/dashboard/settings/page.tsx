@@ -43,9 +43,13 @@ export default function SettingsPage() {
   useEffect(() => {
     const configRef = ref(db, 'payrollConfig');
     const unsubscribe = onValue(configRef, (snapshot) => {
-      const data: PayrollConfig = snapshot.val();
+      const data: PayrollConfig | null = snapshot.val();
       if (data) {
-        form.reset(data);
+        // Ensure allowedIpAddress is a string to prevent controlled/uncontrolled error
+        form.reset({
+            ...data,
+            allowedIpAddress: data.allowedIpAddress || '',
+        });
       }
       setLoading(false);
     });
