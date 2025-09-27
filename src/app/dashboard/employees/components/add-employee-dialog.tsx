@@ -32,12 +32,14 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { Employee, Department } from '@/lib/data';
+import { zambianBanks } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
 import { Slider } from '@/components/ui/slider';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -56,6 +58,10 @@ const formSchema = z.object({
   overtime: z.coerce.number().min(0, 'Overtime cannot be negative.'),
   bonus: z.coerce.number().min(0, 'Bonus cannot be negative.'),
   reimbursements: z.coerce.number().min(0, 'Reimbursements cannot be negative.'),
+  // Bank Details
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  branchCode: z.string().optional(),
 }).refine(data => {
     if (data.workerType === 'Hourly' && (data.hourlyRate === undefined || data.hoursWorked === undefined)) {
         return false;
@@ -109,6 +115,9 @@ export function AddEmployeeDialog({
       overtime: 0,
       bonus: 0,
       reimbursements: 0,
+      bankName: '',
+      accountNumber: '',
+      branchCode: '',
     },
   });
 
@@ -180,6 +189,7 @@ export function AddEmployeeDialog({
         <ScrollArea className="max-h-[70vh] pr-4">
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <h3 className="text-lg font-semibold">Personal & Account Details</h3>
                 <FormField
                 control={form.control}
                 name="name"
@@ -229,6 +239,10 @@ export function AddEmployeeDialog({
                     )}
                     />
                 </div>
+                
+                <Separator />
+                <h3 className="text-lg font-semibold">Employment Details</h3>
+
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -308,6 +322,9 @@ export function AddEmployeeDialog({
                         )}
                     />
                 </div>
+                
+                <Separator />
+                <h3 className="text-lg font-semibold">Compensation Details</h3>
                 
                 <FormField
                     control={form.control}
@@ -481,6 +498,60 @@ export function AddEmployeeDialog({
                         )}
                     />
                 </div>
+
+                <Separator />
+                <h3 className="text-lg font-semibold">Bank Details (Optional)</h3>
+                <FormField
+                    control={form.control}
+                    name="bankName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Bank Name</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a bank" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {zambianBanks.map(bank => (
+                                <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="accountNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Account Number</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter account number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="branchCode"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Branch Code</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter branch code" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
                 <DialogFooter className="sticky bottom-0 bg-background py-4">
                 <Button type="submit" disabled={isLoading}>
                     {isLoading ? (

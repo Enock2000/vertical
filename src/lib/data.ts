@@ -20,6 +20,10 @@ export type Employee = {
   bonus: number;
   reimbursements: number;
   joinDate: string; // ISO 8601 date string
+  // Bank Details
+  bankName?: string;
+  accountNumber?: string;
+  branchCode?: string;
 };
 
 export type PayrollConfig = {
@@ -105,6 +109,22 @@ export type Role = {
     departmentName: string;
     permissions: Permission[];
 };
+
+export const zambianBanks = [
+    "Access Bank Zambia",
+    "Absa Bank Zambia",
+    "Bank of China (Zambia)",
+    "Citibank Zambia",
+    "Ecobank Zambia",
+    "FNB Zambia",
+    "Stanbic Bank Zambia",
+    "Standard Chartered Zambia",
+    "Zambia National Commercial Bank (Zanaco)",
+    "United Bank for Africa (UBA) Zambia",
+    "Investrust Bank",
+    "Indo-Zambia Bank",
+    "First Capital Bank Zambia"
+];
 
 
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
