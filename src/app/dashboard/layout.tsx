@@ -11,6 +11,7 @@ import {
   Search,
   CalendarPlus,
   BarChart3,
+  Settings,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting" },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance" },
+  { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function DashboardLayout({

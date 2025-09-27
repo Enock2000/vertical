@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Employee, calculatePayroll } from "@/lib/data"
+import { Employee, PayrollDetails } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -21,7 +21,7 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
     currency: "ZMW",
 });
 
-export const columns: ColumnDef<Employee>[] = [
+export const columns = (getPayrollDetails: (employee: Employee) => PayrollDetails | null): ColumnDef<Employee>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -65,21 +65,27 @@ export const columns: ColumnDef<Employee>[] = [
     id: "grossPay",
     header: () => <div className="text-right">Gross Pay</div>,
     cell: ({ row }) => {
-        const { grossPay } = calculatePayroll(row.original);
-        return <div className="text-right">{currencyFormatter.format(grossPay)}</div>
+        const payroll = getPayrollDetails(row.original);
+        if (!payroll) return <div className="text-right">-</div>;
+        return <div className="text-right">{currencyFormatter.format(payroll.grossPay)}</div>
     },
   },
   {
     id: "deductions",
     header: () => <div className="text-right">Deductions</div>,
-    cell: ({ row }) => <div className="text-right">{currencyFormatter.format(row.original.deductions)}</div>,
+    cell: ({ row }) => {
+        const payroll = getPayrollDetails(row.original);
+        if (!payroll) return <div className="text-right">-</div>;
+        return <div className="text-right">{currencyFormatter.format(payroll.totalDeductions)}</div>
+    },
   },
   {
     id: "netPay",
     header: () => <div className="text-right font-bold">Net Pay</div>,
     cell: ({ row }) => {
-      const { netPay } = calculatePayroll(row.original);
-      return <div className="text-right font-bold">{currencyFormatter.format(netPay)}</div>
+      const payroll = getPayrollDetails(row.original);
+      if (!payroll) return <div className="text-right font-bold">-</div>;
+      return <div className="text-right font-bold">{currencyFormatter.format(payroll.netPay)}</div>
     },
   },
   {

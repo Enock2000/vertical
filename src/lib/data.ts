@@ -13,14 +13,26 @@ export type Employee = {
   hourlyRate: number; // For Hourly
   hoursWorked: number; // For Hourly
   allowances: number;
-  deductions: number;
-  overtime: number;
+  deductions: number; // Other deductions
+  overtime: number; // Overtime hours
   bonus: number;
   reimbursements: number;
 };
 
+export type PayrollConfig = {
+  napsaRate: number;
+  nhimaRate: number;
+  taxRate: number;
+  overtimeMultiplier: number;
+};
+
 export type PayrollDetails = {
+    basePay: number;
+    overtimePay: number;
     grossPay: number;
+    napsaDeduction: number;
+    nhimaDeduction: number;
+    taxDeduction: number;
     totalDeductions: number;
     netPay: number;
 }
@@ -37,19 +49,54 @@ export type LeaveRequest = {
 };
 
 
-export const calculatePayroll = (employee: Employee): PayrollDetails => {
-    let grossPay = 0;
+export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
+    let basePay = 0;
     if (employee.workerType === 'Salaried') {
-        grossPay = employee.salary;
+        basePay = employee.salary;
     } else if (employee.workerType === 'Hourly') {
-        grossPay = employee.hourlyRate * employee.hoursWorked;
+        basePay = employee.hourlyRate * employee.hoursWorked;
     } else { // Contractor
-        grossPay = employee.salary; // Assuming salary field is used for contract amount
+        basePay = employee.salary; // Assuming salary field is used for contract amount
     }
 
-    grossPay += employee.allowances + employee.overtime + employee.bonus + employee.reimbursements;
-    const totalDeductions = employee.deductions;
+    const overtimePay = employee.workerType === 'Hourly' 
+        ? employee.overtime * employee.hourlyRate * config.overtimeMultiplier 
+        : employee.overtime; // For salaried, assume 'overtime' is a flat amount
+
+    const grossPay = basePay + overtimePay + employee.allowances + employee.bonus + employee.reimbursements;
+
+    // For contractors, no statutory deductions are made
+    if (employee.workerType === 'Contractor') {
+        const totalDeductions = employee.deductions;
+        const netPay = grossPay - totalDeductions;
+        return {
+            basePay,
+            overtimePay,
+            grossPay,
+            napsaDeduction: 0,
+            nhimaDeduction: 0,
+            taxDeduction: 0,
+            totalDeductions,
+            netPay
+        };
+    }
+
+    const napsaDeduction = (grossPay * (config.napsaRate / 100));
+    const nhimaDeduction = (grossPay * (config.nhimaRate / 100));
+    const taxablePay = grossPay - napsaDeduction;
+    const taxDeduction = (taxablePay * (config.taxRate / 100));
+
+    const totalDeductions = napsaDeduction + nhimaDeduction + taxDeduction + employee.deductions;
     const netPay = grossPay - totalDeductions;
 
-    return { grossPay, totalDeductions, netPay };
+    return { 
+        basePay,
+        overtimePay,
+        grossPay, 
+        napsaDeduction,
+        nhimaDeduction,
+        taxDeduction,
+        totalDeductions, 
+        netPay 
+    };
 }

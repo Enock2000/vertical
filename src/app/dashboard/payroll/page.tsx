@@ -1,24 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Download, Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
-import { Employee } from '@/lib/data';
+import { Employee, calculatePayroll, PayrollConfig, PayrollDetails } from '@/lib/data';
 import { PayslipDialog } from './components/payslip-dialog';
 import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, get } from 'firebase/database';
 
 
 export default function PayrollPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
+    const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
+    const [payrollDetailsCache, setPayrollDetailsCache] = useState<{[key: string]: PayrollDetails}>({});
 
     useEffect(() => {
         const employeesRef = ref(db, 'employees');
-        const unsubscribe = onValue(employeesRef, (snapshot) => {
+        const configRef = ref(db, 'payrollConfig');
+
+        let employeesLoaded = false;
+        let configLoaded = false;
+
+        const checkLoading = () => {
+            if (employeesLoaded && configLoaded) {
+                setLoading(false);
+            }
+        }
+
+        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 const employeeList = Object.keys(data).map(key => ({
@@ -29,29 +42,60 @@ export default function PayrollPage() {
             } else {
                 setEmployees([]);
             }
-            setLoading(false);
+            employeesLoaded = true;
+            checkLoading();
         }, (error) => {
-            console.error("Firebase read failed: " + error.name);
-            setLoading(false);
+            console.error("Firebase read failed (employees): " + error.name);
+            employeesLoaded = true;
+            checkLoading();
         });
 
-        return () => unsubscribe();
+        const configUnsubscribe = onValue(configRef, (snapshot) => {
+            setPayrollConfig(snapshot.val());
+            configLoaded = true;
+            checkLoading();
+        }, (error) => {
+            console.error("Firebase read failed (payrollConfig): " + error.name);
+            configLoaded = true;
+            checkLoading();
+        });
+
+        return () => {
+            employeesUnsubscribe();
+            configUnsubscribe();
+        };
     }, []);
 
+    const getPayrollDetails = useCallback((employee: Employee) => {
+        if (!payrollConfig) return null;
+        if (payrollDetailsCache[employee.id]) {
+            return payrollDetailsCache[employee.id];
+        }
+        const details = calculatePayroll(employee, payrollConfig);
+        setPayrollDetailsCache(prev => ({ ...prev, [employee.id]: details }));
+        return details;
+    }, [payrollConfig, payrollDetailsCache]);
+
+
+    const tableColumnsDef = columns(getPayrollDetails);
+
     const tableColumns = [
-        ...columns.slice(0, columns.length - 1),
+        ...tableColumnsDef.slice(0, tableColumnsDef.length - 1),
         {
-            ...columns[columns.length - 1],
-            cell: ({ row }: { row: { original: Employee }}) => (
-                 <div className="text-right">
-                    <PayslipDialog employee={row.original}>
-                        <Button variant="ghost" size="sm">
-                            <Receipt className="mr-2 h-4 w-4" />
-                            Payslip
-                        </Button>
-                    </PayslipDialog>
-                 </div>
-            )
+            ...tableColumnsDef[tableColumnsDef.length - 1],
+            cell: ({ row }: { row: { original: Employee }}) => {
+                const payrollDetails = getPayrollDetails(row.original);
+                 return (
+                     <div className="text-right">
+                        <PayslipDialog employee={row.original} payrollDetails={payrollDetails}>
+                            <Button variant="ghost" size="sm">
+                                <Receipt className="mr-2 h-4 w-4" />
+                                Payslip
+                            </Button>
+                        </PayslipDialog>
+                     </div>
+                 )
+            }
         }
     ]
 
@@ -65,7 +109,7 @@ export default function PayrollPage() {
                     </div>
                     <Button size="sm" className="gap-1">
                         <Download className="h-3.5 w-3.5" />
-                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                             Export CSV
                         </span>
                     </Button>
