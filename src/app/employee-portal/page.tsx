@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { ref, onValue, set, update } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { format } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
 import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
+import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { UserNav } from "@/components/user-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -108,41 +109,36 @@ export default function EmployeePortalPage() {
     }, [employee, payrollConfig]);
 
     const handleClockIn = async () => {
-        if (!user || !employee) return;
+        if (!user) return;
         setIsSubmitting(true);
         try {
-            const now = new Date();
-            const record: AttendanceRecord = {
-                id: user.uid,
-                employeeId: user.uid,
-                employeeName: employee.name,
-                date: todayString,
-                checkInTime: now.toISOString(),
-                checkOutTime: null,
-                status: 'Present',
-            };
-            const attendanceRef = ref(db, `attendance/${todayString}/${user.uid}`);
-            await set(attendanceRef, record);
-            toast({ title: "Clocked In", description: "Your attendance has been recorded." });
+            const result = await recordAttendance({ userId: user.uid, action: 'clockIn' });
+            if (result.success) {
+                toast({ title: "Clocked In", description: result.message });
+            } else {
+                toast({ variant: "destructive", title: "Clock-in Failed", description: result.message });
+            }
         } catch (error) {
             console.error("Clock-in error:", error);
-            toast({ variant: "destructive", title: "Error", description: "Failed to clock in." });
+            toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred." });
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleClockOut = async () => {
-        if (!user || !attendanceRecord) return;
+        if (!user) return;
         setIsSubmitting(true);
         try {
-            const now = new Date();
-            const attendanceRef = ref(db, `attendance/${todayString}/${user.uid}`);
-            await update(attendanceRef, { checkOutTime: now.toISOString() });
-            toast({ title: "Clocked Out", description: "Your checkout has been recorded." });
+            const result = await recordAttendance({ userId: user.uid, action: 'clockOut' });
+            if (result.success) {
+                toast({ title: "Clocked Out", description: result.message });
+            } else {
+                toast({ variant: "destructive", title: "Clock-out Failed", description: result.message });
+            }
         } catch (error) {
             console.error("Clock-out error:", error);
-            toast({ variant: "destructive", title: "Error", description: "Failed to clock out." });
+            toast({ variant: "destructive", title: "Error", description: "An unexpected error occurred." });
         } finally {
             setIsSubmitting(false);
         }

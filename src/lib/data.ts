@@ -25,6 +25,7 @@ export type PayrollConfig = {
   nhimaRate: number;
   taxRate: number;
   overtimeMultiplier: number;
+  allowedIpAddress?: string;
 };
 
 export type PayrollDetails = {

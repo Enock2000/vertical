@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, set } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -19,6 +19,7 @@ const formSchema = z.object({
   nhimaRate: z.coerce.number().min(0).max(100),
   taxRate: z.coerce.number().min(0).max(100),
   overtimeMultiplier: z.coerce.number().min(1),
+  allowedIpAddress: z.string().optional(),
 });
 
 type SettingsFormValues = z.infer<typeof formSchema>;
@@ -35,6 +36,7 @@ export default function SettingsPage() {
       nhimaRate: 1,
       taxRate: 25,
       overtimeMultiplier: 1.5,
+      allowedIpAddress: '',
     },
   });
 
@@ -54,7 +56,11 @@ export default function SettingsPage() {
   async function onSubmit(values: SettingsFormValues) {
     setIsSaving(true);
     try {
-      await set(ref(db, 'payrollConfig'), values);
+      const newValues = {
+        ...values,
+        allowedIpAddress: values.allowedIpAddress || '',
+      };
+      await set(ref(db, 'payrollConfig'), newValues);
       toast({
         title: 'Settings Saved',
         description: 'Your payroll configuration has been updated.',
@@ -138,6 +144,22 @@ export default function SettingsPage() {
                   <FormControl>
                     <Input type="number" placeholder="e.g., 1.5" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="allowedIpAddress"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Allowed IP Address for Clock-In</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., 192.168.1.100" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Leave blank to allow clock-in from any IP address.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
