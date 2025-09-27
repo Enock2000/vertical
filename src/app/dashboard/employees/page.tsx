@@ -80,7 +80,7 @@ export default function EmployeesPage() {
     };
   }, []);
 
-  const handleEmployeeAdded = () => {
+  const handleAction = () => {
     // The onValue listener will automatically update the state
   };
 
@@ -93,7 +93,7 @@ export default function EmployeesPage() {
             Manage your employees and their details.
           </CardDescription>
         </div>
-        <AddEmployeeDialog departments={departments} onEmployeeAdded={handleEmployeeAdded}>
+        <AddEmployeeDialog departments={departments} onEmployeeAdded={handleAction}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-rap">
@@ -108,7 +108,7 @@ export default function EmployeesPage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         ) : (
-            <DataTable columns={columns} data={employees} />
+            <DataTable columns={columns(departments, handleAction)} data={employees} />
         )}
       </CardContent>
     </Card>

@@ -14,10 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Employee } from "@/lib/data"
+import type { Employee, Department } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { EditEmployeeDialog } from "./edit-employee-dialog"
+import { DeleteEmployeeAlert } from "./delete-employee-alert"
 
-export const columns: ColumnDef<Employee>[] = [
+export const columns = (departments: Department[], onAction: () => void): ColumnDef<Employee>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -121,8 +123,16 @@ export const columns: ColumnDef<Employee>[] = [
                 Copy employee ID
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>View details</DropdownMenuItem>
-                <DropdownMenuItem>Edit profile</DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <EditEmployeeDialog employee={employee} departments={departments} onEmployeeUpdated={onAction}>
+                    <div className="w-full text-left">Edit Profile</div>
+                  </EditEmployeeDialog>
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                  <DeleteEmployeeAlert employeeId={employee.id} employeeName={employee.name} onEmployeeDeleted={onAction}>
+                    <div className="w-full text-left">Delete Employee</div>
+                  </DeleteEmployeeAlert>
+                </DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </div>
