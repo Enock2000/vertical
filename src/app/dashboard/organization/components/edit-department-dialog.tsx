@@ -1,4 +1,4 @@
-// src/app/dashboard/organization/components/add-department-dialog.tsx
+// src/app/dashboard/organization/components/edit-department-dialog.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref, push, set } from 'firebase/database';
+import { ref, update } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -28,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import type { Department } from '@/lib/data';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Department name must be at least 2 characters.'),
@@ -38,55 +39,56 @@ const formSchema = z.object({
     path: ["maxSalary"],
 });
 
-type AddDepartmentFormValues = z.infer<typeof formSchema>;
+type EditDepartmentFormValues = z.infer<typeof formSchema>;
 
-interface AddDepartmentDialogProps {
+interface EditDepartmentDialogProps {
   children: React.ReactNode;
-  onDepartmentAdded: () => void;
+  department: Department;
+  onDepartmentUpdated: () => void;
 }
 
-export function AddDepartmentDialog({
+export function EditDepartmentDialog({
   children,
-  onDepartmentAdded,
-}: AddDepartmentDialogProps) {
+  department,
+  onDepartmentUpdated,
+}: EditDepartmentDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<AddDepartmentFormValues>({
+  const form = useForm<EditDepartmentFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
-      minSalary: 0,
-      maxSalary: 0,
+      name: department.name,
+      minSalary: department.minSalary,
+      maxSalary: department.maxSalary,
     },
   });
 
-  async function onSubmit(values: AddDepartmentFormValues) {
+  async function onSubmit(values: EditDepartmentFormValues) {
     setIsLoading(true);
     try {
-      const departmentsRef = ref(db, 'departments');
-      const newDeptRef = push(departmentsRef);
+      const departmentRef = ref(db, `departments/${department.id}`);
       
-      await set(newDeptRef, {
-        id: newDeptRef.key,
+      const updatedDepartmentData = {
         name: values.name,
         minSalary: values.minSalary,
         maxSalary: values.maxSalary,
-      });
+      };
 
-      onDepartmentAdded();
+      await update(departmentRef, updatedDepartmentData);
+
+      onDepartmentUpdated();
       setOpen(false);
-      form.reset();
       toast({
-        title: 'Department Added',
-        description: `The department "${values.name}" has been successfully created.`,
+        title: 'Department Updated',
+        description: `The department "${values.name}" has been successfully updated.`,
       });
     } catch (error: any) {
-      console.error('Error adding department:', error);
+      console.error('Error updating department:', error);
       toast({
         variant: 'destructive',
-        title: 'Failed to add department',
+        title: 'Failed to update department',
         description: error.message || 'An unexpected error occurred.',
       });
     } finally {
@@ -99,9 +101,9 @@ export function AddDepartmentDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Department</DialogTitle>
+          <DialogTitle>Edit Department</DialogTitle>
           <DialogDescription>
-            Enter the details for the new department.
+            Modify the details for the "{department.name}" department.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -119,7 +121,7 @@ export function AddDepartmentDialog({
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-2 gap-4">
                <FormField
                 control={form.control}
                 name="minSalary"
@@ -155,7 +157,7 @@ export function AddDepartmentDialog({
                     Saving...
                   </>
                 ) : (
-                  'Save Department'
+                  'Save Changes'
                 )}
               </Button>
             </DialogFooter>

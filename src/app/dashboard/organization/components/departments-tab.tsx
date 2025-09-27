@@ -3,19 +3,26 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { AddDepartmentDialog } from './add-department-dialog';
 import type { Department } from '@/lib/data';
-import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { EditDepartmentDialog } from './edit-department-dialog';
+import { DeleteDepartmentAlert } from './delete-department-alert';
 
 interface DepartmentsTabProps {
     departments: Department[];
+    onAction: () => void;
 }
 
-export function DepartmentsTab({ departments }: DepartmentsTabProps) {
-    const handleDepartmentAdded = () => {
-        // Realtime listener will update the state
-    };
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'ZMW',
+    minimumFractionDigits: 0,
+});
+
+
+export function DepartmentsTab({ departments, onAction }: DepartmentsTabProps) {
 
     return (
         <Card>
@@ -23,13 +30,13 @@ export function DepartmentsTab({ departments }: DepartmentsTabProps) {
                 <div>
                     <CardTitle>Departments</CardTitle>
                     <CardDescription>
-                        Manage the departments within your organization.
+                        Manage the departments and their salary ranges within your organization.
                     </CardDescription>
                 </div>
-                <AddDepartmentDialog onDepartmentAdded={handleDepartmentAdded}>
+                <AddDepartmentDialog onDepartmentAdded={onAction}>
                     <Button size="sm" className="gap-1">
                         <PlusCircle className="h-3.5 w-3.5" />
-                        <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                             Add Department
                         </span>
                     </Button>
@@ -37,12 +44,39 @@ export function DepartmentsTab({ departments }: DepartmentsTabProps) {
             </CardHeader>
             <CardContent>
                 {departments.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                        {departments.map(dept => (
-                            <Badge key={dept.id} variant="secondary" className="text-lg py-1 px-3">
-                                {dept.name}
-                            </Badge>
-                        ))}
+                    <div className="border rounded-md">
+                        <ul className="divide-y">
+                           {departments.map(dept => (
+                               <li key={dept.id} className="flex items-center justify-between p-4">
+                                   <div>
+                                       <p className="font-semibold">{dept.name}</p>
+                                       <p className="text-sm text-muted-foreground">
+                                           Salary Range: {currencyFormatter.format(dept.minSalary)} - {currencyFormatter.format(dept.maxSalary)}
+                                       </p>
+                                   </div>
+                                   <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <span className="sr-only">Open menu</span>
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                <EditDepartmentDialog department={dept} onDepartmentUpdated={onAction}>
+                                                    <div className="w-full text-left">Edit</div>
+                                                </EditDepartmentDialog>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                                                <DeleteDepartmentAlert departmentId={dept.id} departmentName={dept.name} onDepartmentDeleted={onAction}>
+                                                    <div className="w-full text-left">Delete</div>
+                                                </DeleteDepartmentAlert>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                   </DropdownMenu>
+                               </li>
+                           ))}
+                        </ul>
                     </div>
                 ) : (
                      <div className="flex items-center justify-center h-24 border-2 border-dashed rounded-lg">

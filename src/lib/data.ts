@@ -65,6 +65,8 @@ export type AttendanceRecord = {
 export type Department = {
     id: string;
     name: string;
+    minSalary: number;
+    maxSalary: number;
 };
 
 export type Permission = 
