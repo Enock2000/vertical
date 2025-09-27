@@ -1,8 +1,14 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { db } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 import {
     Activity,
     ArrowUpRight,
     DollarSign,
     Users,
+    Loader2,
   } from "lucide-react"
   
   import {
@@ -10,7 +16,6 @@ import {
     AvatarFallback,
     AvatarImage,
   } from "@/components/ui/avatar"
-  import { Badge } from "@/components/ui/badge"
   import { Button } from "@/components/ui/button"
   import {
     Card,
@@ -28,8 +33,91 @@ import {
     TableRow,
   } from "@/components/ui/table"
   import Link from "next/link"
-  
+  import type { Employee, PayrollConfig } from '@/lib/data';
+  import { calculatePayroll } from '@/lib/data';
+  import { isThisMonth, parseISO } from 'date-fns';
+
   export default function Dashboard() {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const employeesRef = ref(db, 'employees');
+        const configRef = ref(db, 'payrollConfig');
+        let employeesLoaded = false;
+        let configLoaded = false;
+
+        const checkLoading = () => {
+            if (employeesLoaded && configLoaded) {
+                setLoading(false);
+            }
+        }
+
+        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const employeeList = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key,
+                }));
+                setEmployees(employeeList);
+            } else {
+                setEmployees([]);
+            }
+            employeesLoaded = true;
+            checkLoading();
+        }, (error) => {
+            console.error("Firebase read failed (employees): " + error.name);
+            employeesLoaded = true;
+            checkLoading();
+        });
+
+        const configUnsubscribe = onValue(configRef, (snapshot) => {
+            setPayrollConfig(snapshot.val());
+            configLoaded = true;
+            checkLoading();
+        }, (error) => {
+            console.error("Firebase read failed (payrollConfig): " + error.name);
+            configLoaded = true;
+            checkLoading();
+        });
+
+        return () => {
+            employeesUnsubscribe();
+            configUnsubscribe();
+        };
+    }, []);
+
+    const activeEmployeesCount = useMemo(() => {
+        return employees.filter(e => e.status === 'Active').length;
+    }, [employees]);
+
+    const totalPayroll = useMemo(() => {
+        if (!payrollConfig) return 0;
+        return employees.reduce((total, employee) => {
+            const details = calculatePayroll(employee, payrollConfig);
+            return total + details.netPay;
+        }, 0);
+    }, [employees, payrollConfig]);
+
+    const recentSignups = useMemo(() => {
+        return employees.filter(e => isThisMonth(parseISO(e.joinDate))).slice(0, 5); // show latest 5
+    }, [employees]);
+
+    const currencyFormatter = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "ZMW",
+    });
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
+
     return (
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
           <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
@@ -42,9 +130,9 @@ import {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">K0.00</div>
+                  <div className="text-2xl font-bold">{currencyFormatter.format(totalPayroll)}</div>
                   <p className="text-xs text-muted-foreground">
-                    No transactions this month
+                    Estimated for this month
                   </p>
                 </CardContent>
               </Card>
@@ -56,9 +144,9 @@ import {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">0</div>
+                  <div className="text-2xl font-bold">{activeEmployeesCount}</div>
                   <p className="text-xs text-muted-foreground">
-                    No active employees
+                    Currently employed
                   </p>
                 </CardContent>
               </Card>
@@ -150,9 +238,25 @@ import {
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-8">
-              <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-                  No recent signups.
-              </div>
+                {recentSignups.length > 0 ? (
+                    recentSignups.map(employee => (
+                         <div key={employee.id} className="flex items-center gap-4">
+                            <Avatar className="hidden h-9 w-9 sm:flex">
+                                <AvatarImage src={employee.avatar} alt="Avatar" />
+                                <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="grid gap-1">
+                                <p className="text-sm font-medium leading-none">{employee.name}</p>
+                                <p className="text-sm text-muted-foreground">{employee.email}</p>
+                            </div>
+                            <div className="ml-auto font-medium">{currencyFormatter.format(employee.salary)}</div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
+                        No recent signups.
+                    </div>
+                )}
             </CardContent>
           </Card>
         </div>
