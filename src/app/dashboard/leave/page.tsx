@@ -25,6 +25,7 @@ export default function LeavePage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("Initializing leave page data fetch."); // Temporary log to trigger re-build
     const requestsRef = ref(db, 'leaveRequests');
     const employeesRef = ref(db, 'employees');
     let requestsLoaded = false;
