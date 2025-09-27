@@ -27,6 +27,10 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
     header: "Check-In",
     cell: ({ row }) => {
         const checkInTime = row.original.checkInTime;
+        const status = row.original.status;
+        if (status === 'Absent') {
+            return <div className="text-muted-foreground">-</div>;
+        }
         return <div>{format(parseISO(checkInTime), 'hh:mm:ss a')}</div>
     }
   },
@@ -42,7 +46,10 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
     id: "duration",
     header: "Duration",
      cell: ({ row }) => {
-        const { checkInTime, checkOutTime } = row.original;
+        const { checkInTime, checkOutTime, status } = row.original;
+        if (status === 'Absent') {
+             return <div className="text-muted-foreground">-</div>;
+        }
         if (!checkOutTime) {
             return <div className="text-muted-foreground">In Progress</div>;
         }
@@ -59,7 +66,12 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
-      return <Badge variant={status === 'Present' ? 'default' : 'secondary'}>{status}</Badge>
+      const variant: "default" | "secondary" | "destructive" | "outline" = 
+        status === 'Present' ? 'default' :
+        status === 'Absent' ? 'destructive' :
+        status === 'Auto Clock-out' ? 'outline' :
+        'secondary';
+      return <Badge variant={variant}>{status}</Badge>
     },
   },
 ]

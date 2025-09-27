@@ -19,6 +19,7 @@ const formSchema = z.object({
   nhimaRate: z.coerce.number().min(0).max(100),
   taxRate: z.coerce.number().min(0).max(100),
   overtimeMultiplier: z.coerce.number().min(1),
+  workingHours: z.coerce.number().min(1).max(24),
   allowedIpAddress: z.string().optional(),
 });
 
@@ -36,6 +37,7 @@ export default function SettingsPage() {
       nhimaRate: 1,
       taxRate: 25,
       overtimeMultiplier: 1.5,
+      workingHours: 8,
       allowedIpAddress: '',
     },
   });
@@ -92,9 +94,9 @@ export default function SettingsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Payroll Settings</CardTitle>
+        <CardTitle>Payroll & Attendance Settings</CardTitle>
         <CardDescription>
-          Configure the parameters for payroll calculations. Rates should be entered as percentages.
+          Configure the parameters for payroll and attendance calculations. Rates should be entered as percentages.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -148,6 +150,22 @@ export default function SettingsPage() {
                   <FormControl>
                     <Input type="number" placeholder="e.g., 1.5" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="workingHours"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Standard Working Hours</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g., 8" {...field} />
+                  </FormControl>
+                   <FormDescription>
+                    The number of hours an employee is expected to work per day.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

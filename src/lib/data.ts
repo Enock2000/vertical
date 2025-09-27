@@ -27,6 +27,7 @@ export type PayrollConfig = {
   nhimaRate: number;
   taxRate: number;
   overtimeMultiplier: number;
+  workingHours: number; // Standard working hours per day
   allowedIpAddress?: string;
 };
 
@@ -59,7 +60,7 @@ export type AttendanceRecord = {
     date: string; // YYYY-MM-DD
     checkInTime: string; // ISO 8601 string
     checkOutTime: string | null; // ISO 8601 string, null if not checked out
-    status: 'Present' | 'Late';
+    status: 'Present' | 'Late' | 'Absent' | 'Auto Clock-out';
 }
 
 export type Department = {
