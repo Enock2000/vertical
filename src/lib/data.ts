@@ -49,6 +49,42 @@ export type LeaveRequest = {
   status: 'Pending' | 'Approved' | 'Rejected';
 };
 
+export type Department = {
+    id: string;
+    name: string;
+};
+
+export type Permission = 
+    | 'manage-employees'
+    | 'view-employees'
+    | 'manage-payroll'
+    | 'view-payroll'
+    | 'manage-leave'
+    | 'view-leave'
+    | 'manage-reporting'
+    | 'view-reporting'
+    | 'manage-settings';
+
+export const permissionsList: { id: Permission, label: string }[] = [
+    { id: 'manage-employees', label: 'Manage Employees (Add, Edit, Delete)' },
+    { id: 'view-employees', label: 'View Employees' },
+    { id: 'manage-payroll', label: 'Manage Payroll (Run, Approve)' },
+    { id: 'view-payroll', label: 'View Payroll' },
+    { id: 'manage-leave', label: 'Manage Leave Requests (Approve, Reject)' },
+    { id: 'view-leave', label: 'View Leave Requests' },
+    { id: 'manage-reporting', label: 'Manage Reporting' },
+    { id: 'view-reporting', label: 'View Reporting' },
+    { id: 'manage-settings', label: 'Manage System Settings' },
+];
+
+export type Role = {
+    id: string;
+    name: string;
+    departmentId: string;
+    departmentName: string;
+    permissions: Permission[];
+};
+
 
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
     let basePay = 0;
