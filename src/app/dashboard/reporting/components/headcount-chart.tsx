@@ -35,6 +35,7 @@ export default function HeadcountChart({ employees }: HeadcountChartProps) {
             const monthStart = startOfMonth(new Date(year, monthIndex));
             
             const activeEmployeesCount = employees.filter(employee => {
+                if (!employee.joinDate) return false;
                 const joinDate = new Date(employee.joinDate);
                 // In a real app, you would also check for a separationDate here
                 return employee.status === 'Active' && joinDate <= monthStart;

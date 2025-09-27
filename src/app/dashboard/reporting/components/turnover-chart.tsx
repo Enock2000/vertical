@@ -38,6 +38,7 @@ export default function TurnoverChart({ employees }: TurnoverChartProps) {
         
         return monthLabels.map(({ month, monthIndex, year }) => {
             const hires = employees.filter(employee => {
+                if (!employee.joinDate) return false;
                 const joinDate = new Date(employee.joinDate);
                 return getMonth(joinDate) === monthIndex && getYear(joinDate) === year;
             }).length;

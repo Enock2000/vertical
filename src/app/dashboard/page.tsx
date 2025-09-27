@@ -102,7 +102,7 @@ import {
     }, [employees, payrollConfig]);
 
     const recentSignups = useMemo(() => {
-        return employees.filter(e => isThisMonth(parseISO(e.joinDate))).slice(0, 5); // show latest 5
+        return employees.filter(e => e.joinDate && isThisMonth(parseISO(e.joinDate))).slice(0, 5); // show latest 5
     }, [employees]);
 
     const currencyFormatter = new Intl.NumberFormat("en-US", {
