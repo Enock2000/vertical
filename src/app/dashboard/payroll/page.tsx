@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Download, Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,6 @@ export default function PayrollPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
-    const [payrollDetailsCache, setPayrollDetailsCache] = useState<{[key: string]: PayrollDetails}>({});
 
     useEffect(() => {
         const employeesRef = ref(db, 'employees');
@@ -66,15 +65,23 @@ export default function PayrollPage() {
         };
     }, []);
 
-    const getPayrollDetails = useCallback((employee: Employee) => {
-        if (!payrollConfig) return null;
-        if (payrollDetailsCache[employee.id]) {
-            return payrollDetailsCache[employee.id];
+    const payrollDetailsMap = useMemo(() => {
+        if (!payrollConfig || employees.length === 0) {
+            return new Map<string, PayrollDetails>();
         }
-        const details = calculatePayroll(employee, payrollConfig);
-        setPayrollDetailsCache(prev => ({ ...prev, [employee.id]: details }));
-        return details;
-    }, [payrollConfig, payrollDetailsCache]);
+        
+        const map = new Map<string, PayrollDetails>();
+        employees.forEach(employee => {
+            const details = calculatePayroll(employee, payrollConfig);
+            map.set(employee.id, details);
+        });
+        return map;
+
+    }, [employees, payrollConfig]);
+
+    const getPayrollDetails = useCallback((employee: Employee) => {
+        return payrollDetailsMap.get(employee.id) || null;
+    }, [payrollDetailsMap]);
 
 
     const tableColumnsDef = columns(getPayrollDetails);
