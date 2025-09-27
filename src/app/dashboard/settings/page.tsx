@@ -64,7 +64,7 @@ export default function SettingsPage() {
     try {
       const newValues = {
         ...values,
-        allowedIpAddress: values.allowedIpAddress || '',
+        allowedIpAddress: values.allowedIpAddress || null, // Store as null if empty
       };
       await set(ref(db, 'payrollConfig'), newValues);
       toast({
@@ -177,7 +177,7 @@ export default function SettingsPage() {
                 <FormItem>
                   <FormLabel>Allowed IP Address for Clock-In</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., 192.168.1.100" {...field} />
+                    <Input placeholder="e.g., 192.168.1.100" {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormDescription>
                     Leave blank to allow clock-in from any IP address.
