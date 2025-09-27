@@ -12,7 +12,7 @@ import {
   CalendarPlus,
   BarChart3,
   Settings,
-  Sitemap,
+  Network,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -46,7 +46,7 @@ const navItems = [
   { href: "/dashboard/payroll", icon: FileText, label: "Payroll" },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting" },
-  { href: "/dashboard/organization", icon: Sitemap, label: "Organization" },
+  { href: "/dashboard/organization", icon: Network, label: "Organization" },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance" },
   { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
