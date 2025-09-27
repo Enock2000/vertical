@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,6 +37,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
+import { Slider } from '@/components/ui/slider';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -56,14 +57,6 @@ const formSchema = z.object({
   bonus: z.coerce.number().min(0, 'Bonus cannot be negative.'),
   reimbursements: z.coerce.number().min(0, 'Reimbursements cannot be negative.'),
 }).refine(data => {
-    if (data.workerType === 'Salaried' && data.salary === undefined) {
-        return false;
-    }
-    return true;
-}, {
-    message: "Salary is required for Salaried employees.",
-    path: ["salary"],
-}).refine(data => {
     if (data.workerType === 'Hourly' && (data.hourlyRate === undefined || data.hoursWorked === undefined)) {
         return false;
     }
@@ -80,6 +73,13 @@ interface AddEmployeeDialogProps {
   departments: Department[];
   onEmployeeAdded: () => void;
 }
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'ZMW',
+    minimumFractionDigits: 0,
+});
+
 
 export function AddEmployeeDialog({
   children,
@@ -113,6 +113,11 @@ export function AddEmployeeDialog({
   });
 
   const workerType = form.watch('workerType');
+  const departmentId = form.watch('departmentId');
+  
+  const selectedDepartment = useMemo(() => {
+    return departments.find(d => d.id === departmentId);
+  }, [departmentId, departments]);
 
   async function onSubmit(values: AddEmployeeFormValues) {
     setIsLoading(true);
@@ -327,7 +332,7 @@ export function AddEmployeeDialog({
                     )}
                 />
 
-                {workerType === 'Salaried' && (
+                {workerType === 'Salaried' && selectedDepartment && (
                     <FormField
                         control={form.control}
                         name="salary"
@@ -335,12 +340,28 @@ export function AddEmployeeDialog({
                         <FormItem>
                             <FormLabel>Salary</FormLabel>
                             <FormControl>
-                            <Input type="number" placeholder="0" {...field} />
+                                <div className="space-y-4">
+                                    <Slider
+                                        min={selectedDepartment.minSalary}
+                                        max={selectedDepartment.maxSalary}
+                                        step={100}
+                                        value={[field.value || selectedDepartment.minSalary]}
+                                        onValueChange={(value) => field.onChange(value[0])}
+                                    />
+                                    <div className="text-center font-medium text-primary">
+                                        {currencyFormatter.format(field.value || selectedDepartment.minSalary)}
+                                    </div>
+                                </div>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                         )}
                     />
+                )}
+                 {workerType === 'Salaried' && !selectedDepartment && (
+                    <div className="text-sm text-muted-foreground">
+                        Please select a department to set the salary.
+                    </div>
                 )}
                 {workerType === 'Hourly' && (
                     <div className="grid grid-cols-2 gap-4">
