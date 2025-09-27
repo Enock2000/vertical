@@ -12,12 +12,12 @@ import { AddRoleDialog } from './add-role-dialog';
 interface RolesTabProps {
     roles: Role[];
     departments: Department[];
+    onRoleAdded: () => void;
+    onRoleUpdated: () => void;
+    onRoleDeleted: () => void;
 }
 
-export function RolesTab({ roles, departments }: RolesTabProps) {
-    const handleRoleAdded = () => {
-        // Realtime listener will update the state
-    };
+export function RolesTab({ roles, departments, onRoleAdded, onRoleUpdated, onRoleDeleted }: RolesTabProps) {
     
     return (
         <Card>
@@ -28,7 +28,7 @@ export function RolesTab({ roles, departments }: RolesTabProps) {
                         Define roles and assign permissions for your organization.
                     </CardDescription>
                 </div>
-                <AddRoleDialog departments={departments} onRoleAdded={handleRoleAdded}>
+                <AddRoleDialog departments={departments} onRoleAdded={onRoleAdded}>
                     <Button size="sm" className="gap-1">
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
@@ -38,7 +38,7 @@ export function RolesTab({ roles, departments }: RolesTabProps) {
                 </AddRoleDialog>
             </CardHeader>
             <CardContent>
-                <DataTable columns={columns} data={roles} />
+                <DataTable columns={columns(departments, onRoleUpdated, onRoleDeleted)} data={roles} />
             </CardContent>
         </Card>
     );

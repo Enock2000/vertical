@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, set, remove } from 'firebase/database';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RolesTab } from './components/roles-tab';
@@ -72,6 +72,10 @@ export default function OrganizationPage() {
         };
     }, []);
 
+    const handleRoleAction = () => {
+        // The onValue listeners will handle UI updates automatically.
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -87,7 +91,13 @@ export default function OrganizationPage() {
                 <TabsTrigger value="departments">Departments</TabsTrigger>
             </TabsList>
             <TabsContent value="roles">
-                <RolesTab roles={roles} departments={departments} />
+                <RolesTab 
+                    roles={roles} 
+                    departments={departments} 
+                    onRoleAdded={handleRoleAction}
+                    onRoleUpdated={handleRoleAction}
+                    onRoleDeleted={handleRoleAction}
+                />
             </TabsContent>
             <TabsContent value="departments">
                 <DepartmentsTab departments={departments} />

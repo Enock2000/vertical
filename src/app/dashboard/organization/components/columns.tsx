@@ -14,9 +14,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Role } from "@/lib/data"
 import { Badge } from "@/components/ui/badge"
+import { EditRoleDialog } from "./edit-role-dialog"
+import { DeleteRoleAlert } from "./delete-role-alert"
+import type { Department } from "@/lib/data"
 
 
-export const columns: ColumnDef<Role>[] = [
+export const columns = (
+    departments: Department[],
+    onRoleUpdated: () => void,
+    onRoleDeleted: () => void
+): ColumnDef<Role>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -71,8 +78,16 @@ export const columns: ColumnDef<Role>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>Edit Role</DropdownMenuItem>
-                <DropdownMenuItem className="text-red-600">Delete Role</DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <EditRoleDialog role={role} departments={departments} onRoleUpdated={onRoleUpdated}>
+                        <div className="w-full text-left">Edit Role</div>
+                    </EditRoleDialog>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                    <DeleteRoleAlert roleId={role.id} roleName={role.name} onRoleDeleted={onRoleDeleted}>
+                         <div className="w-full text-left">Delete Role</div>
+                    </DeleteRoleAlert>
+                </DropdownMenuItem>
             </DropdownMenuContent>
             </DropdownMenu>
         </div>
