@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,17 @@ import { AddEmployeeDialog } from './components/add-employee-dialog';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  
+  useEffect(() => {
+    try {
+        const storedEmployees = localStorage.getItem('employees');
+        if (storedEmployees) {
+            setEmployees(JSON.parse(storedEmployees));
+        }
+    } catch (error) {
+        console.error("Could not parse employees from localStorage", error);
+    }
+  }, []);
 
   const addEmployee = (employee: Omit<Employee, 'id' | 'avatar'>) => {
     const newEmployee: Employee = {
@@ -24,7 +35,13 @@ export default function EmployeesPage() {
       id: `${Date.now()}`,
       avatar: `https://avatar.vercel.sh/${employee.email}.png`,
     };
-    setEmployees((prev) => [...prev, newEmployee]);
+    const updatedEmployees = [...employees, newEmployee];
+    setEmployees(updatedEmployees);
+    try {
+        localStorage.setItem('employees', JSON.stringify(updatedEmployees));
+    } catch (error) {
+        console.error("Could not save employees to localStorage", error);
+    }
   };
 
   return (

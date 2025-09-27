@@ -1,0 +1,118 @@
+'use client';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import type { Employee } from '@/lib/data';
+import { calculatePayroll } from '@/lib/data';
+import { Printer } from 'lucide-react';
+
+interface PayslipDialogProps {
+  employee: Employee;
+  children: React.ReactNode;
+}
+
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'ZMW',
+});
+
+export function PayslipDialog({ employee, children }: PayslipDialogProps) {
+  const payroll = calculatePayroll(employee);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Payslip</DialogTitle>
+          <DialogDescription>
+            Payslip for {employee.name} - {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <h3 className="font-semibold">Company Name</h3>
+                    <p>VerticalSync Inc.</p>
+                </div>
+                <div className="text-right">
+                    <h3 className="font-semibold">Employee Details</h3>
+                    <p>{employee.name}</p>
+                    <p>{employee.role}</p>
+                </div>
+            </div>
+          <Separator />
+          <div>
+            <h4 className="font-semibold mb-2">Earnings</h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>{employee.workerType === 'Salaried' ? 'Base Salary' : 'Base Pay'}</span>
+                <span>{currencyFormatter.format(employee.workerType === 'Salaried' ? employee.salary : employee.hourlyRate * employee.hoursWorked)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Allowances</span>
+                <span>{currencyFormatter.format(employee.allowances)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Overtime</span>
+                <span>{currencyFormatter.format(employee.overtime)}</span>
+              </div>
+               <div className="flex justify-between">
+                <span>Bonus</span>
+                <span>{currencyFormatter.format(employee.bonus)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Reimbursements</span>
+                <span>{currencyFormatter.format(employee.reimbursements)}</span>
+              </div>
+            </div>
+          </div>
+          <Separator />
+           <div className="flex justify-between font-semibold">
+                <span>Gross Pay</span>
+                <span>{currencyFormatter.format(payroll.grossPay)}</span>
+            </div>
+          <Separator />
+          <div>
+            <h4 className="font-semibold mb-2">Deductions</h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Tax / Other</span>
+                <span>{currencyFormatter.format(employee.deductions)}</span>
+              </div>
+            </div>
+          </div>
+           <Separator />
+           <div className="flex justify-between font-semibold">
+                <span>Total Deductions</span>
+                <span>{currencyFormatter.format(payroll.totalDeductions)}</span>
+            </div>
+          <Separator />
+          <div className="flex justify-between text-lg font-bold text-primary">
+            <span>Net Pay</span>
+            <span>{currencyFormatter.format(payroll.netPay)}</span>
+          </div>
+        </div>
+        <DialogFooter className="sm:justify-start">
+            <Button type="button" onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+            </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

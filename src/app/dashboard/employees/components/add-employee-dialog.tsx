@@ -41,9 +41,31 @@ const formSchema = z.object({
   role: z.string().min(2, 'Role must be at least 2 characters.'),
   status: z.enum(['Active', 'Inactive']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
-  salary: z.coerce.number().positive('Salary must be a positive number.'),
+  workerType: z.enum(['Salaried', 'Hourly', 'Contractor']),
+  salary: z.coerce.number().min(0, 'Salary must be a positive number.').optional(),
+  hourlyRate: z.coerce.number().min(0, 'Hourly rate must be a positive number.').optional(),
+  hoursWorked: z.coerce.number().min(0, 'Hours worked must be a positive number.').optional(),
   allowances: z.coerce.number().min(0, 'Allowances cannot be negative.'),
   deductions: z.coerce.number().min(0, 'Deductions cannot be negative.'),
+  overtime: z.coerce.number().min(0, 'Overtime cannot be negative.'),
+  bonus: z.coerce.number().min(0, 'Bonus cannot be negative.'),
+  reimbursements: z.coerce.number().min(0, 'Reimbursements cannot be negative.'),
+}).refine(data => {
+    if (data.workerType === 'Salaried' && data.salary === undefined) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Salary is required for Salaried employees.",
+    path: ["salary"],
+}).refine(data => {
+    if (data.workerType === 'Hourly' && (data.hourlyRate === undefined || data.hoursWorked === undefined)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Hourly rate and hours worked are required for Hourly employees.",
+    path: ["hourlyRate"],
 });
 
 type AddEmployeeFormValues = z.infer<typeof formSchema>;
@@ -69,17 +91,33 @@ export function AddEmployeeDialog({
       role: '',
       status: 'Active',
       location: '',
+      workerType: 'Salaried',
       salary: 0,
+      hourlyRate: 0,
+      hoursWorked: 0,
       allowances: 0,
       deductions: 0,
+      overtime: 0,
+      bonus: 0,
+      reimbursements: 0,
     },
   });
+
+  const workerType = form.watch('workerType');
 
   async function onSubmit(values: AddEmployeeFormValues) {
     setIsLoading(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    onAddEmployee(values);
+    
+    const employeeData = {
+        ...values,
+        salary: values.salary || 0,
+        hourlyRate: values.hourlyRate || 0,
+        hoursWorked: values.hoursWorked || 0,
+    };
+
+    onAddEmployee(employeeData);
     setIsLoading(false);
     setOpen(false);
     form.reset();
@@ -92,7 +130,7 @@ export function AddEmployeeDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Add New Employee</DialogTitle>
           <DialogDescription>
@@ -133,43 +171,43 @@ export function AddEmployeeDialog({
                 )}
                 />
                 <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="role"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Role</FormLabel>
-                        <FormControl>
-                        <Input placeholder="Software Engineer" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        >
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="Active">Active</SelectItem>
-                            <SelectItem value="Inactive">Inactive</SelectItem>
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+                    <FormField
+                        control={form.control}
+                        name="role"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Role</FormLabel>
+                            <FormControl>
+                            <Input placeholder="Software Engineer" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            >
+                            <FormControl>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="Active">Active</SelectItem>
+                                <SelectItem value="Inactive">Inactive</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 </div>
                 <FormField
                 control={form.control}
@@ -184,46 +222,161 @@ export function AddEmployeeDialog({
                     </FormItem>
                 )}
                 />
-                <div className="grid grid-cols-3 gap-4">
                 <FormField
                     control={form.control}
-                    name="salary"
+                    name="workerType"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Salary</FormLabel>
+                        <FormLabel>Worker Type</FormLabel>
+                        <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        >
                         <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select worker type" />
+                            </SelectTrigger>
                         </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Salaried">Salaried</SelectItem>
+                            <SelectItem value="Hourly">Hourly</SelectItem>
+                            <SelectItem value="Contractor">Contractor</SelectItem>
+                        </SelectContent>
+                        </Select>
                         <FormMessage />
                     </FormItem>
                     )}
                 />
-                <FormField
-                    control={form.control}
-                    name="allowances"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Allowances</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="deductions"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Deductions</FormLabel>
-                        <FormControl>
-                        <Input type="number" placeholder="0" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
+
+                {workerType === 'Salaried' && (
+                    <FormField
+                        control={form.control}
+                        name="salary"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Salary</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                )}
+                {workerType === 'Hourly' && (
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="hourlyRate"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Hourly Rate</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="0" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="hoursWorked"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Hours Worked</FormLabel>
+                                <FormControl>
+                                <Input type="number" placeholder="0" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                )}
+                 {workerType === 'Contractor' && (
+                    <FormField
+                        control={form.control}
+                        name="salary"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contract Amount</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="allowances"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Allowances</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="deductions"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Deductions</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+                 <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="overtime"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Overtime</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="bonus"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Bonus</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="reimbursements"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Reimbursements</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="0" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 </div>
                 <DialogFooter className="sticky bottom-0 bg-background py-4">
                 <Button type="submit" disabled={isLoading}>

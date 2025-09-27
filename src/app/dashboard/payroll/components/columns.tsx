@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Employee, getNetPay } from "@/lib/data"
+import { Employee, calculatePayroll } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -62,17 +62,15 @@ export const columns: ColumnDef<Employee>[] = [
     }
   },
   {
-    accessorKey: "salary",
-    header: () => <div className="text-right">Base Salary</div>,
-    cell: ({ row }) => <div className="text-right">{currencyFormatter.format(row.original.salary)}</div>,
+    id: "grossPay",
+    header: () => <div className="text-right">Gross Pay</div>,
+    cell: ({ row }) => {
+        const { grossPay } = calculatePayroll(row.original);
+        return <div className="text-right">{currencyFormatter.format(grossPay)}</div>
+    },
   },
   {
-    accessorKey: "allowances",
-    header: () => <div className="text-right">Allowances</div>,
-    cell: ({ row }) => <div className="text-right">{currencyFormatter.format(row.original.allowances)}</div>,
-  },
-  {
-    accessorKey: "deductions",
+    id: "deductions",
     header: () => <div className="text-right">Deductions</div>,
     cell: ({ row }) => <div className="text-right">{currencyFormatter.format(row.original.deductions)}</div>,
   },
@@ -80,7 +78,7 @@ export const columns: ColumnDef<Employee>[] = [
     id: "netPay",
     header: () => <div className="text-right font-bold">Net Pay</div>,
     cell: ({ row }) => {
-      const netPay = getNetPay(row.original);
+      const { netPay } = calculatePayroll(row.original);
       return <div className="text-right font-bold">{currencyFormatter.format(netPay)}</div>
     },
   },
