@@ -1,29 +1,15 @@
 "use client"
 
 import * as React from "react"
-import { TrendingUp } from "lucide-react"
 import { Label, Pie, PieChart } from "recharts"
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-
-const chartData = [
-  { gender: "male", employees: 275, fill: "var(--color-male)" },
-  { gender: "female", employees: 200, fill: "var(--color-female)" },
-  { gender: "other", employees: 50, fill: "var(--color-other)" },
-]
+import type { Employee } from "@/lib/data"
 
 const chartConfig = {
   employees: {
@@ -43,10 +29,30 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export default function DiversityChart() {
+interface DiversityChartProps {
+    employees: Employee[];
+}
+
+export default function DiversityChart({ employees }: DiversityChartProps) {
+  const chartData = React.useMemo(() => {
+    // This is a placeholder for gender.
+    // In a real app, you would have a 'gender' field on the employee object.
+    const maleCount = Math.floor(employees.length * 0.6);
+    const femaleCount = employees.length - maleCount;
+
+    return [
+      { gender: "male", count: maleCount, fill: "var(--color-male)" },
+      { gender: "female", count: femaleCount, fill: "var(--color-female)" },
+    ]
+  }, [employees])
+
   const totalEmployees = React.useMemo(() => {
-    return chartData.reduce((acc, curr) => acc + curr.employees, 0)
-  }, [])
+    return employees.length;
+  }, [employees])
+
+  if (employees.length === 0) {
+    return <div className="flex h-[250px] w-full items-center justify-center text-muted-foreground">No data to display.</div>
+  }
 
   return (
     <ChartContainer
@@ -60,7 +66,7 @@ export default function DiversityChart() {
         />
         <Pie
           data={chartData}
-          dataKey="employees"
+          dataKey="count"
           nameKey="gender"
           innerRadius={60}
           strokeWidth={5}

@@ -1,4 +1,8 @@
-import { File } from "lucide-react";
+// src/app/dashboard/reporting/page.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { File, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,29 +10,36 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HeadcountChart from "./components/headcount-chart";
 import TurnoverChart from "./components/turnover-chart";
 import DiversityChart from "./components/diversity-chart";
-
-const auditLogs = [
-    {
-      id: "LOG-001",
-      user: "Admin",
-      action: "Updated employee profile: John Doe",
-      timestamp: new Date().toISOString(),
-    },
-    {
-      id: "LOG-002",
-      user: "Admin",
-      action: "Processed payroll for October 2023",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    },
-    {
-      id: "LOG-003",
-      user: "Jane Smith",
-      action: "Submitted leave request",
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    },
-];
+import { db } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
+import type { Employee } from '@/lib/data';
 
 export default function ReportingPage() {
+    const [employees, setEmployees] = useState<Employee[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const employeesRef = ref(db, 'employees');
+        const unsubscribe = onValue(employeesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const employeeList = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key,
+                }));
+                setEmployees(employeeList);
+            } else {
+                setEmployees([]);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed: " + error.name);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
     return (
         <Tabs defaultValue="overview">
             <div className="flex items-center justify-between">
@@ -44,36 +55,42 @@ export default function ReportingPage() {
                     </span>
                 </Button>
             </div>
-            <TabsContent value="overview" className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Employee Headcount</CardTitle>
-                            <CardDescription>Total number of active employees over time.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           <HeadcountChart />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Turnover Rate</CardTitle>
-                             <CardDescription>Employee turnover analysis for the current year.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <TurnoverChart />
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Diversity Dashboard</CardTitle>
-                            <CardDescription>Breakdown of workforce by gender.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           <DiversityChart />
-                        </CardContent>
-                    </Card>
-                </div>
+             <TabsContent value="overview" className="space-y-4">
+                {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Employee Headcount</CardTitle>
+                                <CardDescription>Total number of active employees over time.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <HeadcountChart employees={employees} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Turnover Rate</CardTitle>
+                                 <CardDescription>Employee turnover analysis for the current year.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TurnoverChart employees={employees} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Diversity Dashboard</CardTitle>
+                                <CardDescription>Breakdown of workforce by gender.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <DiversityChart employees={employees} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
             </TabsContent>
             <TabsContent value="reports">
                 <Card>
@@ -102,13 +119,11 @@ export default function ReportingPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {auditLogs.map((log) => (
-                                    <TableRow key={log.id}>
-                                        <TableCell>{log.user}</TableCell>
-                                        <TableCell>{log.action}</TableCell>
-                                        <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                                    </TableRow>
-                                ))}
+                                <TableRow>
+                                    <TableCell colSpan={3} className="h-24 text-center">
+                                        No audit logs found.
+                                    </TableCell>
+                                </TableRow>
                             </TableBody>
                         </Table>
                     </CardContent>

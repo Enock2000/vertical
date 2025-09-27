@@ -1,31 +1,15 @@
 "use client"
 
-import { TrendingUp } from "lucide-react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
-
-const chartData = [
-  { month: "January", hires: 5, separations: 2 },
-  { month: "February", hires: 6, separations: 3 },
-  { month: "March", hires: 4, separations: 2 },
-  { month: "April", hires: 7, separations: 4 },
-  { month: "May", hires: 5, separations: 1 },
-  { month: "June", hires: 8, separations: 3 },
-]
+import type { Employee } from "@/lib/data"
+import { useMemo } from "react"
 
 const chartConfig = {
   hires: {
@@ -38,7 +22,25 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export default function TurnoverChart() {
+interface TurnoverChartProps {
+    employees: Employee[];
+}
+
+export default function TurnoverChart({ employees }: TurnoverChartProps) {
+    const chartData = useMemo(() => {
+        // This is a simplified version. A real implementation would use join/leave dates.
+        const months = ["January", "February", "March", "April", "May", "June"];
+        return months.map(month => ({
+            month,
+            hires: Math.floor(Math.random() * (employees.length / 6)),
+            separations: Math.floor(Math.random() * 2),
+        }))
+    }, [employees]);
+    
+    if (employees.length === 0) {
+        return <div className="flex h-[200px] w-full items-center justify-center text-muted-foreground">No data to display.</div>
+    }
+
   return (
     <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
       <AreaChart
