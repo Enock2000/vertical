@@ -38,6 +38,7 @@ import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { DateRange } from 'react-day-picker';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const formSchema = z.object({
@@ -122,6 +123,7 @@ export function RequestLeaveDialog({
             Fill in the details below to submit a new leave request.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="max-h-[70vh] pr-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -237,7 +239,7 @@ export function RequestLeaveDialog({
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="sticky bottom-0 bg-background py-4">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <>
@@ -251,6 +253,7 @@ export function RequestLeaveDialog({
             </DialogFooter>
           </form>
         </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
