@@ -37,6 +37,14 @@ export default function SignUpPage() {
                 </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="company-address">Company Address</Label>
+              <Input
+                id="company-address"
+                placeholder="123 Main St, Anytown, USA"
+                required
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="contact-name">Contact Name</Label>
               <Input
                 id="contact-name"
