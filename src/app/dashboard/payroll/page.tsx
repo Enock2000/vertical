@@ -1,29 +1,41 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Receipt } from "lucide-react";
+import { Download, Receipt, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
 import { Employee } from '@/lib/data';
 import { PayslipDialog } from './components/payslip-dialog';
+import { db } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
+
 
 export default function PayrollPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
-    const [isClient, setIsClient] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setIsClient(true);
-        try {
-            const storedEmployees = localStorage.getItem('employees');
-            if (storedEmployees) {
-                setEmployees(JSON.parse(storedEmployees));
+        const employeesRef = ref(db, 'employees');
+        const unsubscribe = onValue(employeesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const employeeList = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key,
+                }));
+                setEmployees(employeeList);
+            } else {
+                setEmployees([]);
             }
-        } catch (error) {
-            console.error("Could not get employees from localStorage", error)
-        }
+            setLoading(false);
+        }, (error) => {
+            console.error("Firebase read failed: " + error.name);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, []);
 
     const tableColumns = [
@@ -43,10 +55,6 @@ export default function PayrollPage() {
         }
     ]
 
-    if (!isClient) {
-        return null; // Or a loading spinner
-    }
-
     return (
         <>
             <Card>
@@ -63,7 +71,13 @@ export default function PayrollPage() {
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    <DataTable columns={tableColumns} data={employees} />
+                    {loading ? (
+                        <div className="flex items-center justify-center h-24">
+                            <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                    ) : (
+                        <DataTable columns={tableColumns} data={employees} />
+                    )}
                 </CardContent>
             </Card>
         </>

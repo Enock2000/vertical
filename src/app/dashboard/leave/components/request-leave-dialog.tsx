@@ -37,8 +37,9 @@ import type { Employee, LeaveRequest } from '@/lib/data';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import type { DateRange } from 'react-day-picker';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { db } from '@/lib/firebase';
+import { ref, push, set } from 'firebase/database';
 
 
 const formSchema = z.object({
@@ -59,13 +60,13 @@ type RequestLeaveFormValues = z.infer<typeof formSchema>;
 interface RequestLeaveDialogProps {
   children: React.ReactNode;
   employees: Employee[];
-  onAddLeaveRequest: (request: Omit<LeaveRequest, 'id' | 'status'>) => void;
+  onLeaveRequestAdded: () => void;
 }
 
 export function RequestLeaveDialog({
   children,
   employees,
-  onAddLeaveRequest,
+  onLeaveRequestAdded,
 }: RequestLeaveDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,23 +95,40 @@ export function RequestLeaveDialog({
         return;
     }
 
-    const requestData = {
-        employeeId: values.employeeId,
-        employeeName: selectedEmployee.name,
-        leaveType: values.leaveType,
-        startDate: values.dateRange.from.toISOString(),
-        endDate: values.dateRange.to.toISOString(),
-        reason: values.reason,
-    };
+    try {
+      const leaveRequestsRef = ref(db, 'leaveRequests');
+      const newRequestRef = push(leaveRequestsRef);
+      
+      const requestData: LeaveRequest = {
+          id: newRequestRef.key!,
+          employeeId: values.employeeId,
+          employeeName: selectedEmployee.name,
+          leaveType: values.leaveType,
+          startDate: values.dateRange.from.toISOString(),
+          endDate: values.dateRange.to.toISOString(),
+          reason: values.reason,
+          status: 'Pending',
+      };
 
-    onAddLeaveRequest(requestData);
-    setIsLoading(false);
-    setOpen(false);
-    form.reset();
-    toast({
-      title: 'Leave Request Submitted',
-      description: `Request for ${selectedEmployee.name} has been submitted for approval.`,
-    });
+      await set(newRequestRef, requestData);
+
+      onLeaveRequestAdded();
+      setIsLoading(false);
+      setOpen(false);
+      form.reset();
+      toast({
+        title: 'Leave Request Submitted',
+        description: `Request for ${selectedEmployee.name} has been submitted for approval.`,
+      });
+    } catch (error) {
+       console.error("Error submitting leave request:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to submit leave request.",
+        })
+        setIsLoading(false);
+    }
   }
 
   return (

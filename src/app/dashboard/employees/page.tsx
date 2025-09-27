@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,46 +14,38 @@ import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
 import { Employee } from '@/lib/data';
 import { AddEmployeeDialog } from './components/add-employee-dialog';
+import { db } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isClient, setIsClient] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    setIsClient(true);
-    try {
-        const storedEmployees = localStorage.getItem('employees');
-        if (storedEmployees) {
-            setEmployees(JSON.parse(storedEmployees));
-        }
-    } catch (error) {
-        console.error("Could not parse employees from localStorage", error);
-    }
+    const employeesRef = ref(db, 'employees');
+    const unsubscribe = onValue(employeesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const employeeList = Object.keys(data).map(key => ({
+          ...data[key],
+          id: key,
+        }));
+        setEmployees(employeeList);
+      } else {
+        setEmployees([]);
+      }
+      setLoading(false);
+    }, (error) => {
+        console.error("Firebase read failed: " + error.name);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (isClient) {
-        try {
-            localStorage.setItem('employees', JSON.stringify(employees));
-        } catch (error) {
-            console.error("Could not save employees to localStorage", error);
-        }
-    }
-  }, [employees, isClient]);
-
-
-  const addEmployee = (employee: Omit<Employee, 'id' | 'avatar'>) => {
-    const newEmployee: Employee = {
-      ...employee,
-      id: `${Date.now()}`,
-      avatar: `https://avatar.vercel.sh/${employee.email}.png`,
-    };
-    setEmployees(prev => [...prev, newEmployee]);
+  const handleEmployeeAdded = () => {
+    // The onValue listener will automatically update the state
   };
-
-  if (!isClient) {
-    return null; // or a loading spinner
-  }
 
   return (
     <Card>
@@ -65,7 +56,7 @@ export default function EmployeesPage() {
             Manage your employees and their details.
           </CardDescription>
         </div>
-        <AddEmployeeDialog onAddEmployee={addEmployee}>
+        <AddEmployeeDialog onEmployeeAdded={handleEmployeeAdded}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-rap">
@@ -75,7 +66,13 @@ export default function EmployeesPage() {
         </AddEmployeeDialog>
       </CardHeader>
       <CardContent>
-        <DataTable columns={columns} data={employees} />
+        {loading ? (
+            <div className="flex items-center justify-center h-24">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        ) : (
+            <DataTable columns={columns} data={employees} />
+        )}
       </CardContent>
     </Card>
   );

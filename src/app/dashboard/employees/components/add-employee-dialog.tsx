@@ -35,7 +35,8 @@ import type { Employee } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { ref, set } from 'firebase/database';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -75,12 +76,12 @@ type AddEmployeeFormValues = z.infer<typeof formSchema>;
 
 interface AddEmployeeDialogProps {
   children: React.ReactNode;
-  onAddEmployee: (employee: Omit<Employee, 'id' | 'avatar'>) => void;
+  onEmployeeAdded: () => void;
 }
 
 export function AddEmployeeDialog({
   children,
-  onAddEmployee,
+  onEmployeeAdded,
 }: AddEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,17 +115,25 @@ export function AddEmployeeDialog({
     
     try {
       // Create user in Firebase Auth
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
 
       const { password, ...employeeData } = values;
-      const newEmployeeData = {
+      const newEmployee: Omit<Employee, 'id'> = {
           ...employeeData,
+          avatar: `https://avatar.vercel.sh/${values.email}.png`,
           salary: values.salary || 0,
           hourlyRate: values.hourlyRate || 0,
           hoursWorked: values.hoursWorked || 0,
       };
+
+      // Save employee data to Realtime Database
+      await set(ref(db, 'employees/' + user.uid), {
+        ...newEmployee,
+        id: user.uid
+      });
       
-      onAddEmployee(newEmployeeData);
+      onEmployeeAdded();
       
       setOpen(false);
       form.reset();
@@ -434,5 +443,3 @@ export function AddEmployeeDialog({
     </Dialog>
   );
 }
-
-    
