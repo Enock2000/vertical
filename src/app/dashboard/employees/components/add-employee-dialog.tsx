@@ -34,10 +34,13 @@ import { useToast } from '@/hooks/use-toast';
 import type { Employee } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
   status: z.enum(['Active', 'Inactive']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
@@ -88,6 +91,7 @@ export function AddEmployeeDialog({
     defaultValues: {
       name: '',
       email: '',
+      password: '',
       role: '',
       status: 'Active',
       location: '',
@@ -107,24 +111,38 @@ export function AddEmployeeDialog({
 
   async function onSubmit(values: AddEmployeeFormValues) {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     
-    const employeeData = {
-        ...values,
-        salary: values.salary || 0,
-        hourlyRate: values.hourlyRate || 0,
-        hoursWorked: values.hoursWorked || 0,
-    };
+    try {
+      // Create user in Firebase Auth
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
 
-    onAddEmployee(employeeData);
-    setIsLoading(false);
-    setOpen(false);
-    form.reset();
-    toast({
-      title: 'Employee Added',
-      description: `${values.name} has been successfully added.`,
-    });
+      const { password, ...employeeData } = values;
+      const newEmployeeData = {
+          ...employeeData,
+          salary: values.salary || 0,
+          hourlyRate: values.hourlyRate || 0,
+          hoursWorked: values.hoursWorked || 0,
+      };
+      
+      onAddEmployee(newEmployeeData);
+      
+      setOpen(false);
+      form.reset();
+      toast({
+        title: 'Employee Added',
+        description: `${values.name} has been successfully added with a login account.`,
+      });
+
+    } catch (error: any) {
+        console.error("Error adding employee:", error);
+        toast({
+            variant: "destructive",
+            title: "Failed to add employee",
+            description: error.message || "An unexpected error occurred."
+        })
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -134,7 +152,7 @@ export function AddEmployeeDialog({
         <DialogHeader>
           <DialogTitle>Add New Employee</DialogTitle>
           <DialogDescription>
-            Fill in the details below to add a new employee to the system.
+            Fill in the details below to add a new employee and create their portal account.
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
@@ -153,23 +171,42 @@ export function AddEmployeeDialog({
                     </FormItem>
                 )}
                 />
-                <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                        <Input
-                        type="email"
-                        placeholder="john.doe@example.com"
-                        {...field}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Email (for login)</FormLabel>
+                        <FormControl>
+                            <Input
+                            type="email"
+                            placeholder="john.doe@example.com"
+                            {...field}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Initial Password</FormLabel>
+                        <FormControl>
+                            <Input
+                            type="password"
+                            placeholder="••••••••"
+                            {...field}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
@@ -397,3 +434,5 @@ export function AddEmployeeDialog({
     </Dialog>
   );
 }
+
+    

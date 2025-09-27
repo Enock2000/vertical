@@ -13,7 +13,7 @@ import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
+export default function EmployeeLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      router.push('/employee-portal');
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -45,9 +45,9 @@ export default function LoginPage() {
           <div className="flex justify-center">
             <Logo />
           </div>
-          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">Employee Portal Login</CardTitle>
           <CardDescription>
-            Enter your email below to login to your admin account.
+            Enter your credentials to access your employee portal.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -57,7 +57,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="your.email@company.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -86,15 +86,9 @@ export default function LoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Are you an employee?{" "}
-            <Link href="/employee-login" className="underline">
+            Are you an admin?{" "}
+            <Link href="/" className="underline">
               Login here
-            </Link>
-          </div>
-           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline">
-              Sign up
             </Link>
           </div>
         </CardContent>
