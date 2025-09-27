@@ -42,7 +42,7 @@ import {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">$45,231.89</div>
+                  <div className="text-2xl font-bold">K45,231.89</div>
                   <p className="text-xs text-muted-foreground">
                     +20.1% from last month
                   </p>
@@ -150,7 +150,7 @@ import {
                       <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
                         2023-06-23
                       </TableCell>
-                      <TableCell className="text-right">$250.00</TableCell>
+                      <TableCell className="text-right">K250.00</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>
@@ -170,7 +170,7 @@ import {
                       <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
                         2023-06-24
                       </TableCell>
-                      <TableCell className="text-right">$150.00</TableCell>
+                      <TableCell className="text-right">K150.00</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>
@@ -190,7 +190,7 @@ import {
                       <TableCell className="hidden md:table-cell lg:hidden xl:table-column">
                         2023-06-25
                       </TableCell>
-                      <TableCell className="text-right">$350.00</TableCell>
+                      <TableCell className="text-right">K350.00</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -216,7 +216,7 @@ import {
                     olivia.martin@email.com
                   </p>
                 </div>
-                <div className="ml-auto font-medium">+$1,999.00</div>
+                <div className="ml-auto font-medium">+K1,999.00</div>
               </div>
               <div className="flex items-center gap-4">
                 <Avatar className="hidden h-9 w-9 sm:flex">
@@ -229,7 +229,7 @@ import {
                     jackson.lee@email.com
                   </p>
                 </div>
-                <div className="ml-auto font-medium">+39.00</div>
+                <div className="ml-auto font-medium">+K39.00</div>
               </div>
               <div className="flex items-center gap-4">
                 <Avatar className="hidden h-9 w-9 sm:flex">
@@ -242,7 +242,7 @@ import {
                     isabella.nguyen@email.com
                   </p>
                 </div>
-                <div className="ml-auto font-medium">+$299.00</div>
+                <div className="ml-auto font-medium">+K299.00</div>
               </div>
             </CardContent>
           </Card>

@@ -89,7 +89,7 @@ export const columns: ColumnDef<Employee>[] = [
       const amount = parseFloat(row.getValue("salary"))
       const formatted = new Intl.NumberFormat("en-US", {
         style: "currency",
-        currency: "USD",
+        currency: "ZMW",
       }).format(amount)
 
       return <div className="text-right font-medium">{formatted}</div>
