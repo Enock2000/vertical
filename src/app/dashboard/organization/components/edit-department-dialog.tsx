@@ -59,9 +59,9 @@ export function EditDepartmentDialog({
   const form = useForm<EditDepartmentFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: department.name,
-      minSalary: department.minSalary,
-      maxSalary: department.maxSalary,
+      name: department.name || '',
+      minSalary: department.minSalary || 0,
+      maxSalary: department.maxSalary || 0,
     },
   });
 
