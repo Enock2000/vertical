@@ -21,15 +21,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 export function UserNav() {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -53,8 +56,12 @@ export function UserNav() {
     return email.substring(0, 2).toUpperCase();
   };
   
+  if (loading) {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
+  
   if (!user) {
-    return null; // or a loading skeleton
+    return null;
   }
 
   return (
