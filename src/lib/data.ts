@@ -49,6 +49,16 @@ export type LeaveRequest = {
   status: 'Pending' | 'Approved' | 'Rejected';
 };
 
+export type AttendanceRecord = {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    date: string; // YYYY-MM-DD
+    checkInTime: string; // ISO 8601 string
+    checkOutTime: string | null; // ISO 8601 string, null if not checked out
+    status: 'Present' | 'Late';
+}
+
 export type Department = {
     id: string;
     name: string;

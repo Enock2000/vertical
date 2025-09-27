@@ -13,6 +13,7 @@ import {
   BarChart3,
   Settings,
   Network,
+  ClipboardCheck,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -45,6 +46,7 @@ const navItems = [
   { href: "/dashboard/employees", icon: Users, label: "Employees" },
   { href: "/dashboard/payroll", icon: FileText, label: "Payroll" },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
+  { href: "/dashboard/attendance", icon: ClipboardCheck, label: "Attendance" },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting" },
   { href: "/dashboard/organization", icon: Network, label: "Organization" },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance" },
