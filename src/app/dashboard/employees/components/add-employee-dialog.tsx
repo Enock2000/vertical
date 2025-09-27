@@ -125,6 +125,7 @@ export function AddEmployeeDialog({
           salary: values.salary || 0,
           hourlyRate: values.hourlyRate || 0,
           hoursWorked: values.hoursWorked || 0,
+          joinDate: new Date().toISOString(),
       };
 
       // Save employee data to Realtime Database

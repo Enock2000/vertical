@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/chart"
 import type { Employee } from "@/lib/data"
 import { useMemo } from "react"
+import { format, subMonths, getMonth, getYear, startOfMonth } from "date-fns"
+
 
 const chartConfig = {
   employees: {
@@ -23,22 +25,25 @@ interface HeadcountChartProps {
 
 export default function HeadcountChart({ employees }: HeadcountChartProps) {
     const chartData = useMemo(() => {
-        const monthlyData: { [key: string]: number } = {
-            "January": 0, "February": 0, "March": 0, "April": 0, "May": 0, "June": 0,
-            "July": 0, "August": 0, "September": 0, "October": 0, "November": 0, "December": 0
-        };
+        const now = new Date();
+        const monthLabels = Array.from({ length: 12 }, (_, i) => {
+            const date = subMonths(now, i);
+            return { month: format(date, "MMM"), monthIndex: getMonth(date), year: getYear(date) };
+        }).reverse();
 
-        employees.forEach(employee => {
-            // This is a simplified version. A real implementation would use a join date.
-            // For now, we'll just count all active employees for each month to show something.
-            if(employee.status === 'Active') {
-                Object.keys(monthlyData).forEach(month => {
-                    monthlyData[month]++;
-                });
-            }
+        const monthlyData = monthLabels.map(({ month, monthIndex, year }) => {
+            const monthStart = startOfMonth(new Date(year, monthIndex));
+            
+            const activeEmployeesCount = employees.filter(employee => {
+                const joinDate = new Date(employee.joinDate);
+                // In a real app, you would also check for a separationDate here
+                return employee.status === 'Active' && joinDate <= monthStart;
+            }).length;
+
+            return { month, employees: activeEmployeesCount };
         });
-
-        return Object.keys(monthlyData).map(month => ({ month, employees: monthlyData[month] }));
+        
+        return monthlyData;
     }, [employees]);
 
 
@@ -55,7 +60,6 @@ export default function HeadcountChart({ employees }: HeadcountChartProps) {
           tickLine={false}
           tickMargin={10}
           axisLine={false}
-          tickFormatter={(value) => value.slice(0, 3)}
         />
         <YAxis allowDecimals={false} />
         <ChartTooltip content={<ChartTooltipContent />} />

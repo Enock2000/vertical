@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/chart"
 import type { Employee } from "@/lib/data"
 import { useMemo } from "react"
+import { format, subMonths, getMonth, getYear } from "date-fns"
+
 
 const chartConfig = {
   hires: {
@@ -28,13 +30,23 @@ interface TurnoverChartProps {
 
 export default function TurnoverChart({ employees }: TurnoverChartProps) {
     const chartData = useMemo(() => {
-        // This is a simplified version. A real implementation would use join/leave dates.
-        const months = ["January", "February", "March", "April", "May", "June"];
-        return months.map(month => ({
-            month,
-            hires: Math.floor(Math.random() * (employees.length / 6)),
-            separations: Math.floor(Math.random() * 2),
-        }))
+        const now = new Date();
+        const monthLabels = Array.from({ length: 6 }, (_, i) => {
+            const date = subMonths(now, i);
+            return { month: format(date, "MMM"), monthIndex: getMonth(date), year: getYear(date) };
+        }).reverse();
+        
+        return monthLabels.map(({ month, monthIndex, year }) => {
+            const hires = employees.filter(employee => {
+                const joinDate = new Date(employee.joinDate);
+                return getMonth(joinDate) === monthIndex && getYear(joinDate) === year;
+            }).length;
+
+            // Placeholder for separations
+            const separations = Math.floor(Math.random() * 2);
+
+            return { month, hires, separations };
+        })
     }, [employees]);
     
     if (employees.length === 0) {
@@ -57,7 +69,6 @@ export default function TurnoverChart({ employees }: TurnoverChartProps) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
-          tickFormatter={(value) => value.slice(0, 3)}
         />
         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
         <defs>

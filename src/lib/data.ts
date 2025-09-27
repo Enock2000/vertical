@@ -17,6 +17,7 @@ export type Employee = {
   overtime: number; // Overtime hours
   bonus: number;
   reimbursements: number;
+  joinDate: string; // ISO 8601 date string
 };
 
 export type PayrollConfig = {
