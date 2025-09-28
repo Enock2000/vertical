@@ -98,7 +98,7 @@ export default function JobApplicationPage() {
                 <div className="container flex h-14 items-center justify-between">
                     <Logo />
                     <Button variant="ghost" asChild>
-                        <Link href="/">
+                        <Link href="/careers">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Careers
                         </Link>

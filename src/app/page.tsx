@@ -60,6 +60,7 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             <Link href="#features">Features</Link>
+            <Link href="/careers">Careers</Link>
             <Link href="#testimonials">Testimonials</Link>
             <Link href="#pricing">Pricing</Link>
           </nav>
@@ -153,9 +154,27 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        
+         {/* Careers Section */}
+        <section id="careers" className="py-20 md:py-28">
+          <div className="container text-center">
+            <Users className="mx-auto h-12 w-12 text-primary" />
+            <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl">
+              Join Our Team
+            </h2>
+            <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
+              We're always looking for talented individuals to help us build the future of HR.
+            </p>
+            <div className="mt-8">
+              <Button size="lg" asChild>
+                <Link href="/careers">View Open Positions</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
 
         {/* Testimonials Section */}
-        <section id="testimonials" className="py-20 md:py-28">
+        <section id="testimonials" className="py-20 md:py-28 bg-muted/50">
             <div className="container">
                 <div className="text-center">
                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
@@ -201,7 +220,7 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section id="pricing" className="py-20 md:py-28 bg-muted/50">
+        <section id="pricing" className="py-20 md:py-28">
           <div className="container text-center">
             <Zap className="mx-auto h-12 w-12 text-primary" />
             <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl">
@@ -225,6 +244,7 @@ export default function HomePage() {
                 <Logo />
                 <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync Inc. All rights reserved.</p>
                  <nav className="flex items-center space-x-6 text-sm font-medium">
+                    <Link href="/careers">Careers</Link>
                     <Link href="#">Terms of Service</Link>
                     <Link href="#">Privacy Policy</Link>
                 </nav>
