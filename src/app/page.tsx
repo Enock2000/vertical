@@ -76,7 +76,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-20 md:py-32">
+        <section className="pt-20 md:pt-32 pb-10 md:pb-16">
           <div className="container text-center">
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
               The All-in-One HR Platform for Modern Businesses
@@ -92,40 +92,42 @@ export default function HomePage() {
                 <Link href="#features">Explore Features</Link>
               </Button>
             </div>
-             <div className="relative mt-16">
-                <Carousel
-                    className="w-full max-w-4xl mx-auto"
-                    opts={{
-                        loop: true,
-                    }}
-                    plugins={[
-                        require('embla-carousel-autoplay')({ delay: 10000, stopOnInteraction: true }),
-                    ]}
-                    >
-                    <CarouselContent>
-                        {placeholderImages.map((image) => (
-                        <CarouselItem key={image.id}>
-                            <Card className="overflow-hidden">
-                                <CardContent className="p-0">
-                                    <Image
-                                        src={image.imageUrl}
-                                        alt={image.description}
-                                        width={1200}
-                                        height={600}
-                                        className="w-full aspect-video object-contain"
-                                        data-ai-hint={image.imageHint}
-                                    />
-                                </CardContent>
-                            </Card>
-                        </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
-                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
-                </Carousel>
-            </div>
           </div>
         </section>
+        
+        <div className="relative my-16">
+            <Carousel
+                className="w-full"
+                opts={{
+                    loop: true,
+                }}
+                plugins={[
+                    require('embla-carousel-autoplay')({ delay: 10000, stopOnInteraction: true }),
+                ]}
+                >
+                <CarouselContent>
+                    {placeholderImages.map((image) => (
+                    <CarouselItem key={image.id}>
+                        <Card className="overflow-hidden border-0 rounded-none">
+                            <CardContent className="p-0">
+                                <Image
+                                    src={image.imageUrl}
+                                    alt={image.description}
+                                    width={1600}
+                                    height={800}
+                                    className="w-full max-h-[600px] aspect-video object-cover"
+                                    data-ai-hint={image.imageHint}
+                                />
+                            </CardContent>
+                        </Card>
+                    </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
+            </Carousel>
+        </div>
+
 
         {/* Features Section */}
         <section id="features" className="py-20 md:py-28 bg-muted/50">
