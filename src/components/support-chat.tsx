@@ -2,13 +2,16 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { HelpCircle, Send, Sparkles, User } from 'lucide-react';
+import { HelpCircle, Send, Sparkles, User, Loader2 } from 'lucide-react';
 import { askVira } from '@/ai/flows/support-chat-flow';
 import { Skeleton } from './ui/skeleton';
+import { Label } from './ui/label';
 
 interface Message {
     sender: 'user' | 'vira';
@@ -16,11 +19,24 @@ interface Message {
 }
 
 export function SupportChat() {
+    const [user, loadingAuth] = useAuthState(auth);
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'vira', text: "Hi! I'm Vira, your AI support assistant. How can I help you today?" }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [guestInfo, setGuestInfo] = useState({ name: '', email: '' });
+    const [isRegistered, setIsRegistered] = useState(false);
+
+    const handleGuestSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (guestInfo.name.trim() && guestInfo.email.trim()) {
+            setIsRegistered(true);
+            setMessages([
+                { sender: 'vira', text: `Thanks, ${guestInfo.name}! How can I help you today?` }
+            ]);
+        }
+    };
 
     const handleSend = async () => {
         if (input.trim() === '') return;
@@ -41,9 +57,17 @@ export function SupportChat() {
             setIsLoading(false);
         }
     };
+    
+    const showRegistration = !user && !isRegistered;
 
     return (
-        <Popover>
+        <Popover onOpenChange={(open) => {
+            if (open && !user && !isRegistered) {
+                setMessages([{ sender: 'vira', text: "Welcome! To get started, please tell me your name and email." }]);
+            } else if (open) {
+                 setMessages([{ sender: 'vira', text: "Hi! I'm Vira, your AI support assistant. How can I help you today?" }]);
+            }
+        }}>
             <PopoverTrigger asChild>
                 <Button
                     variant="default"
@@ -96,17 +120,50 @@ export function SupportChat() {
                         </div>
                     </ScrollArea>
                     <div className="p-3 border-t">
-                        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
-                            <Input
-                                placeholder="Ask a question..."
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                disabled={isLoading}
-                            />
-                            <Button type="submit" size="icon" disabled={isLoading}>
-                                <Send className="h-4 w-4" />
-                            </Button>
-                        </form>
+                        {loadingAuth ? (
+                            <div className="flex justify-center items-center h-10">
+                                <Loader2 className="h-5 w-5 animate-spin"/>
+                            </div>
+                        ) : showRegistration ? (
+                             <form onSubmit={handleGuestSubmit} className="space-y-3">
+                                <div className="space-y-1">
+                                    <Label htmlFor="guest-name">Name</Label>
+                                    <Input
+                                        id="guest-name"
+                                        placeholder="Your Name"
+                                        value={guestInfo.name}
+                                        onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                 <div className="space-y-1">
+                                    <Label htmlFor="guest-email">Email</Label>
+                                    <Input
+                                        id="guest-email"
+                                        type="email"
+                                        placeholder="your@email.com"
+                                        value={guestInfo.email}
+                                        onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <Button type="submit" className="w-full">
+                                    Start Chat
+                                </Button>
+                            </form>
+                        ) : (
+                            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+                                <Input
+                                    placeholder="Ask a question..."
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    disabled={isLoading}
+                                />
+                                <Button type="submit" size="icon" disabled={isLoading}>
+                                    <Send className="h-4 w-4" />
+                                </Button>
+                            </form>
+                        )}
                     </div>
                 </div>
             </PopoverContent>
