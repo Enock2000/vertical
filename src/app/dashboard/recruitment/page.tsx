@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { PlusCircle, Loader2, Search } from 'lucide-react';
+import { PlusCircle, Loader2, Search, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,6 +14,7 @@ import { AddJobDialog } from './components/add-job-dialog';
 import { ApplicantsTable } from './components/applicants-table';
 import { OnboardingTab } from './components/onboarding-tab';
 import { formatDistanceToNow } from 'date-fns';
+import Link from 'next/link';
 
 export default function RecruitmentPage() {
   const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
@@ -122,10 +123,20 @@ export default function RecruitmentPage() {
         {selectedVacancy ? (
           <>
             <CardHeader>
-              <CardTitle>{selectedVacancy.title}</CardTitle>
-              <CardDescription>
-                {filteredApplicants.length} applicant(s) for this position.
-              </CardDescription>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>{selectedVacancy.title}</CardTitle>
+                        <CardDescription>
+                            {filteredApplicants.length} applicant(s) for this position.
+                        </CardDescription>
+                    </div>
+                    <Button asChild variant="outline" size="sm">
+                        <Link href={`/jobs/${selectedVacancy.id}`} target="_blank">
+                            <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                            View Job
+                        </Link>
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="applicants">

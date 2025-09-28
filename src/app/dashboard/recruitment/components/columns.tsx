@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, FileText } from "lucide-react"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -24,6 +24,7 @@ import { ref, update } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { GenerateOfferDialog } from "./generate-offer-dialog"
 import type { Department } from "@/lib/data"
+import { ViewDocumentsDialog } from "./view-documents-dialog"
 
 
 const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, status: ApplicantStatus }) => {
@@ -119,7 +120,13 @@ export const columns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View Resume</DropdownMenuItem>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <ViewDocumentsDialog applicant={applicant}>
+                        <div className="w-full text-left flex items-center">
+                            <FileText className="mr-2 h-4 w-4" /> View Documents
+                        </div>
+                    </ViewDocumentsDialog>
+                </DropdownMenuItem>
                 {applicant.status === 'Offer' && department && (
                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <GenerateOfferDialog applicant={applicant} vacancy={vacancy} department={department}>
