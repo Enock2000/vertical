@@ -5,11 +5,11 @@ import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import type { Employee } from "@/lib/data"
+import type { Employee, Bank } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { EditPaymentMethodDialog } from "./edit-payment-method-dialog"
 
-export const columns = (onAction: () => void): ColumnDef<Employee>[] => [
+export const columns = (banks: Bank[], onAction: () => void): ColumnDef<Employee>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -62,7 +62,7 @@ export const columns = (onAction: () => void): ColumnDef<Employee>[] => [
 
       return (
         <div className="text-right">
-            <EditPaymentMethodDialog employee={employee} onPaymentMethodUpdated={onAction}>
+            <EditPaymentMethodDialog employee={employee} banks={banks} onPaymentMethodUpdated={onAction}>
                 <Button variant="outline" size="sm">
                     Edit Details
                 </Button>

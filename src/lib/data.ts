@@ -203,22 +203,11 @@ export type Certification = {
   expiryDate?: string | null; // ISO 8601, optional
 };
 
-export const zambianBanks = [
-    "Access Bank Zambia",
-    "Absa Bank Zambia",
-    "Bank of China (Zambia)",
-    "Citibank Zambia",
-    "Ecobank Zambia",
-    "FNB Zambia",
-    "Stanbic Bank Zambia",
-    "Standard Chartered Zambia",
-    "Zambia National Commercial Bank (Zanaco)",
-    "United Bank for Africa (UBA) Zambia",
-    "Investrust Bank",
-    "Indo-Zambia Bank",
-    "First Capital Bank Zambia"
-];
-
+export type Bank = {
+    id: string;
+    name: string;
+    swiftCode: string;
+};
 
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
     let basePay = 0;

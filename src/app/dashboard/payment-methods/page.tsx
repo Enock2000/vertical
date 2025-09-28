@@ -6,16 +6,27 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import type { Employee } from '@/lib/data';
+import type { Employee, Bank } from '@/lib/data';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 
 export default function PaymentMethodsPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const employeesRef = ref(db, 'employees');
+    const banksRef = ref(db, 'banks');
+
+    let employeesLoaded = false;
+    let banksLoaded = false;
+
+    const checkLoading = () => {
+        if (employeesLoaded && banksLoaded) {
+            setLoading(false);
+        }
+    };
 
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
@@ -28,20 +39,33 @@ export default function PaymentMethodsPage() {
       } else {
         setEmployees([]);
       }
-      setLoading(false);
+      employeesLoaded = true;
+      checkLoading();
     }, (error) => {
         console.error("Firebase read failed (employees): " + error.name);
-        setLoading(false);
+        employeesLoaded = true;
+        checkLoading();
+    });
+
+     const banksUnsubscribe = onValue(banksRef, (snapshot) => {
+      const data = snapshot.val();
+      const list: Bank[] = data ? Object.values(data) : [];
+      setBanks(list);
+      banksLoaded = true;
+      checkLoading();
     });
 
     return () => {
         employeesUnsubscribe();
+        banksUnsubscribe();
     };
   }, []);
 
   const handleAction = () => {
     // The onValue listener will automatically update the state
   };
+
+  const tableColumns = columns(banks, handleAction);
 
   return (
     <Card>
@@ -59,7 +83,7 @@ export default function PaymentMethodsPage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         ) : (
-            <DataTable columns={columns(handleAction)} data={employees} />
+            <DataTable columns={tableColumns} data={employees} />
         )}
       </CardContent>
     </Card>

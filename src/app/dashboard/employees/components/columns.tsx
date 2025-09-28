@@ -18,7 +18,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
-import type { Employee, Department } from "@/lib/data"
+import type { Employee, Department, Bank } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { EditEmployeeDialog } from "./edit-employee-dialog"
 import { DeleteEmployeeAlert } from "./delete-employee-alert"
@@ -34,7 +34,7 @@ const handleStatusChange = async (employeeId: string, status: Employee['status']
     }
 };
 
-export const columns = (departments: Department[], onAction: () => void): ColumnDef<Employee>[] => [
+export const columns = (departments: Department[], banks: Bank[], onAction: () => void): ColumnDef<Employee>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -158,7 +158,7 @@ export const columns = (departments: Department[], onAction: () => void): Column
                 </DropdownMenuSub>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <EditEmployeeDialog employee={employee} departments={departments} onEmployeeUpdated={onAction}>
+                  <EditEmployeeDialog employee={employee} departments={departments} banks={banks} onEmployeeUpdated={onAction}>
                     <div className="w-full text-left">Edit Profile</div>
                   </EditEmployeeDialog>
                 </DropdownMenuItem>

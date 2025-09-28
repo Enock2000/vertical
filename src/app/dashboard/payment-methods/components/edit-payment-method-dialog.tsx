@@ -32,11 +32,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee } from '@/lib/data';
-import { zambianBanks } from '@/lib/data';
+import type { Employee, Bank } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formSchema = z.object({
   bankName: z.string().min(1, 'Please select a bank.'),
@@ -49,12 +49,14 @@ type EditPaymentMethodFormValues = z.infer<typeof formSchema>;
 interface EditPaymentMethodDialogProps {
   children: React.ReactNode;
   employee: Employee;
+  banks: Bank[];
   onPaymentMethodUpdated: () => void;
 }
 
 export function EditPaymentMethodDialog({
   children,
   employee,
+  banks,
   onPaymentMethodUpdated,
 }: EditPaymentMethodDialogProps) {
   const [open, setOpen] = useState(false);
@@ -124,9 +126,11 @@ export function EditPaymentMethodDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {zambianBanks.map(bank => (
-                        <SelectItem key={bank} value={bank}>{bank}</SelectItem>
-                      ))}
+                      <ScrollArea className="h-40">
+                        {banks.map(bank => (
+                            <SelectItem key={bank.id} value={bank.name}>{bank.name}</SelectItem>
+                        ))}
+                      </ScrollArea>
                     </SelectContent>
                   </Select>
                   <FormMessage />

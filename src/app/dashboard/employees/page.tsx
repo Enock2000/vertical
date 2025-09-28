@@ -12,25 +12,29 @@ import {
 } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import type { Employee, Department } from '@/lib/data';
+import type { Employee, Department, Bank } from '@/lib/data';
 import { AddEmployeeDialog } from './components/add-employee-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import { EditEmployeeDialog } from './components/edit-employee-dialog';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const employeesRef = ref(db, 'employees');
     const departmentsRef = ref(db, 'departments');
+    const banksRef = ref(db, 'banks');
     
     let employeesLoaded = false;
     let deptsLoaded = false;
+    let banksLoaded = false;
 
     const checkLoading = () => {
-        if (employeesLoaded && deptsLoaded) {
+        if (employeesLoaded && deptsLoaded && banksLoaded) {
             setLoading(false);
         }
     };
@@ -73,16 +77,26 @@ export default function EmployeesPage() {
         checkLoading();
     });
 
+    const banksUnsubscribe = onValue(banksRef, (snapshot) => {
+      const data = snapshot.val();
+      const list: Bank[] = data ? Object.values(data) : [];
+      setBanks(list);
+      banksLoaded = true; checkLoading();
+    });
 
     return () => {
         employeesUnsubscribe();
         departmentsUnsubscribe();
+        banksUnsubscribe();
     };
   }, []);
 
   const handleAction = () => {
     // The onValue listener will automatically update the state
   };
+
+  const tableColumns = columns(departments, banks, handleAction);
+
 
   return (
     <Card>
@@ -93,7 +107,7 @@ export default function EmployeesPage() {
             Manage your employees and their details.
           </CardDescription>
         </div>
-        <AddEmployeeDialog departments={departments} onEmployeeAdded={handleAction}>
+        <AddEmployeeDialog departments={departments} banks={banks} onEmployeeAdded={handleAction}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-rap">
@@ -108,7 +122,7 @@ export default function EmployeesPage() {
                 <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         ) : (
-            <DataTable columns={columns(departments, handleAction)} data={employees} />
+            <DataTable columns={tableColumns} data={employees} />
         )}
       </CardContent>
     </Card>

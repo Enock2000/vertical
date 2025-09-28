@@ -31,8 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee, Department } from '@/lib/data';
-import { zambianBanks } from '@/lib/data';
+import type { Employee, Department, Bank } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -77,6 +76,7 @@ type AddEmployeeFormValues = z.infer<typeof formSchema>;
 interface AddEmployeeDialogProps {
   children: React.ReactNode;
   departments: Department[];
+  banks: Bank[];
   onEmployeeAdded: () => void;
 }
 
@@ -90,6 +90,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 export function AddEmployeeDialog({
   children,
   departments,
+  banks,
   onEmployeeAdded,
 }: AddEmployeeDialogProps) {
   const [open, setOpen] = useState(false);
@@ -514,9 +515,11 @@ export function AddEmployeeDialog({
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                            {zambianBanks.map(bank => (
-                                <SelectItem key={bank} value={bank}>{bank}</SelectItem>
-                            ))}
+                              <ScrollArea className="h-40">
+                                {banks.map(bank => (
+                                    <SelectItem key={bank.id} value={bank.name}>{bank.name}</SelectItem>
+                                ))}
+                              </ScrollArea>
                             </SelectContent>
                         </Select>
                         <FormMessage />
