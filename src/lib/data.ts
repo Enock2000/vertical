@@ -20,6 +20,8 @@ export type Employee = {
   bonus: number;
   reimbursements: number;
   joinDate: string; // ISO 8601 date string
+  gender?: 'Male' | 'Female' | 'Other';
+  dateOfBirth?: string; // ISO 8601 date string
   identificationType?: 'ID Number' | 'Passport' | 'License';
   identificationNumber?: string;
   // Bank Details

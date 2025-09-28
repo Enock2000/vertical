@@ -9,6 +9,7 @@ import {
     DollarSign,
     Users,
     Loader2,
+    Cake,
   } from "lucide-react"
   
   import {
@@ -35,7 +36,7 @@ import {
   import Link from "next/link"
   import type { Employee, PayrollConfig } from '@/lib/data';
   import { calculatePayroll } from '@/lib/data';
-  import { isThisMonth, parseISO } from 'date-fns';
+  import { isThisMonth, parseISO, format, getMonth } from 'date-fns';
 
   export default function Dashboard() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -104,6 +105,15 @@ import {
     const recentSignups = useMemo(() => {
         return employees.filter(e => e.joinDate && isThisMonth(parseISO(e.joinDate))).slice(0, 5); // show latest 5
     }, [employees]);
+    
+    const birthdaysThisMonth = useMemo(() => {
+        const currentMonth = getMonth(new Date());
+        return employees.filter(e => {
+            if (!e.dateOfBirth) return false;
+            return getMonth(new Date(e.dateOfBirth)) === currentMonth;
+        });
+    }, [employees]);
+
 
     const currencyFormatter = new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -119,8 +129,8 @@ import {
     }
 
     return (
-        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-          <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2 xl:col-span-3">
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -230,35 +240,68 @@ import {
               </CardContent>
             </Card>
           </div>
-          <Card className="xl:col-span-1">
-            <CardHeader>
-              <CardTitle>Recent Signups</CardTitle>
-              <CardDescription>
-                New employees who joined this month.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-8">
-                {recentSignups.length > 0 ? (
-                    recentSignups.map(employee => (
-                         <div key={employee.id} className="flex items-center gap-4">
-                            <Avatar className="hidden h-9 w-9 sm:flex">
-                                <AvatarImage src={employee.avatar} alt="Avatar" />
-                                <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid gap-1">
-                                <p className="text-sm font-medium leading-none">{employee.name}</p>
-                                <p className="text-sm text-muted-foreground">{employee.email}</p>
+          <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-1">
+            <Card className="xl:col-span-1">
+                <CardHeader>
+                <CardTitle>Recent Signups</CardTitle>
+                <CardDescription>
+                    New employees who joined this month.
+                </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-8">
+                    {recentSignups.length > 0 ? (
+                        recentSignups.map(employee => (
+                            <div key={employee.id} className="flex items-center gap-4">
+                                <Avatar className="hidden h-9 w-9 sm:flex">
+                                    <AvatarImage src={employee.avatar} alt="Avatar" />
+                                    <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="grid gap-1">
+                                    <p className="text-sm font-medium leading-none">{employee.name}</p>
+                                    <p className="text-sm text-muted-foreground">{employee.email}</p>
+                                </div>
+                                <div className="ml-auto font-medium">{currencyFormatter.format(employee.salary)}</div>
                             </div>
-                            <div className="ml-auto font-medium">{currencyFormatter.format(employee.salary)}</div>
+                        ))
+                    ) : (
+                        <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
+                            No recent signups.
                         </div>
-                    ))
-                ) : (
-                    <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-                        No recent signups.
-                    </div>
-                )}
-            </CardContent>
-          </Card>
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Birthdays This Month</CardTitle>
+                    <CardDescription>Upcoming employee birthdays.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-6">
+                    {birthdaysThisMonth.length > 0 ? (
+                        birthdaysThisMonth.map(employee => (
+                             <div key={employee.id} className="flex items-center gap-4">
+                                <Avatar className="hidden h-9 w-9 sm:flex">
+                                    <AvatarImage src={employee.avatar} alt={employee.name} />
+                                    <AvatarFallback>{employee.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="grid gap-1">
+                                    <p className="text-sm font-medium leading-none">{employee.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        {format(new Date(employee.dateOfBirth!), 'MMMM d')}
+                                    </p>
+                                </div>
+                                <div className="ml-auto">
+                                    <Cake className="h-5 w-5 text-primary" />
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
+                            No birthdays this month.
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+          </div>
         </div>
     )
   }

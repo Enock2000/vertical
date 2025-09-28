@@ -24,6 +24,7 @@ import { EditEmployeeDialog } from "./edit-employee-dialog"
 import { DeleteEmployeeAlert } from "./delete-employee-alert"
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
+import { differenceInYears } from "date-fns"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
@@ -90,6 +91,17 @@ export const columns = (departments: Department[], banks: Bank[], onAction: () =
   {
     accessorKey: "role",
     header: "Role",
+  },
+  {
+    accessorKey: "age",
+    header: "Age",
+    cell: ({ row }) => {
+        const { dateOfBirth } = row.original;
+        if (!dateOfBirth) {
+            return <span className="text-muted-foreground">-</span>;
+        }
+        return <span>{differenceInYears(new Date(), new Date(dateOfBirth))}</span>;
+    }
   },
   {
     accessorKey: "departmentName",
