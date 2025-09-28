@@ -1,21 +1,26 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Employee, Goal } from "@/lib/data";
+import { EmployeePerformanceCard } from "./employee-performance-card";
 
-export function PerformanceReviewsTab() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Performance Reviews</CardTitle>
-        <CardDescription>
-          Manage employee performance reviews and track goals.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-center h-48 border-2 border-dashed rounded-lg">
-          <p className="text-muted-foreground">Performance review features coming soon.</p>
+interface PerformanceReviewsTabProps {
+    employees: Employee[];
+    goals: Goal[];
+}
+
+export function PerformanceReviewsTab({ employees, goals }: PerformanceReviewsTabProps) {
+    return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+           {employees.map(employee => {
+               const employeeGoals = goals.filter(g => g.employeeId === employee.id);
+               return (
+                   <EmployeePerformanceCard 
+                        key={employee.id} 
+                        employee={employee}
+                        goals={employeeGoals}
+                    />
+               )
+           })}
         </div>
-      </CardContent>
-    </Card>
-  );
+    );
 }
