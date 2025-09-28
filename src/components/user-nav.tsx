@@ -40,7 +40,7 @@ export function UserNav() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/');
+      router.push('/login');
     } catch (error) {
       console.error("Logout error:", error);
       toast({
