@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SupportChat } from '@/components/support-chat';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from './auth-provider';
 
 export const metadata: Metadata = {
   title: 'VerticalSync',
@@ -28,9 +29,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
+          <AuthProvider>
             {children}
             <Toaster />
             <SupportChat />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

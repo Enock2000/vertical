@@ -1,7 +1,8 @@
+// src/app/dashboard/layout.tsx
 "use client";
 
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Users,
   Home,
@@ -17,8 +18,10 @@ import {
   Landmark,
   Briefcase,
   Trophy,
+  Loader2,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
 
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +70,29 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, employee, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        // Not logged in, redirect to login page
+        router.push('/login');
+      } else if (employee && employee.role !== 'Admin') {
+        // Logged in but not an admin, redirect to employee portal
+        router.push('/employee-portal');
+      }
+      // If user is logged in and is an admin, they can stay.
+    }
+  }, [user, employee, loading, router]);
+
+  if (loading || !employee || employee.role !== 'Admin') {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   const breadcrumbItems = pathname.split('/').filter(Boolean).map((part, index, arr) => {
     const href = '/' + arr.slice(0, index + 1).join('/');
