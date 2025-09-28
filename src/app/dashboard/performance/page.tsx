@@ -9,22 +9,25 @@ import { PerformanceReviewsTab } from './components/performance-reviews-tab';
 import { FeedbackTab } from './components/feedback-tab';
 import { TrainingCatalogTab } from './components/training-catalog-tab';
 import { CertificationsTab } from './components/certifications-tab';
-import type { Employee, Goal } from '@/lib/data';
+import type { Employee, Goal, Feedback } from '@/lib/data';
 
 export default function PerformancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
+    const [feedback, setFeedback] = useState<Feedback[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const employeesRef = ref(db, 'employees');
         const goalsRef = ref(db, 'goals');
+        const feedbackRef = ref(db, 'feedback');
 
         let employeesLoaded = false;
         let goalsLoaded = false;
+        let feedbackLoaded = false;
 
         const checkLoading = () => {
-            if (employeesLoaded && goalsLoaded) {
+            if (employeesLoaded && goalsLoaded && feedbackLoaded) {
                 setLoading(false);
             }
         };
@@ -42,7 +45,8 @@ export default function PerformancePage() {
 
         const goalsUnsubscribe = onValue(goalsRef, (snapshot) => {
             const data = snapshot.val();
-            setGoals(data ? Object.values(data) : []);
+            const goalsList = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
+            setGoals(goalsList);
             goalsLoaded = true;
             checkLoading();
         }, (error) => {
@@ -51,9 +55,22 @@ export default function PerformancePage() {
             checkLoading();
         });
 
+        const feedbackUnsubscribe = onValue(feedbackRef, (snapshot) => {
+            const data = snapshot.val();
+            const feedbackList = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
+            setFeedback(feedbackList);
+            feedbackLoaded = true;
+            checkLoading();
+        }, (error) => {
+            console.error("Firebase read failed (feedback): " + error.name);
+            feedbackLoaded = true;
+            checkLoading();
+        });
+
         return () => {
             employeesUnsubscribe();
             goalsUnsubscribe();
+            feedbackUnsubscribe();
         };
     }, []);
 
@@ -77,7 +94,7 @@ export default function PerformancePage() {
                 <PerformanceReviewsTab employees={employees} goals={goals} />
             </TabsContent>
             <TabsContent value="feedback">
-                <FeedbackTab />
+                <FeedbackTab employees={employees} allFeedback={feedback} />
             </TabsContent>
             <TabsContent value="training">
                 <TrainingCatalogTab />

@@ -169,9 +169,12 @@ export type Feedback = {
   id: string;
   subjectEmployeeId: string; // Employee being reviewed
   providerEmployeeId: string; // Employee giving feedback
+  providerEmployeeName: string; // Denormalized for easy display
   feedbackDate: string; // ISO 8601
   isAnonymous: boolean;
   content: string;
+  prompt: string;
+  requestedFor: string[]; // Array of employee IDs asked to give feedback
 };
 
 export type TrainingCourse = {
