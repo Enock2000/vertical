@@ -79,6 +79,21 @@ export type PayrollDetails = {
     netPay: number;
 }
 
+export type PayrollRunEmployee = PayrollDetails & {
+    employeeId: string;
+    employeeName: string;
+};
+
+export type PayrollRun = {
+  id: string;
+  runDate: string; // ISO 8601 date string
+  employeeCount: number;
+  totalAmount: number;
+  achFileName: string;
+  employees: Record<string, PayrollRunEmployee>; // Keyed by employee ID
+};
+
+
 export type LeaveRequest = {
   id: string;
   employeeId: string;
