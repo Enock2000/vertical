@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { format } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
-import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest } from '@/lib/data';
+import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Goal, JobVacancy } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { UserNav } from "@/components/user-nav";
@@ -18,13 +18,20 @@ import Logo from "@/components/logo";
 import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-dialog';
 import { EmployeePayslipDialog } from './components/employee-payslip-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AttendanceTab } from './components/attendance-tab';
+import { PerformanceTab } from './components/performance-tab';
+import { JobsTab } from './components/jobs-tab';
 
 export default function EmployeePortalPage() {
     const [user, loadingAuth] = useAuthState(auth);
     const [employee, setEmployee] = useState<Employee | null>(null);
-    const [attendanceRecord, setAttendanceRecord] = useState<AttendanceRecord | null>(null);
+    const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
+    const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [goals, setGoals] = useState<Goal[]>([]);
+    const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -39,62 +46,81 @@ export default function EmployeePortalPage() {
 
     useEffect(() => {
         if (user) {
-            let employeeLoaded = false;
-            let attendanceLoaded = false;
-            let payrollConfigLoaded = false;
-            let leaveRequestsLoaded = false;
+            let loadedCount = 0;
+            const totalToLoad = 6;
             
             const checkLoading = () => {
-                if(employeeLoaded && attendanceLoaded && payrollConfigLoaded && leaveRequestsLoaded) {
+                loadedCount++;
+                if(loadedCount === totalToLoad) {
                     setLoadingData(false);
                 }
             }
 
             const employeeRef = ref(db, 'employees/' + user.uid);
-            const attendanceRef = ref(db, `attendance/${todayString}/${user.uid}`);
+            const todayAttendanceRef = ref(db, `attendance/${todayString}/${user.uid}`);
+            const allAttendanceRef = ref(db, 'attendance');
             const payrollConfigRef = ref(db, 'payrollConfig');
-            const leaveRequestsRef = ref(db, 'leaveRequests');
+            const leaveRequestsQuery = query(ref(db, 'leaveRequests'), orderByChild('employeeId'), equalTo(user.uid));
+            const goalsQuery = query(ref(db, 'goals'), orderByChild('employeeId'), equalTo(user.uid));
+            const jobsRef = ref(db, 'jobVacancies');
 
-            const employeeUnsubscribe = onValue(employeeRef, (snapshot) => {
-                setEmployee(snapshot.val());
-                employeeLoaded = true;
-                checkLoading();
-            });
-
-            const attendanceUnsubscribe = onValue(attendanceRef, (snapshot) => {
-                setAttendanceRecord(snapshot.val());
-                attendanceLoaded = true;
-                checkLoading();
-            }, (error) => {
-                console.error(error);
-                attendanceLoaded = true;
-                checkLoading();
-            });
-
-            const payrollConfigUnsubscribe = onValue(payrollConfigRef, (snapshot) => {
-                setPayrollConfig(snapshot.val());
-                payrollConfigLoaded = true;
-                checkLoading();
-            });
-
-            const leaveRequestsUnsubscribe = onValue(leaveRequestsRef, (snapshot) => {
+            const onValueCallback = (setter: React.Dispatch<any>, isObject: boolean = false) => (snapshot: any) => {
                 const data = snapshot.val();
                 if (data) {
-                    const allRequests: LeaveRequest[] = Object.values(data);
-                    const userRequests = allRequests.filter(req => req.employeeId === user.uid);
-                    setLeaveRequests(userRequests.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+                    setter(isObject ? data : Object.values(data));
                 } else {
-                    setLeaveRequests([]);
+                    setter(isObject ? null : []);
                 }
-                leaveRequestsLoaded = true;
                 checkLoading();
-            });
+            };
+            
+            const onErrorCallback = (error: Error) => {
+                console.error(error);
+                checkLoading();
+            };
+            
+            // Fetch all attendance and then filter client-side
+            const allAttendanceUnsubscribe = onValue(ref(db, 'attendance'), (snapshot) => {
+                const allData = snapshot.val();
+                const userRecords: AttendanceRecord[] = [];
+                if (allData) {
+                    Object.keys(allData).forEach(date => {
+                        const dayRecord = allData[date][user.uid];
+                        if (dayRecord) {
+                            userRecords.push({ ...dayRecord, id: `${date}-${user.uid}`, date });
+                        }
+                    });
+                }
+                setAllAttendance(userRecords.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+                checkLoading();
+            }, onErrorCallback);
+
+
+            const employeeUnsubscribe = onValue(employeeRef, onValueCallback(setEmployee, true), onErrorCallback);
+            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, onValueCallback(setTodayAttendance, true), onErrorCallback);
+            const payrollConfigUnsubscribe = onValue(payrollConfigRef, onValueCallback(setPayrollConfig, true), onErrorCallback);
+            const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, onValueCallback(setLeaveRequests), onErrorCallback);
+            const goalsUnsubscribe = onValue(goalsQuery, onValueCallback(setGoals), onErrorCallback);
+            const jobsUnsubscribe = onValue(jobsRef, (snapshot) => {
+                const data = snapshot.val();
+                if(data) {
+                    const openJobs = Object.values<JobVacancy>(data).filter(j => j.status === 'Open');
+                    setJobVacancies(openJobs);
+                } else {
+                    setJobVacancies([]);
+                }
+                checkLoading();
+            }, onErrorCallback);
+
             
             return () => {
                 employeeUnsubscribe();
-                attendanceUnsubscribe();
+                todayAttendanceUnsubscribe();
+                allAttendanceUnsubscribe();
                 payrollConfigUnsubscribe();
                 leaveRequestsUnsubscribe();
+                goalsUnsubscribe();
+                jobsUnsubscribe();
             };
         } else if (!loadingAuth) {
             setLoadingData(false);
@@ -145,7 +171,6 @@ export default function EmployeePortalPage() {
     };
 
     const handleReportEmergency = () => {
-        // Replace with the actual HR/Admin email
         const adminEmail = "admin@verticalsync.com";
         const subject = `Emergency Report from ${employee?.name}`;
         const body = `This is an automated emergency alert from the employee portal.\n\nEmployee: ${employee?.name}\nEmail: ${employee?.email}\n\nPlease contact them immediately to ensure their safety.`;
@@ -178,120 +203,128 @@ export default function EmployeePortalPage() {
         );
     }
     
-    const hasClockedIn = !!attendanceRecord;
-    const hasClockedOut = !!attendanceRecord?.checkOutTime;
+    const hasClockedIn = !!todayAttendance;
+    const hasClockedOut = !!todayAttendance?.checkOutTime;
 
     return (
         <div className="flex min-h-screen w-full flex-col">
-            <header className="sticky top-0 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
+            <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
                 <Logo />
                 <UserNav />
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                <div className="grid gap-4">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Welcome, {employee.name}</CardTitle>
-                            <CardDescription>
-                               This is your personal space to manage your attendance, leave, and view your details.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-wrap gap-2">
-                             <EmployeeLeaveRequestDialog employee={employee}>
-                                <Button>
-                                    <CalendarPlus className="mr-2 h-4 w-4" />
-                                    Request Leave
-                                </Button>
-                            </EmployeeLeaveRequestDialog>
-                             <EmployeePayslipDialog employee={employee} payrollDetails={payrollDetails}>
-                                <Button variant="secondary">
-                                    <Receipt className="mr-2 h-4 w-4" />
-                                    View Latest Payslip
-                                </Button>
-                             </EmployeePayslipDialog>
-                              <Button variant="destructive" onClick={handleReportEmergency}>
-                                <ShieldAlert className="mr-2 h-4 w-4" />
-                                Report Emergency
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-                    <Card className="lg:col-span-1">
-                        <CardHeader className="text-center">
-                            <CardTitle>Time Clock</CardTitle>
-                            <CardDescription>{format(currentTime, 'PPPP')}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center gap-4">
-                            <div className="text-4xl font-bold tracking-tighter">
-                                {format(currentTime, 'hh:mm:ss a')}
-                            </div>
-                             <div className="flex w-full gap-4">
-                                <Button
-                                    className="flex-1"
-                                    onClick={handleClockIn}
-                                    disabled={hasClockedIn || isSubmitting}
-                                >
-                                    {isSubmitting && !hasClockedIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
-                                    Clock In
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="flex-1"
-                                    onClick={handleClockOut}
-                                    disabled={!hasClockedIn || hasClockedOut || isSubmitting}
-                                >
-                                     {isSubmitting && hasClockedIn && !hasClockedOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
-                                    Clock Out
-                                </Button>
-                            </div>
-                            {hasClockedIn && (
-                                <div className="text-sm text-muted-foreground text-center mt-2">
-                                    <p>Checked in at: {format(new Date(attendanceRecord.checkInTime), 'hh:mm a')}</p>
-                                    {hasClockedOut && (
-                                        <p>Checked out at: {format(new Date(attendanceRecord.checkOutTime!), 'hh:mm a')}</p>
-                                    )}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle>My Leave Requests</CardTitle>
-                            <CardDescription>A history of your recent leave applications.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           {leaveRequests.length > 0 ? (
-                            <div className="space-y-4">
-                                {leaveRequests.slice(0, 5).map(req => ( // Show latest 5
-                                     <div key={req.id} className="flex items-center justify-between p-2 rounded-md border">
-                                        <div>
-                                            <p className="font-medium">{req.leaveType} Leave</p>
-                                            <p className="text-sm text-muted-foreground">
-                                                {format(new Date(req.startDate), 'MMM d, yyyy')} - {format(new Date(req.endDate), 'MMM d, yyyy')}
-                                            </p>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Welcome, {employee.name}</CardTitle>
+                        <CardDescription>
+                            This is your personal space to manage your work life.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+                <Tabs defaultValue="dashboard">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                        <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                        <TabsTrigger value="performance">Performance</TabsTrigger>
+                        <TabsTrigger value="jobs">Available Jobs</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="dashboard" className="mt-4">
+                        <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+                            <Card className="lg:col-span-1">
+                                <CardHeader className="text-center">
+                                    <CardTitle>Time Clock</CardTitle>
+                                    <CardDescription>{format(currentTime, 'PPPP')}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex flex-col items-center gap-4">
+                                    <div className="text-4xl font-bold tracking-tighter">
+                                        {format(currentTime, 'hh:mm:ss a')}
+                                    </div>
+                                    <div className="flex w-full gap-4">
+                                        <Button className="flex-1" onClick={handleClockIn} disabled={hasClockedIn || isSubmitting}>
+                                            {isSubmitting && !hasClockedIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+                                            Clock In
+                                        </Button>
+                                        <Button variant="outline" className="flex-1" onClick={handleClockOut} disabled={!hasClockedIn || hasClockedOut || isSubmitting}>
+                                            {isSubmitting && hasClockedIn && !hasClockedOut ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
+                                            Clock Out
+                                        </Button>
+                                    </div>
+                                    {hasClockedIn && (
+                                        <div className="text-sm text-muted-foreground text-center mt-2">
+                                            <p>Checked in at: {format(new Date(todayAttendance.checkInTime), 'hh:mm a')}</p>
+                                            {hasClockedOut && (
+                                                <p>Checked out at: {format(new Date(todayAttendance.checkOutTime!), 'hh:mm a')}</p>
+                                            )}
                                         </div>
-                                         <Badge 
-                                            variant={
-                                                req.status === 'Approved' ? 'default' :
-                                                req.status === 'Rejected' ? 'destructive' :
-                                                'secondary'
-                                            }
-                                        >
-                                            {req.status}
-                                        </Badge>
-                                     </div>
-                                ))}
-                            </div>
-                           ) : (
-                             <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
-                                You haven't made any leave requests yet.
-                            </div>
-                           )}
-                        </CardContent>
-                    </Card>
-                </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            <Card className="lg:col-span-2">
+                                <CardHeader>
+                                    <CardTitle>My Leave Requests</CardTitle>
+                                    <CardDescription>A history of your recent leave applications.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                {leaveRequests.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {leaveRequests.slice(0, 5).map(req => (
+                                            <div key={req.id} className="flex items-center justify-between p-2 rounded-md border">
+                                                <div>
+                                                    <p className="font-medium">{req.leaveType} Leave</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {format(new Date(req.startDate), 'MMM d, yyyy')} - {format(new Date(req.endDate), 'MMM d, yyyy')}
+                                                    </p>
+                                                </div>
+                                                <Badge variant={req.status === 'Approved' ? 'default' : req.status === 'Rejected' ? 'destructive' : 'secondary'}>
+                                                    {req.status}
+                                                </Badge>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
+                                        You haven't made any leave requests yet.
+                                    </div>
+                                )}
+                                </CardContent>
+                            </Card>
+
+                             <Card className="lg:col-span-3">
+                                <CardHeader>
+                                    <CardTitle>Quick Actions</CardTitle>
+                                </CardHeader>
+                                <CardContent className="flex flex-wrap gap-2">
+                                    <EmployeeLeaveRequestDialog employee={employee}>
+                                        <Button>
+                                            <CalendarPlus className="mr-2 h-4 w-4" />
+                                            Request Leave
+                                        </Button>
+                                    </EmployeeLeaveRequestDialog>
+                                    <EmployeePayslipDialog employee={employee} payrollDetails={payrollDetails}>
+                                        <Button variant="secondary">
+                                            <Receipt className="mr-2 h-4 w-4" />
+                                            View Latest Payslip
+                                        </Button>
+                                    </EmployeePayslipDialog>
+                                    <Button variant="destructive" onClick={handleReportEmergency}>
+                                        <ShieldAlert className="mr-2 h-4 w-4" />
+                                        Report Emergency
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="attendance">
+                        <AttendanceTab attendanceRecords={allAttendance} />
+                    </TabsContent>
+                    <TabsContent value="performance">
+                        <PerformanceTab goals={goals} />
+                    </TabsContent>
+                    <TabsContent value="jobs">
+                       <JobsTab jobs={jobVacancies} />
+                    </TabsContent>
+                </Tabs>
             </main>
         </div>
     )
