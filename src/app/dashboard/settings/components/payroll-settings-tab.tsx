@@ -13,10 +13,13 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
-  napsaRate: z.coerce.number().min(0).max(100),
-  nhimaRate: z.coerce.number().min(0).max(100),
+  employeeNapsaRate: z.coerce.number().min(0).max(100),
+  employerNapsaRate: z.coerce.number().min(0).max(100),
+  employeeNhimaRate: z.coerce.number().min(0).max(100),
+  employerNhimaRate: z.coerce.number().min(0).max(100),
   taxRate: z.coerce.number().min(0).max(100),
   overtimeMultiplier: z.coerce.number().min(1),
   workingHours: z.coerce.number().min(1).max(24),
@@ -68,6 +71,66 @@ export function PayrollSettingsTab({ form }: PayrollSettingsTabProps) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-lg">
+            <h3 className="text-lg font-medium">Statutory Contributions</h3>
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="employeeNapsaRate"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Employee NAPSA Rate (%)</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                <FormField
+                control={form.control}
+                name="employerNapsaRate"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Employer NAPSA Rate (%)</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+                 <FormField
+                control={form.control}
+                name="employeeNhimaRate"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Employee NHIMA Rate (%)</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                control={form.control}
+                name="employerNhimaRate"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Employer NHIMA Rate (%)</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+
+            <Separator />
+            <h3 className="text-lg font-medium">Tax & Overtime</h3>
             <FormField
               control={form.control}
               name="taxRate"
@@ -76,32 +139,6 @@ export function PayrollSettingsTab({ form }: PayrollSettingsTabProps) {
                   <FormLabel>Income Tax Rate (PAYE %)</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g., 25" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="napsaRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>NAPSA Contribution Rate (%)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 5" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="nhimaRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>NHIMA Contribution Rate (%)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 1" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,6 +157,9 @@ export function PayrollSettingsTab({ form }: PayrollSettingsTabProps) {
                 </FormItem>
               )}
             />
+            
+            <Separator />
+            <h3 className="text-lg font-medium">Attendance</h3>
             <FormField
               control={form.control}
               name="workingHours"

@@ -60,8 +60,10 @@ export type Applicant = {
 };
 
 export type PayrollConfig = {
-  napsaRate: number;
-  nhimaRate: number;
+  employeeNapsaRate: number;
+  employerNapsaRate: number;
+  employeeNhimaRate: number;
+  employerNhimaRate: number;
   taxRate: number;
   overtimeMultiplier: number;
   workingHours: number; // Standard working hours per day
@@ -72,8 +74,10 @@ export type PayrollDetails = {
     basePay: number;
     overtimePay: number;
     grossPay: number;
-    napsaDeduction: number;
-    nhimaDeduction: number;
+    employeeNapsaDeduction: number;
+    employerNapsaContribution: number;
+    employeeNhimaDeduction: number;
+    employerNhimaContribution: number;
     taxDeduction: number;
     totalDeductions: number;
     netPay: number;
@@ -248,28 +252,35 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
             basePay,
             overtimePay,
             grossPay,
-            napsaDeduction: 0,
-            nhimaDeduction: 0,
+            employeeNapsaDeduction: 0,
+            employerNapsaContribution: 0,
+            employeeNhimaDeduction: 0,
+            employerNhimaContribution: 0,
             taxDeduction: 0,
             totalDeductions,
             netPay
         };
     }
 
-    const napsaDeduction = (grossPay * (config.napsaRate / 100));
-    const nhimaDeduction = (grossPay * (config.nhimaRate / 100));
-    const taxablePay = grossPay - napsaDeduction;
+    const employeeNapsaDeduction = (grossPay * (config.employeeNapsaRate / 100));
+    const employerNapsaContribution = (grossPay * (config.employerNapsaRate / 100));
+    const employeeNhimaDeduction = (grossPay * (config.employeeNhimaRate / 100));
+    const employerNhimaContribution = (grossPay * (config.employerNhimaRate / 100));
+
+    const taxablePay = grossPay - employeeNapsaDeduction;
     const taxDeduction = (taxablePay * (config.taxRate / 100));
 
-    const totalDeductions = napsaDeduction + nhimaDeduction + taxDeduction + employee.deductions;
+    const totalDeductions = employeeNapsaDeduction + employeeNhimaDeduction + taxDeduction + employee.deductions;
     const netPay = grossPay - totalDeductions;
 
     return { 
         basePay,
         overtimePay,
         grossPay, 
-        napsaDeduction,
-        nhimaDeduction,
+        employeeNapsaDeduction,
+        employerNapsaContribution,
+        employeeNhimaDeduction,
+        employerNhimaContribution,
         taxDeduction,
         totalDeductions, 
         netPay 

@@ -14,8 +14,10 @@ import { PayrollSettingsTab } from './components/payroll-settings-tab';
 import { BanksTab } from './components/banks-tab';
 
 const formSchema = z.object({
-  napsaRate: z.coerce.number().min(0).max(100),
-  nhimaRate: z.coerce.number().min(0).max(100),
+  employeeNapsaRate: z.coerce.number().min(0).max(100),
+  employerNapsaRate: z.coerce.number().min(0).max(100),
+  employeeNhimaRate: z.coerce.number().min(0).max(100),
+  employerNhimaRate: z.coerce.number().min(0).max(100),
   taxRate: z.coerce.number().min(0).max(100),
   overtimeMultiplier: z.coerce.number().min(1),
   workingHours: z.coerce.number().min(1).max(24),
@@ -32,8 +34,10 @@ export default function SettingsPage() {
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      napsaRate: 5,
-      nhimaRate: 1,
+      employeeNapsaRate: 5,
+      employerNapsaRate: 5,
+      employeeNhimaRate: 1,
+      employerNhimaRate: 1,
       taxRate: 25,
       overtimeMultiplier: 1.5,
       workingHours: 8,

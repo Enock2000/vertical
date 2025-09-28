@@ -88,15 +88,23 @@ export function PayslipDialog({ employee, payrollDetails, children }: PayslipDia
               </div>
             <Separator />
             <div>
-              <h4 className="font-semibold mb-2">Deductions</h4>
+              <h4 className="font-semibold mb-2">Deductions & Contributions</h4>
               <div className="space-y-1 text-sm">
                  <div className="flex justify-between">
-                  <span>NAPSA (5%)</span>
-                  <span>({currencyFormatter.format(payrollDetails.napsaDeduction)})</span>
+                  <span>NAPSA (Employee)</span>
+                  <span>({currencyFormatter.format(payrollDetails.employeeNapsaDeduction)})</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>NAPSA (Employer)</span>
+                  <span>{currencyFormatter.format(payrollDetails.employerNapsaContribution)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>NHIMA (1%)</span>
-                  <span>({currencyFormatter.format(payrollDetails.nhimaDeduction)})</span>
+                  <span>NHIMA (Employee)</span>
+                  <span>({currencyFormatter.format(payrollDetails.employeeNhimaDeduction)})</span>
+                </div>
+                 <div className="flex justify-between text-muted-foreground">
+                  <span>NHIMA (Employer)</span>
+                  <span>{currencyFormatter.format(payrollDetails.employerNhimaContribution)}</span>
                 </div>
                  <div className="flex justify-between">
                   <span>Income Tax (PAYE)</span>
