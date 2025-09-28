@@ -27,15 +27,17 @@ import {
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { columns } from "./columns"
-import type { Applicant } from "@/lib/data"
+import type { Applicant, JobVacancy, Department } from "@/lib/data"
 import { DataTableFacetedFilter } from "./data-table-faceted-filter"
 import { ApplicantStatus } from "@/lib/data"
 
 interface ApplicantsTableProps {
   applicants: Applicant[];
+  vacancy: JobVacancy;
+  departments: Department[];
 }
 
-export function ApplicantsTable({ applicants }: ApplicantsTableProps) {
+export function ApplicantsTable({ applicants, vacancy, departments }: ApplicantsTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -48,10 +50,12 @@ export function ApplicantsTable({ applicants }: ApplicantsTableProps) {
       label: status
   }))
 
+  const tableColumns = React.useMemo(() => columns(vacancy, departments), [vacancy, departments]);
+
 
   const table = useReactTable({
     data: applicants,
-    columns: columns(),
+    columns: tableColumns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -127,7 +131,7 @@ export function ApplicantsTable({ applicants }: ApplicantsTableProps) {
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns().length}
+                  colSpan={tableColumns.length}
                   className="h-24 text-center"
                 >
                   No applicants for this position yet.

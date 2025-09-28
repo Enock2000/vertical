@@ -41,6 +41,7 @@ export const ApplicantStatus = {
   Screening: 'Screening',
   Interview: 'Interview',
   Offer: 'Offer',
+  Onboarding: 'Onboarding',
   Hired: 'Hired',
   Rejected: 'Rejected',
 } as const;
@@ -210,3 +211,18 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
         netPay 
     };
 }
+
+export type OnboardingTask = {
+    id: string;
+    title: string;
+    completed: boolean;
+};
+
+export const defaultOnboardingTasks: Omit<OnboardingTask, 'completed'>[] = [
+    { id: 'task-1', title: 'Sign Employment Contract' },
+    { id: 'task-2', title: 'Complete Personal Details Form' },
+    { id: 'task-3', title: 'Submit Banking Information' },
+    { id: 'task-4', title: 'Complete Tax & NAPSA Forms' },
+    { id: 'task-5', title: 'Set up IT Equipment' },
+    { id: 'task-6', title: 'Company Induction Meeting' },
+];

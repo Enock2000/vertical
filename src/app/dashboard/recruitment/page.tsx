@@ -7,12 +7,12 @@ import { ref, onValue } from 'firebase/database';
 import { PlusCircle, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { JobVacancy, Department, Applicant } from '@/lib/data';
 import { AddJobDialog } from './components/add-job-dialog';
 import { ApplicantsTable } from './components/applicants-table';
+import { OnboardingTab } from './components/onboarding-tab';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function RecruitmentPage() {
@@ -34,11 +34,18 @@ export default function RecruitmentPage() {
 
     const jobsUnsubscribe = onValue(jobsRef, (snapshot) => {
       const data = snapshot.val();
-      const list = data ? Object.values(data) : [];
+      const list: JobVacancy[] = data ? Object.values(data) : [];
+      list.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setJobVacancies(list);
+      
       if (!selectedVacancy && list.length > 0) {
         setSelectedVacancy(list[0]);
+      } else if (selectedVacancy) {
+        // Update selected vacancy if it changed
+        const updatedVacancy = list.find(v => v.id === selectedVacancy.id);
+        setSelectedVacancy(updatedVacancy || (list.length > 0 ? list[0] : null));
       }
+
       jobsLoaded = true; checkLoading();
     });
 
@@ -57,7 +64,7 @@ export default function RecruitmentPage() {
       deptsUnsubscribe();
       applicantsUnsubscribe();
     };
-  }, [selectedVacancy]);
+  }, []);
 
   const filteredApplicants = applicants.filter(
     (app) => app.jobVacancyId === selectedVacancy?.id
@@ -74,7 +81,7 @@ export default function RecruitmentPage() {
               <CardDescription>Manage your open positions.</CardDescription>
             </div>
             <AddJobDialog departments={departments} onJobAdded={() => {}}>
-                <Button size="sm" className="gap-1">
+                <Button size="icon" className="h-8 w-8">
                     <PlusCircle className="h-4 w-4" />
                 </Button>
             </AddJobDialog>
@@ -121,7 +128,18 @@ export default function RecruitmentPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ApplicantsTable applicants={filteredApplicants} />
+                <Tabs defaultValue="applicants">
+                    <TabsList>
+                        <TabsTrigger value="applicants">Applicants</TabsTrigger>
+                        <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="applicants" className="mt-4">
+                        <ApplicantsTable applicants={filteredApplicants} vacancy={selectedVacancy} departments={departments} />
+                    </TabsContent>
+                    <TabsContent value="onboarding" className="mt-4">
+                        <OnboardingTab />
+                    </TabsContent>
+                </Tabs>
             </CardContent>
           </>
         ) : (

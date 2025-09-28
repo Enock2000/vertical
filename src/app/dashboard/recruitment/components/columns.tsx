@@ -18,16 +18,44 @@ import {
   DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Applicant, ApplicantStatus } from "@/lib/data"
+import type { Applicant, ApplicantStatus, JobVacancy } from "@/lib/data"
+import { db } from "@/lib/firebase"
+import { ref, update } from "firebase/database"
+import { useToast } from "@/hooks/use-toast"
+import { GenerateOfferDialog } from "./generate-offer-dialog"
+import type { Department } from "@/lib/data"
 
-// Dummy handler for now
-const handleStatusChange = (applicantId: string, status: ApplicantStatus) => {
-    console.log(`Changing status of ${applicantId} to ${status}`);
-    // In a real app, you'd call a server action or API here
-    // e.g., update(ref(db, `applicants/${applicantId}`), { status });
-}
 
-export const columns = (): ColumnDef<Applicant>[] => [
+const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, status: ApplicantStatus }) => {
+    const { toast } = useToast();
+
+    const handleStatusChange = async () => {
+        try {
+            await update(ref(db, `applicants/${applicantId}`), { status });
+            toast({
+                title: "Status Updated",
+                description: `Applicant status has been changed to "${status}".`,
+            });
+        } catch (error) {
+            console.error(`Failed to update status to ${status}`, error);
+            toast({
+                variant: "destructive",
+                title: "Update Failed",
+                description: "Could not update applicant status.",
+            });
+        }
+    };
+
+    return (
+        <DropdownMenuItem onClick={handleStatusChange}>{status}</DropdownMenuItem>
+    );
+};
+
+
+export const columns = (
+    vacancy: JobVacancy,
+    departments: Department[]
+): ColumnDef<Applicant>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -78,6 +106,7 @@ export const columns = (): ColumnDef<Applicant>[] => [
     id: "actions",
     cell: ({ row }) => {
       const applicant = row.original;
+      const department = departments.find(d => d.id === vacancy.departmentId);
 
       return (
         <div className="text-right">
@@ -91,17 +120,25 @@ export const columns = (): ColumnDef<Applicant>[] => [
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem>View Resume</DropdownMenuItem>
+                {applicant.status === 'Offer' && department && (
+                   <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <GenerateOfferDialog applicant={applicant} vacancy={vacancy} department={department}>
+                            <div className="w-full text-left">Generate Offer</div>
+                        </GenerateOfferDialog>
+                   </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuSub>
                     <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                         <DropdownMenuSubContent>
-                             <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'Screening')}>Screening</DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'Interview')}>Interview</DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'Offer')}>Offer</DropdownMenuItem>
+                             <StatusUpdateAction applicantId={applicant.id} status="Screening" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Interview" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Offer" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Onboarding" />
                             <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'Hired')}>Hired</DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusChange(applicant.id, 'Rejected')}>Rejected</DropdownMenuItem>
+                             <StatusUpdateAction applicantId={applicant.id} status="Hired" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Rejected" />
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
