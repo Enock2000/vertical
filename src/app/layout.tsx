@@ -1,6 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
+import { SupportChat } from '@/components/support-chat';
 
 export const metadata: Metadata = {
   title: 'VerticalSync',
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body className="font-body antialiased">
         {children}
         <Toaster />
+        <SupportChat />
       </body>
     </html>
   );

@@ -45,7 +45,6 @@ import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/logo";
-import { SupportChat } from "@/components/support-chat";
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -177,7 +176,6 @@ export default function DashboardLayout({
           <UserNav />
         </header>
         <main className="flex-1 p-4 sm:px-6 sm:py-0">{children}</main>
-        <SupportChat />
       </div>
     </div>
   );
