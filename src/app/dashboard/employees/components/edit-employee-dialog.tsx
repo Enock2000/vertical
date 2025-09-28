@@ -257,7 +257,7 @@ export function EditEmployeeDialog({
                                 selected={field.value}
                                 onSelect={field.onChange}
                                 captionLayout="dropdown-nav"
-                                fromYear={new Date().getFullYear() - 70}
+                                fromYear={1960}
                                 toYear={new Date().getFullYear() - 18}
                                 disabled={(date) =>
                                     date > new Date() || date < new Date("1900-01-01")
