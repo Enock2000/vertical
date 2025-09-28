@@ -112,7 +112,7 @@ export default function HomePage() {
                                         alt={image.description}
                                         width={1200}
                                         height={600}
-                                        className="w-full aspect-video object-cover"
+                                        className="w-full aspect-video object-contain"
                                         data-ai-hint={image.imageHint}
                                     />
                                 </CardContent>
