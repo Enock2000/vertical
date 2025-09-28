@@ -26,22 +26,23 @@ interface HeadcountChartProps {
 export default function HeadcountChart({ employees }: HeadcountChartProps) {
     const chartData = useMemo(() => {
         const now = new Date();
+        // Generate labels for the last 12 months
         const monthLabels = Array.from({ length: 12 }, (_, i) => {
             const date = subMonths(now, i);
-            return { month: format(date, "MMM"), monthIndex: getMonth(date), year: getYear(date) };
+            return { month: format(date, "MMM"), dateObj: startOfMonth(date) };
         }).reverse();
 
-        const monthlyData = monthLabels.map(({ month, monthIndex, year }) => {
-            const monthStart = startOfMonth(new Date(year, monthIndex));
-            
-            const activeEmployeesCount = employees.filter(employee => {
+        // Calculate headcount for each month
+        const monthlyData = monthLabels.map(({ month, dateObj }) => {
+            const headcount = employees.filter(employee => {
                 if (!employee.joinDate) return false;
                 const joinDate = new Date(employee.joinDate);
-                // In a real app, you would also check for a separationDate here
-                return employee.status === 'Active' && joinDate <= monthStart;
+                // In a real app, you would also check for a separationDate here.
+                // For now, we'll count any employee who joined before the end of that month.
+                return joinDate <= dateObj;
             }).length;
 
-            return { month, employees: activeEmployeesCount };
+            return { month, employees: headcount };
         });
         
         return monthlyData;
