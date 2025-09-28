@@ -42,6 +42,8 @@ import { Separator } from '@/components/ui/separator';
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
+  identificationType: z.enum(['ID Number', 'Passport', 'License']).optional(),
+  identificationNumber: z.string().optional(),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
   departmentId: z.string().min(1, 'Please select a department.'),
   status: z.enum(['Active', 'Inactive', 'Suspended', 'On Leave', 'Sick']),
@@ -192,6 +194,46 @@ export function EditEmployeeDialog({
                     </FormItem>
                 )}
                 />
+
+                <Separator />
+                <h3 className="text-lg font-semibold">Identification</h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="identificationType"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Document Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select document type" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="ID Number">ID Number</SelectItem>
+                                    <SelectItem value="Passport">Passport</SelectItem>
+                                    <SelectItem value="License">License</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="identificationNumber"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Document Number</FormLabel>
+                            <FormControl>
+                            <Input placeholder="Enter document number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
                 
                 <Separator />
                 <h3 className="text-lg font-semibold">Employment Details</h3>
