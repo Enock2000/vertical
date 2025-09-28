@@ -36,7 +36,16 @@ export type JobVacancy = {
   createdAt: string; // ISO 8601 date string
 };
 
-export type ApplicantStatus = 'New' | 'Screening' | 'Interview' | 'Offer' | 'Hired' | 'Rejected';
+export const ApplicantStatus = {
+  New: 'New',
+  Screening: 'Screening',
+  Interview: 'Interview',
+  Offer: 'Offer',
+  Hired: 'Hired',
+  Rejected: 'Rejected',
+} as const;
+
+export type ApplicantStatus = (typeof ApplicantStatus)[keyof typeof ApplicantStatus];
 
 export type Applicant = {
   id: string;
