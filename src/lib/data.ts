@@ -143,6 +143,63 @@ export type Role = {
     permissions: Permission[];
 };
 
+export type Goal = {
+  id: string;
+  employeeId: string;
+  title: string;
+  description: string;
+  status: 'On Track' | 'At Risk' | 'Completed' | 'Postponed';
+  progress: number; // 0-100
+  dueDate: string; // ISO 8601
+};
+
+export type PerformanceReview = {
+  id: string;
+  employeeId: string;
+  reviewerId: string; // Manager's ID
+  reviewDate: string; // ISO 8601
+  status: 'Pending' | 'In Progress' | 'Completed';
+  goals: Goal[];
+  employeeSelfAssessment: string;
+  managerFeedback: string;
+  overallRating: 1 | 2 | 3 | 4 | 5;
+};
+
+export type Feedback = {
+  id: string;
+  subjectEmployeeId: string; // Employee being reviewed
+  providerEmployeeId: string; // Employee giving feedback
+  feedbackDate: string; // ISO 8601
+  isAnonymous: boolean;
+  content: string;
+};
+
+export type TrainingCourse = {
+  id: string;
+  title: string;
+  category: string;
+  provider: string;
+  duration: string; // e.g., "3 hours", "5 days"
+  description: string;
+};
+
+export type Enrollment = {
+  id: string;
+  employeeId: string;
+  courseId: string;
+  enrollmentDate: string; // ISO 8601
+  status: 'Enrolled' | 'In Progress' | 'Completed';
+};
+
+export type Certification = {
+  id: string;
+  employeeId: string;
+  name: string;
+  issuingBody: string;
+  issueDate: string; // ISO 8601
+  expiryDate?: string; // ISO 8601, optional
+};
+
 export const zambianBanks = [
     "Access Bank Zambia",
     "Absa Bank Zambia",

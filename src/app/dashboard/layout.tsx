@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   Landmark,
   Briefcase,
+  Trophy,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -52,6 +53,7 @@ const navItems = [
   { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods" },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
   { href: "/dashboard/attendance", icon: ClipboardCheck, label: "Attendance" },
+  { href: "/dashboard/performance", icon: Trophy, label: "Performance" },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting" },
   { href: "/dashboard/organization", icon: Network, label: "Organization" },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance" },
