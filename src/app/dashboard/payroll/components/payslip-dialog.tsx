@@ -57,6 +57,14 @@ export function PayslipDialog({ employee, payrollDetails, children }: PayslipDia
               </div>
             <Separator />
             <div>
+                <h4 className="font-semibold mb-2 text-sm">Payment Method</h4>
+                <div className="space-y-1 text-xs text-muted-foreground">
+                    <p>Bank: {employee.bankName || 'N/A'}</p>
+                    <p>Account: {employee.accountNumber || 'N/A'}</p>
+                </div>
+            </div>
+            <Separator />
+            <div>
               <h4 className="font-semibold mb-2">Earnings</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
