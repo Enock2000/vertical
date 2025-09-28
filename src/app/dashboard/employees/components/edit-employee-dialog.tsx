@@ -32,23 +32,18 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { Employee, Department, Bank } from '@/lib/data';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
   gender: z.enum(['Male', 'Female', 'Other']).optional(),
-  dateOfBirth: z.date().optional(),
+  dateOfBirth: z.string().optional(),
   identificationType: z.enum(['ID Number', 'Passport', 'License']).optional(),
   identificationNumber: z.string().optional(),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
@@ -110,7 +105,6 @@ export function EditEmployeeDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...employee,
-      dateOfBirth: employee.dateOfBirth ? new Date(employee.dateOfBirth) : undefined,
     },
   });
 
@@ -133,7 +127,6 @@ export function EditEmployeeDialog({
           salary: values.salary || 0,
           hourlyRate: values.hourlyRate || 0,
           hoursWorked: values.hoursWorked || 0,
-          dateOfBirth: values.dateOfBirth ? values.dateOfBirth.toISOString() : undefined,
       };
 
       await update(ref(db, 'employees/' + employee.id), updatedEmployeeData);
@@ -230,42 +223,11 @@ export function EditEmployeeDialog({
                         control={form.control}
                         name="dateOfBirth"
                         render={({ field }) => (
-                        <FormItem className="flex flex-col">
+                        <FormItem>
                             <FormLabel>Date of Birth</FormLabel>
-                            <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    {field.value ? (
-                                    format(field.value, "PPP")
-                                    ) : (
-                                    <span>Pick a date</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                captionLayout="dropdown-nav"
-                                fromYear={1960}
-                                toYear={new Date().getFullYear() - 18}
-                                disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                }
-                                initialFocus
-                                />
-                            </PopoverContent>
-                            </Popover>
+                            <FormControl>
+                            <Input placeholder="YYYY-MM-DD" {...field} />
+                            </FormControl>
                             <FormMessage />
                         </FormItem>
                         )}
