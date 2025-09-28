@@ -9,68 +9,64 @@ import { PerformanceReviewsTab } from './components/performance-reviews-tab';
 import { FeedbackTab } from './components/feedback-tab';
 import { TrainingCatalogTab } from './components/training-catalog-tab';
 import { CertificationsTab } from './components/certifications-tab';
-import type { Employee, Goal, Feedback } from '@/lib/data';
+import type { Employee, Goal, Feedback, TrainingCourse, Certification } from '@/lib/data';
 
 export default function PerformancePage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
     const [feedback, setFeedback] = useState<Feedback[]>([]);
+    const [courses, setCourses] = useState<TrainingCourse[]>([]);
+    const [certifications, setCertifications] = useState<Certification[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const employeesRef = ref(db, 'employees');
         const goalsRef = ref(db, 'goals');
         const feedbackRef = ref(db, 'feedback');
+        const coursesRef = ref(db, 'trainingCourses');
+        const certificationsRef = ref(db, 'certifications');
 
-        let employeesLoaded = false;
-        let goalsLoaded = false;
-        let feedbackLoaded = false;
+        let loadedCount = 0;
+        const totalToLoad = 5;
 
         const checkLoading = () => {
-            if (employeesLoaded && goalsLoaded && feedbackLoaded) {
+            loadedCount++;
+            if (loadedCount === totalToLoad) {
                 setLoading(false);
             }
         };
 
-        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
-            const data = snapshot.val();
-            setEmployees(data ? Object.values(data) : []);
-            employeesLoaded = true;
-            checkLoading();
-        }, (error) => {
-            console.error("Firebase read failed (employees): " + error.name);
-            employeesLoaded = true;
-            checkLoading();
-        });
+        const createOnValueCallback = (setter: React.Dispatch<any>, isObject?: boolean) => {
+            return (snapshot: any) => {
+                const data = snapshot.val();
+                if (data) {
+                    setter(isObject ? Object.values(data) : Object.keys(data).map(key => ({ ...data[key], id: key })));
+                } else {
+                    setter([]);
+                }
+                checkLoading();
+            };
+        };
+        
+        const createOnErrorCallback = () => {
+             return (error: Error) => {
+                console.error("Firebase read failed:", error.message);
+                checkLoading();
+            }
+        };
 
-        const goalsUnsubscribe = onValue(goalsRef, (snapshot) => {
-            const data = snapshot.val();
-            const goalsList = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
-            setGoals(goalsList);
-            goalsLoaded = true;
-            checkLoading();
-        }, (error) => {
-            console.error("Firebase read failed (goals): " + error.name);
-            goalsLoaded = true;
-            checkLoading();
-        });
-
-        const feedbackUnsubscribe = onValue(feedbackRef, (snapshot) => {
-            const data = snapshot.val();
-            const feedbackList = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
-            setFeedback(feedbackList);
-            feedbackLoaded = true;
-            checkLoading();
-        }, (error) => {
-            console.error("Firebase read failed (feedback): " + error.name);
-            feedbackLoaded = true;
-            checkLoading();
-        });
-
+        const employeesUnsubscribe = onValue(employeesRef, createOnValueCallback(setEmployees, true), createOnErrorCallback());
+        const goalsUnsubscribe = onValue(goalsRef, createOnValueCallback(setGoals), createOnErrorCallback());
+        const feedbackUnsubscribe = onValue(feedbackRef, createOnValueCallback(setFeedback), createOnErrorCallback());
+        const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setCourses), createOnErrorCallback());
+        const certificationsUnsubscribe = onValue(certificationsRef, createOnValueCallback(setCertifications), createOnErrorCallback());
+        
         return () => {
             employeesUnsubscribe();
             goalsUnsubscribe();
             feedbackUnsubscribe();
+            coursesUnsubscribe();
+            certificationsUnsubscribe();
         };
     }, []);
 
@@ -97,10 +93,10 @@ export default function PerformancePage() {
                 <FeedbackTab employees={employees} allFeedback={feedback} />
             </TabsContent>
             <TabsContent value="training">
-                <TrainingCatalogTab />
+                <TrainingCatalogTab courses={courses} />
             </TabsContent>
             <TabsContent value="certifications">
-                <CertificationsTab />
+                <CertificationsTab employees={employees} allCertifications={certifications} />
             </TabsContent>
         </Tabs>
     );
