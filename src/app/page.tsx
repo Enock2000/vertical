@@ -6,6 +6,15 @@ import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap } from 'lucide-react';
 import Image from 'next/image';
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { placeholderImages } from '@/lib/placeholder-images.json';
 
 const features = [
   {
@@ -84,15 +93,36 @@ export default function HomePage() {
               </Button>
             </div>
              <div className="relative mt-16">
-              <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full"></div>
-                <Image
-                    src="https://picsum.photos/seed/dashboard/1200/600"
-                    alt="Dashboard preview"
-                    width={1200}
-                    height={600}
-                    className="rounded-lg border shadow-2xl relative"
-                    data-ai-hint="dashboard ui"
-                />
+                <Carousel
+                    className="w-full max-w-4xl mx-auto"
+                    opts={{
+                        loop: true,
+                    }}
+                    plugins={[
+                        require('embla-carousel-autoplay')({ delay: 10000, stopOnInteraction: true }),
+                    ]}
+                    >
+                    <CarouselContent>
+                        {placeholderImages.map((image) => (
+                        <CarouselItem key={image.id}>
+                            <Card className="overflow-hidden">
+                                <CardContent className="p-0">
+                                    <Image
+                                        src={image.imageUrl}
+                                        alt={image.description}
+                                        width={1200}
+                                        height={600}
+                                        className="w-full aspect-video object-cover"
+                                        data-ai-hint={image.imageHint}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2" />
+                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2" />
+                </Carousel>
             </div>
           </div>
         </section>

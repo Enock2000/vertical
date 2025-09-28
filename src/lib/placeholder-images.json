@@ -1,3 +1,34 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-1",
+      "description": "A team of professionals collaborating around a table in a modern office.",
+      "imageUrl": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxidXNpbmVzcyUyMG1lZXRpbmd8ZW58MHx8fHwxNzU5MDE5MjU5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business meeting"
+    },
+    {
+      "id": "hero-2",
+      "description": "An HR manager conducting an interview with a candidate in a bright office.",
+      "imageUrl": "https://images.unsplash.com/photo-1573497491208-6b1acb260507?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxqb2IlMjBpbnRlcnZpZXd8ZW58MHx8fHwxNzU4OTk3NTkzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "job interview"
+    },
+    {
+      "id": "hero-3",
+      "description": "Diverse group of colleagues discussing a project on a whiteboard.",
+      "imageUrl": "https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0ZWFtJTIwY29sbGFib3JhdGlvbnxlbnwwfHx8fDE3NTkwMzMzOTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "team collaboration"
+    },
+    {
+      "id": "hero-4",
+      "description": "A person signing a contract, representing successful recruitment.",
+      "imageUrl": "https://images.unsplash.com/photo-1564846824194-346b7871b855?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzaWduaW5nJTIwY29udHJhY3R8ZW58MHx8fHwxNzU5MDAxMjAxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "signing contract"
+    },
+    {
+      "id": "hero-5",
+      "description": "Two professionals having a one-on-one performance review meeting.",
+      "imageUrl": "https://images.unsplash.com/photo-1699078394333-41a21c12ac4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyZm9ybWFuY2UlMjByZXZpZXd8ZW58MHx8fHwxNzU5MDc3MjM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "performance review"
+    }
+  ]
 }
