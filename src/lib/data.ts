@@ -200,7 +200,7 @@ export type Certification = {
   name: string;
   issuingBody: string;
   issueDate: string; // ISO 8601
-  expiryDate?: string; // ISO 8601, optional
+  expiryDate?: string | null; // ISO 8601, optional
 };
 
 export const zambianBanks = [

@@ -72,7 +72,7 @@ export function AddCertificationDialog({ children, employee }: AddCertificationD
         name: values.name,
         issuingBody: values.issuingBody,
         issueDate: values.issueDate.toISOString(),
-        expiryDate: values.expiryDate?.toISOString(),
+        expiryDate: values.expiryDate?.toISOString() || null,
       };
 
       await set(newCertRef, newCertification);
