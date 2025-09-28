@@ -15,6 +15,7 @@ import {
   Network,
   ClipboardCheck,
   Landmark,
+  Briefcase,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -45,6 +46,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
   { href: "/dashboard/employees", icon: Users, label: "Employees" },
+  { href: "/dashboard/recruitment", icon: Briefcase, label: "Recruitment" },
   { href: "/dashboard/payroll", icon: FileText, label: "Payroll" },
   { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods" },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
@@ -88,7 +90,7 @@ export default function DashboardLayout({
                     href={item.href}
                     className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8",
-                      pathname === item.href
+                      pathname.startsWith(item.href) && item.href !== "/dashboard" || pathname === item.href
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     )}

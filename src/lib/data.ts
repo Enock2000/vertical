@@ -26,13 +26,36 @@ export type Employee = {
   branchCode?: string;
 };
 
+export type JobVacancy = {
+  id: string;
+  title: string;
+  departmentId: string;
+  departmentName: string;
+  description: string;
+  status: 'Open' | 'Closed' | 'Archived';
+  createdAt: string; // ISO 8601 date string
+};
+
+export type ApplicantStatus = 'New' | 'Screening' | 'Interview' | 'Offer' | 'Hired' | 'Rejected';
+
+export type Applicant = {
+  id: string;
+  jobVacancyId: string;
+  name: string;
+  email: string;
+  phone: string;
+  resumeUrl: string; // URL to the resume file in storage
+  status: ApplicantStatus;
+  appliedAt: string; // ISO 8601 date string
+};
+
 export type PayrollConfig = {
   napsaRate: number;
   nhimaRate: number;
   taxRate: number;
   overtimeMultiplier: number;
   workingHours: number; // Standard working hours per day
-  allowedIpAddress?: string;
+  allowedIpAddress?: string | null;
 };
 
 export type PayrollDetails = {
