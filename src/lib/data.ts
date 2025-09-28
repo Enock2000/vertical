@@ -230,6 +230,14 @@ export type Bank = {
     swiftCode: string;
 };
 
+export type AuditLog = {
+    id: string;
+    actor: string; // Who performed the action (e.g., "System", "Admin User")
+    action: string; // What was done (e.g., "Payroll Run Executed")
+    details: string; // A descriptive summary
+    timestamp: string; // ISO 8601
+};
+
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
     let basePay = 0;
     if (employee.workerType === 'Salaried') {

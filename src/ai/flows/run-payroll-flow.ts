@@ -18,6 +18,7 @@ import {
   type PayrollRun,
   type PayrollRunEmployee,
   calculatePayroll,
+  type AuditLog,
 } from '@/lib/data';
 import { format } from 'date-fns';
 
@@ -32,6 +33,13 @@ export type PayrollRunOutput = z.infer<typeof PayrollRunOutputSchema>;
 
 export async function runPayroll(): Promise<PayrollRunOutput> {
   return runPayrollFlow({});
+}
+
+// Helper function to create an audit log
+async function createAuditLog(log: Omit<AuditLog, 'id'>) {
+    const logRef = ref(db, 'auditLogs');
+    const newLogRef = push(logRef);
+    await set(newLogRef, { ...log, id: newLogRef.key });
 }
 
 const runPayrollFlow = ai.defineFlow(
@@ -113,6 +121,14 @@ const runPayrollFlow = ai.defineFlow(
       
       const csvContent = csvHeaders + csvRows;
       const base64Csv = Buffer.from(csvContent).toString('base64');
+
+      // 6. Create an audit log for the successful payroll run
+      await createAuditLog({
+          actor: 'System',
+          action: 'Payroll Run Executed',
+          details: `Processed payroll for ${employeeCount} employees. Total amount: ${totalAmount.toFixed(2)}. ACH file generated.`,
+          timestamp: runDate,
+      });
       
       return {
         success: true,
@@ -122,6 +138,12 @@ const runPayrollFlow = ai.defineFlow(
       };
     } catch (error: any) {
       console.error('Error running payroll flow:', error);
+       await createAuditLog({
+          actor: 'System',
+          action: 'Payroll Run Failed',
+          details: error.message || 'An unexpected error occurred during payroll processing.',
+          timestamp: new Date().toISOString(),
+      });
       return {
         success: false,
         message: error.message || 'An unexpected error occurred during payroll processing.',

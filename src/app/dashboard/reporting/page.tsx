@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { File, Loader2 } from "lucide-react";
+import { File, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,32 +12,71 @@ import TurnoverChart from "./components/turnover-chart";
 import DiversityChart from "./components/diversity-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee } from '@/lib/data';
+import type { Employee, AuditLog } from '@/lib/data';
+import { format } from 'date-fns';
+
+const availableReports = [
+    { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
+    { name: 'Payroll History', description: 'A detailed history of all payroll runs.' },
+    { name: 'Attendance Summary', description: 'A summary of employee attendance for a selected period.' },
+    { name: 'Leave Balances', description: 'Current leave balances for all employees.' },
+];
 
 export default function ReportingPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
+    const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const employeesRef = ref(db, 'employees');
-        const unsubscribe = onValue(employeesRef, (snapshot) => {
+        const auditLogsRef = ref(db, 'auditLogs');
+        
+        let employeesLoaded = false;
+        let auditLogsLoaded = false;
+        
+        const checkLoading = () => {
+            if (employeesLoaded && auditLogsLoaded) {
+                setLoading(false);
+            }
+        };
+
+        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const employeeList = Object.keys(data).map(key => ({
-                    ...data[key],
-                    id: key,
-                }));
-                setEmployees(employeeList);
+                setEmployees(Object.values(data));
             } else {
                 setEmployees([]);
             }
-            setLoading(false);
+            employeesLoaded = true;
+            checkLoading();
         }, (error) => {
-            console.error("Firebase read failed: " + error.name);
-            setLoading(false);
+            console.error("Firebase read failed (employees): " + error.name);
+            employeesLoaded = true;
+            checkLoading();
         });
 
-        return () => unsubscribe();
+        const auditLogsUnsubscribe = onValue(auditLogsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const logs: AuditLog[] = Object.values(data);
+                // Sort logs by timestamp descending
+                logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                setAuditLogs(logs);
+            } else {
+                setAuditLogs([]);
+            }
+            auditLogsLoaded = true;
+            checkLoading();
+        }, (error) => {
+            console.error("Firebase read failed (auditLogs): " + error.name);
+            auditLogsLoaded = true;
+            checkLoading();
+        });
+
+        return () => {
+            employeesUnsubscribe();
+            auditLogsUnsubscribe();
+        };
     }, []);
 
     return (
@@ -99,7 +138,29 @@ export default function ReportingPage() {
                         <CardDescription>Download various reports in CSV or PDF format.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p>Report generation functionality coming soon.</p>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Report Name</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className="text-right">Action</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {availableReports.map((report) => (
+                                    <TableRow key={report.name}>
+                                        <TableCell className="font-medium">{report.name}</TableCell>
+                                        <TableCell>{report.description}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="outline" size="sm" disabled>
+                                                <Download className="mr-2 h-4 w-4" />
+                                                Download
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
             </TabsContent>
@@ -113,17 +174,35 @@ export default function ReportingPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>User</TableHead>
-                                    <TableHead>Action</TableHead>
                                     <TableHead>Timestamp</TableHead>
+                                    <TableHead>Actor</TableHead>
+                                    <TableHead>Action</TableHead>
+                                    <TableHead>Details</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                <TableRow>
-                                    <TableCell colSpan={3} className="h-24 text-center">
-                                        No audit logs found.
-                                    </TableCell>
-                                </TableRow>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : auditLogs.length > 0 ? (
+                                    auditLogs.map((log) => (
+                                        <TableRow key={log.id}>
+                                            <TableCell>{format(new Date(log.timestamp), 'MMM d, yyyy - hh:mm:ss a')}</TableCell>
+                                            <TableCell>{log.actor}</TableCell>
+                                            <TableCell className="font-medium">{log.action}</TableCell>
+                                            <TableCell>{log.details}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            No audit logs found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
