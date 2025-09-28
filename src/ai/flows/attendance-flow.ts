@@ -1,3 +1,4 @@
+
 // src/ai/flows/attendance-flow.ts
 'use server';
 
@@ -66,14 +67,22 @@ const attendanceFlow = ai.defineFlow(
       const todayString = format(new Date(), 'yyyy-MM-dd');
       const attendanceRef = ref(db, `attendance/${todayString}/${userId}`);
       const now = new Date().toISOString();
+      
+      const employeeRef = ref(db, 'employees/' + userId);
+      const employeeSnapshot = await get(employeeRef);
+      const employee: Employee = employeeSnapshot.val();
+
+      if (!employee) {
+           return { success: false, message: 'Employee not found.' };
+      }
 
       if (action === 'clockIn') {
-        const employeeRef = ref(db, 'employees/' + userId);
-        const employeeSnapshot = await get(employeeRef);
-        const employee: Employee = employeeSnapshot.val();
-
-        if (!employee) {
-             return { success: false, message: 'Employee not found.' };
+        // 4. Check employee status before clocking in
+        if (employee.status !== 'Active') {
+            return {
+                success: false,
+                message: `Cannot clock in. Your current status is "${employee.status}". Please contact HR.`
+            }
         }
 
         const record: Omit<AttendanceRecord, 'id'> = {

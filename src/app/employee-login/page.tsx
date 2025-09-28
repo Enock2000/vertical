@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { ref, get } from 'firebase/database';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,7 @@ import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import type { Employee } from '@/lib/data';
 
 export default function EmployeeLoginPage() {
   const [email, setEmail] = useState('');
@@ -24,8 +27,40 @@ export default function EmployeeLoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Fetch employee status after successful authentication
+      const employeeRef = ref(db, 'employees/' + user.uid);
+      const snapshot = await get(employeeRef);
+
+      if (!snapshot.exists()) {
+        await signOut(auth);
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "Employee profile not found.",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      const employee: Employee = snapshot.val();
+      
+      // Check employee status
+      if (employee.status === 'Suspended' || employee.status === 'Inactive') {
+        await signOut(auth);
+        toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: `Your account is currently ${employee.status}. Please contact HR.`,
+        });
+        setIsLoading(false);
+        return;
+      }
+
       router.push('/employee-portal');
+
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
