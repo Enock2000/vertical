@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Briefcase, Building2 } from 'lucide-react';
 import type { JobVacancy } from '@/lib/data';
+import Link from 'next/link';
 
 interface JobsTabProps {
   jobs: JobVacancy[];
@@ -32,7 +33,11 @@ export function JobsTab({ jobs }: JobsTabProps) {
                         <Building2 className="h-4 w-4" /> {job.departmentName}
                       </p>
                     </div>
-                     <Button>Apply Now</Button>
+                     <Button asChild>
+                        <Link href={`/jobs/${job.id}`} target="_blank">
+                            Apply Now
+                        </Link>
+                     </Button>
                   </div>
                    <p className="text-sm mt-2 text-muted-foreground line-clamp-3">
                         {job.description}
