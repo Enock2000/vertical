@@ -121,6 +121,14 @@ export const columns = (departments: Department[], banks: Bank[], onAction: () =
     },
   },
   {
+    accessorKey: "annualLeaveBalance",
+    header: "Leave Balance",
+     cell: ({ row }) => {
+      const balance = row.original.annualLeaveBalance;
+      return <div className="text-center">{balance} days</div>
+    }
+  },
+  {
     accessorKey: "salary",
     header: () => <div className="text-right">Salary</div>,
     cell: ({ row }) => {

@@ -12,7 +12,7 @@ import { UserNav } from "@/components/user-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert } from "lucide-react";
+import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-dialog';
@@ -260,7 +260,21 @@ export default function EmployeePortalPage() {
                                 </CardContent>
                             </Card>
 
-                            <Card className="lg:col-span-2">
+                            <Card className="lg:col-span-1">
+                                <CardHeader>
+                                     <CardTitle className="flex items-center gap-2">
+                                        <CalendarDays className="h-5 w-5"/>
+                                        Leave Balance
+                                    </CardTitle>
+                                    <CardDescription>Your available annual leave days.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="text-center">
+                                    <div className="text-5xl font-bold">{employee.annualLeaveBalance}</div>
+                                    <p className="text-muted-foreground">days remaining</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="lg:col-span-1">
                                 <CardHeader>
                                     <CardTitle>My Leave Requests</CardTitle>
                                     <CardDescription>A history of your recent leave applications.</CardDescription>
@@ -268,7 +282,7 @@ export default function EmployeePortalPage() {
                                 <CardContent>
                                 {leaveRequests.length > 0 ? (
                                     <div className="space-y-4">
-                                        {leaveRequests.slice(0, 5).map(req => (
+                                        {leaveRequests.slice(0, 3).map(req => (
                                             <div key={req.id} className="flex items-center justify-between p-2 rounded-md border">
                                                 <div>
                                                     <p className="font-medium">{req.leaveType} Leave</p>

@@ -52,6 +52,7 @@ const formSchema = z.object({
   departmentId: z.string().min(1, 'Please select a department.'),
   status: z.enum(['Active', 'Inactive', 'Suspended', 'On Leave', 'Sick']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
+  annualLeaveBalance: z.coerce.number().min(0, 'Leave balance cannot be negative.'),
   workerType: z.enum(['Salaried', 'Hourly', 'Contractor']),
   salary: z.coerce.number().min(0, 'Salary must be a positive number.').optional(),
   hourlyRate: z.coerce.number().min(0, 'Hourly rate must be a positive number.').optional(),
@@ -111,6 +112,7 @@ export function AddEmployeeDialog({
       departmentId: '',
       status: 'Active',
       location: '',
+      annualLeaveBalance: 21,
       workerType: 'Salaried',
       salary: 0,
       hourlyRate: 0,
@@ -367,7 +369,7 @@ export function AddEmployeeDialog({
                         )}
                     />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                     <FormField
                         control={form.control}
                         name="status"
@@ -403,6 +405,19 @@ export function AddEmployeeDialog({
                             <FormLabel>Location</FormLabel>
                             <FormControl>
                                 <Input placeholder="Lusaka, Zambia" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="annualLeaveBalance"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Leave Balance</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="21" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
