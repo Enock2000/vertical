@@ -20,7 +20,11 @@ const formSchema = z.object({
   employerNhimaRate: z.coerce.number().min(0).max(100),
   taxRate: z.coerce.number().min(0).max(100),
   overtimeMultiplier: z.coerce.number().min(1),
-  workingHours: z.coerce.number().min(1).max(24),
+  // Attendance and working hours
+  dailyTargetHours: z.coerce.number().min(1).max(24),
+  weeklyTargetHours: z.coerce.number().min(1),
+  monthlyTargetHours: z.coerce.number().min(1),
+  yearlyTargetHours: z.coerce.number().min(1),
   allowedIpAddress: z.string().optional(),
 });
 
@@ -40,7 +44,10 @@ export default function SettingsPage() {
       employerNhimaRate: 1,
       taxRate: 25,
       overtimeMultiplier: 1.5,
-      workingHours: 8,
+      dailyTargetHours: 8,
+      weeklyTargetHours: 40,
+      monthlyTargetHours: 160,
+      yearlyTargetHours: 1920,
       allowedIpAddress: '',
     },
   });
@@ -62,6 +69,7 @@ export default function SettingsPage() {
       const data: PayrollConfig | null = snapshot.val();
       if (data) {
         form.reset({
+            ...form.getValues(), // preserve defaults
             ...data,
             allowedIpAddress: data.allowedIpAddress || '',
         });

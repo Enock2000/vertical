@@ -7,7 +7,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { ref, get, set, update, child } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { Employee, PayrollConfig, AttendanceRecord } from '@/lib/data';
@@ -42,7 +42,7 @@ const processDailyAttendanceFlow = ai.defineFlow(
       const configRef = ref(db, 'payrollConfig');
       const configSnapshot = await get(configRef);
       const config: PayrollConfig = configSnapshot.val();
-      const workingHours = config?.workingHours || 8; // Default to 8 hours
+      const dailyTargetHours = config?.dailyTargetHours || 8; // Default to 8 hours
 
       // 2. Get all active employees
       const employeesRef = ref(db, 'employees');
@@ -70,8 +70,8 @@ const processDailyAttendanceFlow = ai.defineFlow(
             const checkInTime = parseISO(existingRecord.checkInTime);
             const hoursSinceClockIn = differenceInHours(new Date(), checkInTime);
 
-            if (hoursSinceClockIn >= workingHours) {
-              const autoClockOutTime = addHours(checkInTime, workingHours);
+            if (hoursSinceClockIn >= dailyTargetHours) {
+              const autoClockOutTime = addHours(checkInTime, dailyTargetHours);
               await update(child(attendanceRef, employeeId), {
                 checkOutTime: autoClockOutTime.toISOString(),
                 status: 'Auto Clock-out',

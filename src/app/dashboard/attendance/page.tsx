@@ -8,11 +8,12 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import type { AttendanceRecord, Employee } from '@/lib/data';
+import type { AttendanceRecord, Employee, PayrollConfig } from '@/lib/data';
 
 export default function AttendancePage() {
     const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
+    const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [loading, setLoading] = useState(true);
     
     // For now, we'll just fetch today's attendance.
@@ -22,12 +23,14 @@ export default function AttendancePage() {
     useEffect(() => {
         const attendanceRef = ref(db, `attendance/${todayString}`);
         const employeesRef = ref(db, 'employees');
+        const configRef = ref(db, 'payrollConfig');
 
         let attendanceLoaded = false;
         let employeesLoaded = false;
+        let configLoaded = false;
 
         const checkLoading = () => {
-            if (attendanceLoaded && employeesLoaded) {
+            if (attendanceLoaded && employeesLoaded && configLoaded) {
                 setLoading(false);
             }
         };
@@ -70,9 +73,16 @@ export default function AttendancePage() {
             checkLoading();
         });
 
+        const configUnsubscribe = onValue(configRef, (snapshot) => {
+            setPayrollConfig(snapshot.val());
+            configLoaded = true;
+            checkLoading();
+        });
+
         return () => {
             attendanceUnsubscribe();
             employeesUnsubscribe();
+            configUnsubscribe();
         };
     }, [todayString]);
     
@@ -86,9 +96,10 @@ export default function AttendancePage() {
                 departmentName: employee?.departmentName || '-',
                 avatar: employee?.avatar || '',
                 email: employee?.email || '',
+                dailyTargetHours: payrollConfig?.dailyTargetHours,
             };
         });
-    }, [attendanceRecords, employees]);
+    }, [attendanceRecords, employees, payrollConfig]);
 
 
     return (

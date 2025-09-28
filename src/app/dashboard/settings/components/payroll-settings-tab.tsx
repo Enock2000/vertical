@@ -22,7 +22,11 @@ const formSchema = z.object({
   employerNhimaRate: z.coerce.number().min(0).max(100),
   taxRate: z.coerce.number().min(0).max(100),
   overtimeMultiplier: z.coerce.number().min(1),
-  workingHours: z.coerce.number().min(1).max(24),
+  // Attendance and working hours
+  dailyTargetHours: z.coerce.number().min(1).max(24),
+  weeklyTargetHours: z.coerce.number().min(1),
+  monthlyTargetHours: z.coerce.number().min(1),
+  yearlyTargetHours: z.coerce.number().min(1),
   allowedIpAddress: z.string().optional(),
 });
 
@@ -159,23 +163,63 @@ export function PayrollSettingsTab({ form }: PayrollSettingsTabProps) {
             />
             
             <Separator />
-            <h3 className="text-lg font-medium">Attendance</h3>
-            <FormField
-              control={form.control}
-              name="workingHours"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Standard Working Hours</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g., 8" {...field} />
-                  </FormControl>
-                   <FormDescription>
-                    The number of hours an employee is expected to work per day.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <h3 className="text-lg font-medium">Working Hours & Attendance</h3>
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="dailyTargetHours"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Daily Target Hours</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 8" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                control={form.control}
+                name="weeklyTargetHours"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Weekly Target Hours</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 40" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                control={form.control}
+                name="monthlyTargetHours"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Monthly Target Hours</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 160" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                control={form.control}
+                name="yearlyTargetHours"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Yearly Target Hours</FormLabel>
+                    <FormControl>
+                        <Input type="number" placeholder="e.g., 1920" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
              <FormField
               control={form.control}
               name="allowedIpAddress"

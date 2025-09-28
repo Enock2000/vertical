@@ -70,7 +70,11 @@ export type PayrollConfig = {
   employerNhimaRate: number;
   taxRate: number;
   overtimeMultiplier: number;
-  workingHours: number; // Standard working hours per day
+  // Working Hours
+  dailyTargetHours: number;
+  weeklyTargetHours: number;
+  monthlyTargetHours: number;
+  yearlyTargetHours: number;
   allowedIpAddress?: string | null;
 };
 

@@ -2,13 +2,22 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, differenceInMilliseconds } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { AttendanceRecord } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export const columns: ColumnDef<AttendanceRecord>[] = [
+// Extends AttendanceRecord to include dailyTargetHours
+type EnrichedAttendanceRecord = AttendanceRecord & { dailyTargetHours?: number };
+
+const formatDuration = (ms: number) => {
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
+    return `${hours}h ${minutes}m`;
+}
+
+export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
   {
     accessorKey: "employeeName",
     header: ({ column }) => {
@@ -68,22 +77,37 @@ export const columns: ColumnDef<AttendanceRecord>[] = [
     }
   },
    {
-    id: "duration",
-    header: "Duration",
-     cell: ({ row }) => {
-        const { checkInTime, checkOutTime, status } = row.original;
-        if (status === 'Absent') {
-             return <div className="text-muted-foreground">-</div>;
+    id: 'workingHours',
+    header: 'Working Hours',
+    cell: ({ row }) => {
+        const { checkInTime, checkOutTime, status, dailyTargetHours } = row.original;
+        
+        if (status === 'Absent' || !checkOutTime) {
+            return <div className="text-muted-foreground">-</div>;
         }
-        if (!checkOutTime) {
-            return <div className="text-muted-foreground">In Progress</div>;
-        }
+        
         const start = parseISO(checkInTime);
         const end = parseISO(checkOutTime);
-        const diffMs = end.getTime() - start.getTime();
-        const hours = Math.floor(diffMs / 3600000);
-        const minutes = Math.floor((diffMs % 3600000) / 60000);
-        return <div>{`${hours}h ${minutes}m`}</div>
+        const diffMs = differenceInMilliseconds(end, start);
+        const duration = formatDuration(diffMs);
+
+        if (!dailyTargetHours) {
+            return <div>{duration}</div>
+        }
+
+        const targetMs = dailyTargetHours * 3600000;
+        const deficitMs = targetMs - diffMs;
+        
+        return (
+            <div>
+                <span>{duration}</span>
+                {deficitMs > 0 && (
+                     <span className="ml-2 text-xs text-destructive">
+                        (-{formatDuration(deficitMs)})
+                     </span>
+                )}
+            </div>
+        )
     }
    },
   {
