@@ -105,6 +105,13 @@ export function EditEmployeeDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       ...employee,
+      gender: employee.gender || undefined,
+      dateOfBirth: employee.dateOfBirth || '',
+      identificationType: employee.identificationType || undefined,
+      identificationNumber: employee.identificationNumber || '',
+      bankName: employee.bankName || '',
+      accountNumber: employee.accountNumber || '',
+      branchCode: employee.branchCode || '',
     },
   });
 
