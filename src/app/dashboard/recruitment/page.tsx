@@ -2,7 +2,7 @@
 // src/app/dashboard/recruitment/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { PlusCircle, Loader2, Search, ExternalLink } from 'lucide-react';
@@ -60,7 +60,7 @@ export default function RecruitmentPage() {
     });
     
     const applicantsUnsubscribe = onValue(applicantsRef, (snapshot) => {
-        setApplicants(snapshot.val() ? Object.values(snapshot.val()) : []);
+        setApplicants(snapshot.val() ? Object.keys(snapshot.val()).map(key => ({...snapshot.val()[key], id: key})) : []);
         applicantsLoaded = true; checkLoading();
     });
 
@@ -71,9 +71,9 @@ export default function RecruitmentPage() {
     };
   }, [companyId]);
 
-  const filteredApplicants = applicants.filter(
+  const filteredApplicants = useMemo(() => applicants.filter(
     (app) => app.jobVacancyId === selectedVacancy?.id
-  );
+  ), [applicants, selectedVacancy]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
@@ -122,46 +122,48 @@ export default function RecruitmentPage() {
       </Card>
 
       <Card className="md:col-span-2">
-        {selectedVacancy ? (
-          <>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>{selectedVacancy.title}</CardTitle>
-                        <CardDescription>
-                            {filteredApplicants.length} applicant(s) for this position.
-                        </CardDescription>
+        <Tabs defaultValue="applicants" className="h-full flex flex-col">
+            {selectedVacancy ? (
+            <>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>{selectedVacancy.title}</CardTitle>
+                            <CardDescription>
+                                {filteredApplicants.length} applicant(s) for this position.
+                            </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <TabsList>
+                                <TabsTrigger value="applicants">Applicants</TabsTrigger>
+                                <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+                            </TabsList>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href={`/jobs/${selectedVacancy.id}?companyId=${companyId}`} target="_blank">
+                                    <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                                    View Job
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
-                    <Button asChild variant="outline" size="sm">
-                        <Link href={`/jobs/${selectedVacancy.id}?companyId=${companyId}`} target="_blank">
-                            <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                            View Job
-                        </Link>
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Tabs defaultValue="applicants">
-                    <TabsList>
-                        <TabsTrigger value="applicants">Applicants</TabsTrigger>
-                        <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="applicants" className="mt-4">
+                </CardHeader>
+                <CardContent className="flex-grow">
+                    <TabsContent value="applicants" className="mt-0">
                         <ApplicantsTable applicants={filteredApplicants} vacancy={selectedVacancy} departments={departments} />
                     </TabsContent>
-                    <TabsContent value="onboarding" className="mt-4">
-                        <OnboardingTab />
+                    <TabsContent value="onboarding" className="mt-0">
+                        <OnboardingTab applicants={applicants} />
                     </TabsContent>
-                </Tabs>
-            </CardContent>
-          </>
-        ) : (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-                <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold">No Vacancy Selected</h3>
-                <p className="text-muted-foreground">Select a job vacancy to view applicants or add a new one.</p>
-            </div>
-        )}
+                </CardContent>
+            </>
+            ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                    <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold">No Vacancy Selected</h3>
+                    <p className="text-muted-foreground">Select a job vacancy to view applicants or add a new one.</p>
+                </div>
+            )}
+        </Tabs>
       </Card>
     </div>
   );

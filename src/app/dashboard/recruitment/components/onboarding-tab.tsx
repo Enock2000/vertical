@@ -1,61 +1,71 @@
+
 // src/app/dashboard/recruitment/components/onboarding-tab.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { defaultOnboardingTasks } from '@/lib/data';
-import type { OnboardingTask } from '@/lib/data';
+import { Button } from '@/components/ui/button';
+import type { Applicant } from '@/lib/data';
+import { OnboardingChecklist } from './onboarding-checklist';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-export function OnboardingTab() {
-  const [tasks, setTasks] = useState<OnboardingTask[]>(
-    defaultOnboardingTasks.map(task => ({ ...task, completed: false }))
+interface OnboardingTabProps {
+  applicants: Applicant[];
+}
+
+export function OnboardingTab({ applicants }: OnboardingTabProps) {
+  const onboardingApplicants = useMemo(() => 
+    applicants.filter(a => a.status === 'Onboarding'),
+    [applicants]
+  );
+  
+  const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(
+    onboardingApplicants.length > 0 ? onboardingApplicants[0] : null
   );
 
-  const handleTaskChange = (taskId: string, completed: boolean) => {
-    setTasks(tasks.map(task => (task.id === taskId ? { ...task, completed } : task)));
-  };
-
-  const completedTasks = tasks.filter(task => task.completed).length;
-  const totalTasks = tasks.length;
-  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Onboarding Checklist</CardTitle>
-        <CardDescription>
-          Track the new hire's progress through the onboarding process.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Label className="flex-shrink-0">Progress</Label>
-            <Progress value={progress} className="flex-1" />
-            <span className="text-sm text-muted-foreground">{completedTasks} / {totalTasks} completed</span>
-          </div>
-          <div className="space-y-2 rounded-md border p-4">
-            {tasks.map(task => (
-              <div key={task.id} className="flex items-center gap-3">
-                <Checkbox
-                  id={task.id}
-                  checked={task.completed}
-                  onCheckedChange={(checked) => handleTaskChange(task.id, !!checked)}
-                />
-                <Label
-                  htmlFor={task.id}
-                  className={`flex-1 ${task.completed ? 'text-muted-foreground line-through' : ''}`}
+    <div className="grid md:grid-cols-3 gap-6">
+      <Card className="md:col-span-1">
+        <CardHeader>
+          <CardTitle>Onboarding Employees</CardTitle>
+          <CardDescription>Select an employee to manage their onboarding.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {onboardingApplicants.length > 0 ? (
+              onboardingApplicants.map(applicant => (
+                <Button
+                  key={applicant.id}
+                  variant={selectedApplicant?.id === applicant.id ? 'secondary' : 'ghost'}
+                  className="w-full justify-start gap-2"
+                  onClick={() => setSelectedApplicant(applicant)}
                 >
-                  {task.title}
-                </Label>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={`https://avatar.vercel.sh/${applicant.email}.png`} />
+                    <AvatarFallback>{applicant.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  {applicant.name}
+                </Button>
+              ))
+            ) : (
+              <div className="text-center text-sm text-muted-foreground py-8">
+                No employees are currently onboarding.
               </div>
-            ))}
+            )}
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <div className="md:col-span-2">
+        {selectedApplicant ? (
+          <OnboardingChecklist key={selectedApplicant.id} applicant={selectedApplicant} />
+        ) : (
+           <Card className="flex items-center justify-center h-full">
+             <div className="text-center text-muted-foreground p-8">
+                <p>Select an employee to view their onboarding checklist.</p>
+             </div>
+           </Card>
+        )}
+      </div>
+    </div>
   );
 }

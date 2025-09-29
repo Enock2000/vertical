@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
@@ -71,6 +72,23 @@ export const ApplicantStatus = {
 
 export type ApplicantStatus = (typeof ApplicantStatus)[keyof typeof ApplicantStatus];
 
+export type OnboardingTask = {
+    id: string;
+    title: string;
+    completed: boolean;
+    dueDate: string | null;
+};
+
+export const defaultOnboardingTasks: Omit<OnboardingTask, 'id' | 'completed' | 'dueDate'>[] = [
+    { title: 'Sign Employment Contract' },
+    { title: 'Complete Personal Details Form' },
+    { title: 'Submit Banking Information' },
+    { title: 'Complete Tax & NAPSA Forms' },
+    { title: 'Set up IT Equipment' },
+    { title: 'Company Induction Meeting' },
+];
+
+
 export type Applicant = {
   id: string;
   companyId: string;
@@ -81,6 +99,7 @@ export type Applicant = {
   resumeUrl: string; // URL to the resume file in storage
   status: ApplicantStatus;
   appliedAt: string; // ISO 8601 date string
+  onboardingTasks?: OnboardingTask[];
 };
 
 export type PayrollConfig = {
@@ -387,18 +406,3 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
         netPay 
     };
 }
-
-export type OnboardingTask = {
-    id: string;
-    title: string;
-    completed: boolean;
-};
-
-export const defaultOnboardingTasks: Omit<OnboardingTask, 'completed'>[] = [
-    { id: 'task-1', title: 'Sign Employment Contract' },
-    { id: 'task-2', title: 'Complete Personal Details Form' },
-    { id: 'task-3', title: 'Submit Banking Information' },
-    { id: 'task-4', title: 'Complete Tax & NAPSA Forms' },
-    { id: 'task-5', title: 'Set up IT Equipment' },
-    { id: 'task-6', title: 'Company Induction Meeting' },
-];

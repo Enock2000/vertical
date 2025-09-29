@@ -19,9 +19,10 @@ import {
   DropdownMenuSubContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Applicant, ApplicantStatus, JobVacancy } from "@/lib/data"
+import type { Applicant, ApplicantStatus, JobVacancy, OnboardingTask } from "@/lib/data"
+import { defaultOnboardingTasks } from "@/lib/data"
 import { db } from "@/lib/firebase"
-import { ref, update } from "firebase/database"
+import { ref, update, push } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { GenerateOfferDialog } from "./generate-offer-dialog"
 import type { Department } from "@/lib/data"
@@ -36,7 +37,18 @@ const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, stat
     const handleStatusChange = async () => {
         if (!companyId) return;
         try {
-            await update(ref(db, `companies/${companyId}/applicants/${applicantId}`), { status });
+            const updates: { [key: string]: any } = { status };
+            if (status === 'Onboarding') {
+                const initialTasks: OnboardingTask[] = defaultOnboardingTasks.map(task => ({
+                    id: push(ref(db)).key!,
+                    title: task.title,
+                    completed: false,
+                    dueDate: null,
+                }));
+                updates['onboardingTasks'] = initialTasks;
+            }
+
+            await update(ref(db, `companies/${companyId}/applicants/${applicantId}`), updates);
             toast({
                 title: "Status Updated",
                 description: `Applicant status has been changed to "${status}".`,
