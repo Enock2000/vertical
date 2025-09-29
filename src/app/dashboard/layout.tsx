@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
+import { auth } from '@/lib/firebase'; // Import auth correctly
 
 import { Button } from "@/components/ui/button";
 import {
@@ -95,7 +96,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { user, employee, company, loading } = useAuth();
-  const auth = require('firebase/auth').getAuth();
 
   useEffect(() => {
     if (!loading) {
