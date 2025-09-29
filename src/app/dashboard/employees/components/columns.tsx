@@ -1,3 +1,4 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -18,13 +19,14 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
-import type { Employee, Department, Bank } from "@/lib/data"
+import type { Employee, Department, Bank, Role } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { EditEmployeeDialog } from "./edit-employee-dialog"
 import { DeleteEmployeeAlert } from "./delete-employee-alert"
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { differenceInYears } from "date-fns"
+import { PromoteEmployeeDialog } from "./promote-employee-dialog"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
@@ -35,7 +37,7 @@ const handleStatusChange = async (employeeId: string, status: Employee['status']
     }
 };
 
-export const columns = (departments: Department[], banks: Bank[], onAction: () => void): ColumnDef<Employee>[] => [
+export const columns = (departments: Department[], banks: Bank[], roles: Role[], onAction: () => void): ColumnDef<Employee>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -176,6 +178,11 @@ export const columns = (departments: Department[], banks: Bank[], onAction: () =
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
+                         <div className="w-full text-left">Promote to Admin</div>
+                    </PromoteEmployeeDialog>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <EditEmployeeDialog employee={employee} departments={departments} banks={banks} onEmployeeUpdated={onAction}>

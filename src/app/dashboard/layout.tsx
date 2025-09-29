@@ -1,9 +1,10 @@
 
+
 // src/app/dashboard/layout.tsx
 "use client";
 
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
     Users,
     Home,
@@ -26,7 +27,8 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
-import { auth } from '@/lib/firebase'; // Import auth correctly
+import { auth, db } from '@/lib/firebase'; // Import auth correctly
+import { ref, onValue } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,21 +50,22 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Permission, Role } from "@/lib/data";
 
 const navItems = [
-  { href: "/dashboard", icon: Home, label: "Dashboard" },
-  { href: "/dashboard/employees", icon: Users, label: "Employees" },
-  { href: "/dashboard/recruitment", icon: Briefcase, label: "Recruitment" },
-  { href: "/dashboard/payroll", icon: FileText, label: "Payroll" },
-  { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods" },
-  { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
-  { href: "/dashboard/attendance", icon: ClipboardCheck, label: "Attendance" },
-  { href: "/dashboard/roster", icon: CalendarCheck, label: "Roster" },
-  { href: "/dashboard/performance", icon: Trophy, label: "Performance" },
-  { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting" },
-  { href: "/dashboard/organization", icon: Network, label: "Organization" },
-  { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance" },
-  { href: "/dashboard/settings", icon: Settings, label: "Settings" },
+  { href: "/dashboard", icon: Home, label: "Dashboard", permission: "dashboard" as Permission },
+  { href: "/dashboard/employees", icon: Users, label: "Employees", permission: "employees" as Permission },
+  { href: "/dashboard/recruitment", icon: Briefcase, label: "Recruitment", permission: "recruitment" as Permission },
+  { href: "/dashboard/payroll", icon: FileText, label: "Payroll", permission: "payroll" as Permission },
+  { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods", permission: "payment-methods" as Permission },
+  { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave", permission: "leave" as Permission },
+  { href: "/dashboard/attendance", icon: ClipboardCheck, label: "Attendance", permission: "attendance" as Permission },
+  { href: "/dashboard/roster", icon: CalendarCheck, label: "Roster", permission: "roster" as Permission },
+  { href: "/dashboard/performance", icon: Trophy, label: "Performance", permission: "performance" as Permission },
+  { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting", permission: "reporting" as Permission },
+  { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },
+  { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
+  { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
 ];
 
 const AccessDenied = ({ title, description }: { title: string, description: string }) => (
@@ -89,7 +92,8 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, employee, company, loading } = useAuth();
+  const { user, employee, company, loading, companyId } = useAuth();
+  const [adminRole, setAdminRole] = useState<Role | null>(null);
 
   useEffect(() => {
     if (!loading) {
@@ -102,6 +106,28 @@ export default function DashboardLayout({
       }
     }
   }, [user, employee, loading, router]);
+  
+  useEffect(() => {
+    if (employee?.adminRoleId && companyId) {
+        const roleRef = ref(db, `companies/${companyId}/roles/${employee.adminRoleId}`);
+        const unsubscribe = onValue(roleRef, (snapshot) => {
+            setAdminRole(snapshot.val());
+        });
+        return () => unsubscribe();
+    }
+  }, [employee, companyId]);
+
+  const visibleNavItems = useMemo(() => {
+    // If the user is the primary admin (no specific admin role), show all items.
+    if (employee?.role === 'Admin' && !employee.adminRoleId) {
+        return navItems;
+    }
+    if (adminRole) {
+        return navItems.filter(item => adminRole.permissions.includes(item.permission));
+    }
+    // If role is still loading or not found, show nothing to be safe.
+    return [];
+  }, [employee, adminRole]);
 
 
   if (loading || !employee || !company) {
@@ -140,7 +166,7 @@ export default function DashboardLayout({
         </div>
         <ScrollArea className="flex-grow">
             <nav className="flex flex-col gap-1 p-4">
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
@@ -175,7 +201,7 @@ export default function DashboardLayout({
                 >
                   <Logo />
                 </Link>
-                {navItems.map((item) => (
+                {visibleNavItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

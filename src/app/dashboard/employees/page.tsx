@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import type { Employee, Department, Bank } from '@/lib/data';
+import type { Employee, Department, Bank, Role } from '@/lib/data';
 import { AddEmployeeDialog } from './components/add-employee-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
@@ -24,6 +25,7 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,13 +34,15 @@ export default function EmployeesPage() {
     const employeesRef = ref(db, 'employees');
     const departmentsRef = ref(db, `companies/${companyId}/departments`);
     const banksRef = ref(db, `companies/${companyId}/banks`);
+    const rolesRef = ref(db, `companies/${companyId}/roles`);
     
     let employeesLoaded = false;
     let deptsLoaded = false;
     let banksLoaded = false;
+    let rolesLoaded = false;
 
     const checkLoading = () => {
-        if (employeesLoaded && deptsLoaded && banksLoaded) {
+        if (employeesLoaded && deptsLoaded && banksLoaded && rolesLoaded) {
             setLoading(false);
         }
     };
@@ -85,10 +89,22 @@ export default function EmployeesPage() {
       banksLoaded = true; checkLoading();
     });
 
+    const rolesUnsubscribe = onValue(rolesRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            setRoles(Object.values(data));
+        } else {
+            setRoles([]);
+        }
+        rolesLoaded = true;
+        checkLoading();
+    });
+
     return () => {
         employeesUnsubscribe();
         departmentsUnsubscribe();
         banksUnsubscribe();
+        rolesUnsubscribe();
     };
   }, [companyId]);
 
@@ -96,7 +112,7 @@ export default function EmployeesPage() {
     // The onValue listener will automatically update the state
   };
 
-  const tableColumns = columns(departments, banks, handleAction);
+  const tableColumns = columns(departments, banks, roles, handleAction);
 
 
   return (

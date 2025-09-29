@@ -96,7 +96,7 @@ export function AddRoleDialog({
             permissions: values.permissions as Permission[],
         };
         
-        await set(newRoleRef, newRole);
+        await set(newRoleRef, { ...newRole, id: newRoleRef.key });
 
         onRoleAdded();
         setOpen(false);

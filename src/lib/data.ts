@@ -47,6 +47,8 @@ export type Employee = {
   bankName?: string;
   accountNumber?: string;
   branchCode?: string;
+  jobTitle?: string; // Original job title before promotion
+  adminRoleId?: string; // ID of the assigned admin Role
 };
 
 export type JobVacancy = {
@@ -183,26 +185,35 @@ export type Department = {
 };
 
 export type Permission = 
-    | 'manage-employees'
-    | 'view-employees'
-    | 'manage-payroll'
-    | 'view-payroll'
-    | 'manage-leave'
-    | 'view-leave'
-    | 'manage-reporting'
-    | 'view-reporting'
-    | 'manage-settings';
+    | 'dashboard'
+    | 'employees'
+    | 'recruitment'
+    | 'payroll'
+    | 'payment-methods'
+    | 'leave'
+    | 'attendance'
+    | 'roster'
+    | 'performance'
+    | 'reporting'
+    | 'organization'
+    | 'compliance'
+    | 'settings';
+
 
 export const permissionsList: { id: Permission, label: string }[] = [
-    { id: 'manage-employees', label: 'Manage Employees (Add, Edit, Delete)' },
-    { id: 'view-employees', label: 'View Employees' },
-    { id: 'manage-payroll', label: 'Manage Payroll (Run, Approve)' },
-    { id: 'view-payroll', label: 'View Payroll' },
-    { id: 'manage-leave', label: 'Manage Leave Requests (Approve, Reject)' },
-    { id: 'view-leave', label: 'View Leave Requests' },
-    { id: 'manage-reporting', label: 'Manage Reporting' },
-    { id: 'view-reporting', label: 'View Reporting' },
-    { id: 'manage-settings', label: 'Manage System Settings' },
+    { id: 'dashboard', label: 'View Dashboard' },
+    { id: 'employees', label: 'Manage Employees' },
+    { id: 'recruitment', label: 'Manage Recruitment' },
+    { id: 'payroll', label: 'Manage Payroll' },
+    { id: 'payment-methods', label: 'Manage Payment Methods' },
+    { id: 'leave', label: 'Manage Leave' },
+    { id: 'attendance', label: 'Manage Attendance' },
+    { id: 'roster', label: 'Manage Roster' },
+    { id: 'performance', label: 'Manage Performance' },
+    { id: 'reporting', label: 'View Reporting' },
+    { id: 'organization', label: 'Manage Organization' },
+    { id: 'compliance', label: 'Access Compliance Advisor' },
+    { id: 'settings', label: 'Manage Settings' },
 ];
 
 export type Role = {
