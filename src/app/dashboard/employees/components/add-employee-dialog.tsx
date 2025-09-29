@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -39,6 +40,7 @@ import { auth, db } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
 import { Slider } from '@/components/ui/slider';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -98,6 +100,7 @@ export function AddEmployeeDialog({
   banks,
   onEmployeeAdded,
 }: AddEmployeeDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -140,6 +143,14 @@ export function AddEmployeeDialog({
   }, [departmentId, departments]);
 
   async function onSubmit(values: AddEmployeeFormValues) {
+    if (!companyId) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not find company. Unable to add employee.',
+      });
+      return;
+    }
     setIsLoading(true);
     
     try {
@@ -152,6 +163,7 @@ export function AddEmployeeDialog({
       
       const newEmployee: Omit<Employee, 'id'> = {
           ...employeeData,
+          companyId: companyId,
           departmentName,
           avatar: `https://avatar.vercel.sh/${values.email}.png`,
           salary: values.salary || 0,
