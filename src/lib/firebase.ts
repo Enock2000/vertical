@@ -19,7 +19,7 @@ const firebaseConfig = {
 const actionCodeSettings = {
   // URL you want to redirect back to. The domain (www.example.com) for this
   // URL must be whitelisted in the Firebase Console.
-  url: typeof window !== 'undefined' ? `${window.location.origin}/finish-login` : 'http://localhost:9002/finish-login',
+  url: 'http://localhost:9002/finish-login',
   // This must be true.
   handleCodeInApp: true,
 };
