@@ -12,8 +12,10 @@ import { Loader2, ArrowRight, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 
+type EnrichedJobVacancy = JobVacancy & { companyName: string };
+
 export default function CareersPage() {
-    const [vacancies, setVacancies] = useState<JobVacancy[]>([]);
+    const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -29,7 +31,7 @@ export default function CareersPage() {
                 return;
             }
 
-            const allVacancies: JobVacancy[] = [];
+            const allVacancies: EnrichedJobVacancy[] = [];
             
             for (const companyId in companiesData) {
                 const company = companiesData[companyId];
@@ -42,7 +44,7 @@ export default function CareersPage() {
                         Object.keys(jobsData).forEach(jobId => {
                             const job = jobsData[jobId];
                             if (job.status === 'Open') {
-                                allVacancies.push({ ...job, id: jobId, companyId });
+                                allVacancies.push({ ...job, id: jobId, companyId, companyName: company.name });
                             }
                         });
                     }
@@ -94,7 +96,7 @@ export default function CareersPage() {
                                                 <CardTitle>{job.title}</CardTitle>
                                                 <CardDescription className="flex items-center gap-2 pt-2">
                                                      <Building2 className="h-4 w-4" />
-                                                    {job.departmentName}
+                                                    {job.companyName} &middot; {job.departmentName}
                                                 </CardDescription>
                                             </div>
                                             <Button asChild>
