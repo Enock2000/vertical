@@ -285,11 +285,13 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
 // Helper function to get all admin user IDs
 export const getAdminUserIds = async (): Promise<string[]> => {
     const employeesRef = ref(db, 'employees');
-    const adminQuery = query(employeesRef, orderByChild('role'), equalTo('Admin'));
-    const snapshot = await get(adminQuery);
+    const snapshot = await get(employeesRef);
     if (snapshot.exists()) {
-        const admins = snapshot.val();
-        return Object.keys(admins);
+        const allEmployees: Record<string, Employee> = snapshot.val();
+        const adminIds = Object.values(allEmployees)
+            .filter(employee => employee.role === 'Admin')
+            .map(admin => admin.id);
+        return adminIds;
     }
     return [];
 };
