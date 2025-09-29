@@ -4,8 +4,8 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { JobVacancy } from '@/lib/data';
+import { ref, onValue, query, orderByChild, equalTo, get } from 'firebase/database';
+import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowRight, Building2 } from 'lucide-react';
@@ -17,32 +17,48 @@ export default function CareersPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // In a multi-tenant app, this page would need a way to know which company's jobs to show.
-        // For a public careers page, one might show all jobs or have a selector.
-        // For this example, we'll assume we fetch from a specific or all companies.
-        // This implementation will fetch ALL open jobs from ALL companies.
-        const jobsQuery = query(ref(db, 'jobVacancies'), orderByChild('status'), equalTo('Open'));
-        const unsubscribe = onValue(jobsQuery, (snapshot) => {
-            const companiesData = snapshot.val();
-            const list: JobVacancy[] = [];
-            if (companiesData) {
-                 Object.keys(companiesData).forEach(companyId => {
-                    const companyJobs = companiesData[companyId];
-                    Object.keys(companyJobs).forEach(jobId => {
-                        list.push({ ...companyJobs[jobId], id: jobId, companyId });
-                    });
-                });
+        const fetchVacancies = async () => {
+            setLoading(true);
+            const companiesRef = ref(db, 'companies');
+            const companiesSnapshot = await get(companiesRef);
+            const companiesData: { [key: string]: Company } = companiesSnapshot.val();
+
+            if (!companiesData) {
+                setVacancies([]);
+                setLoading(false);
+                return;
             }
 
-            list.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setVacancies(list);
+            const allVacancies: JobVacancy[] = [];
+            
+            for (const companyId in companiesData) {
+                const company = companiesData[companyId];
+                if (company.status === 'Active') {
+                    const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
+                    const jobsSnapshot = await get(jobsRef);
+                    const jobsData = jobsSnapshot.val();
+
+                    if (jobsData) {
+                        Object.keys(jobsData).forEach(jobId => {
+                            const job = jobsData[jobId];
+                            if (job.status === 'Open') {
+                                allVacancies.push({ ...job, id: jobId, companyId });
+                            }
+                        });
+                    }
+                }
+            }
+
+            allVacancies.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setVacancies(allVacancies);
             setLoading(false);
-        }, (error) => {
+        };
+
+        fetchVacancies().catch(error => {
             console.error("Firebase read failed:", error);
             setLoading(false);
         });
 
-        return () => unsubscribe();
     }, []);
 
     return (
