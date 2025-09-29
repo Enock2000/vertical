@@ -142,7 +142,7 @@ export default function DashboardLayout({
             className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
           >
             <Briefcase className="h-4 w-4 transition-all group-hover:scale-110" />
-            <span className="sr-only">VerticalSync</span>
+            <span className="sr-only">{company.name}</span>
           </Link>
         </div>
         <ScrollArea className="flex-grow">
@@ -184,10 +184,12 @@ export default function DashboardLayout({
               <nav className="grid gap-6 text-lg font-medium">
                 <Link
                   href="/"
-                  className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
+                  className="group flex h-10 shrink-0 items-center justify-start gap-2 rounded-full text-lg font-semibold"
                 >
-                  <Briefcase className="h-5 w-5 transition-all group-hover:scale-110" />
-                  <span className="sr-only">VerticalSync</span>
+                  <div className="flex items-center justify-center size-8 bg-primary text-primary-foreground rounded-md">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <span className="text-xl font-bold text-foreground">{company.name}</span>
                 </Link>
                 {navItems.map((item) => (
                   <Link
