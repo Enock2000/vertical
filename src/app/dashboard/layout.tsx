@@ -43,12 +43,6 @@ import {
   SheetContent,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -135,43 +129,36 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-        <div className="flex flex-col items-center gap-4 px-2 sm:py-5">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
+        <div className="flex items-center border-b px-6 h-14">
            <Link
             href="/"
-            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+            className="flex items-center gap-2 font-semibold"
           >
-            <Briefcase className="h-4 w-4 transition-all group-hover:scale-110" />
-            <span className="sr-only">{company.name}</span>
+            <Logo />
           </Link>
         </div>
         <ScrollArea className="flex-grow">
-            <nav className="flex flex-col items-center gap-4 px-2">
-            <TooltipProvider>
+            <nav className="flex flex-col gap-1 p-4">
                 {navItems.map((item) => (
-                <Tooltip key={item.href}>
-                    <TooltipTrigger asChild>
-                    <Link
-                        href={item.href}
-                        className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-lg transition-colors md:h-8 md:w-8",
-                        pathname.startsWith(item.href) && item.href !== "/dashboard" || pathname === item.href
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        <item.icon className="h-5 w-5" />
-                        <span className="sr-only">{item.label}</span>
-                    </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                      (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
+                          ? "bg-muted text-primary"
+                          : ""
+                    )}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
                 ))}
-            </TooltipProvider>
             </nav>
         </ScrollArea>
       </aside>
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-60">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
           <Sheet>
             <SheetTrigger asChild>
@@ -186,10 +173,7 @@ export default function DashboardLayout({
                   href="/"
                   className="group flex h-10 shrink-0 items-center justify-start gap-2 rounded-full text-lg font-semibold"
                 >
-                  <div className="flex items-center justify-center size-8 bg-primary text-primary-foreground rounded-md">
-                    <Briefcase className="h-5 w-5" />
-                  </div>
-                  <span className="text-xl font-bold text-foreground">{company.name}</span>
+                  <Logo />
                 </Link>
                 {navItems.map((item) => (
                   <Link
