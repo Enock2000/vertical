@@ -140,7 +140,7 @@ export default function RecruitmentPage() {
                             </TabsList>
                             <Button asChild variant="outline" size="sm">
                                 <Link href={`/jobs/${selectedVacancy.id}?companyId=${companyId}`} target="_blank">
-                                    <ExternalLink className="mr-2 h-3.5 w-3.5" />
+                                    <ExternalLink className="mr-2 h-3.5 w-3.p" />
                                     View Job
                                 </Link>
                             </Button>
