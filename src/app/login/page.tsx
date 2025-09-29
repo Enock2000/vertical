@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { sendSignInLinkToEmail } from 'firebase/auth';
+import { auth, actionCodeSettings } from '@/lib/firebase';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,6 @@ import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -24,14 +23,22 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+      window.localStorage.setItem('emailForSignIn', email);
+      toast({
+        title: "Magic Link Sent!",
+        description: "Please check your email to complete the sign-in process.",
+      });
+      // Optionally, you can redirect to a page that says "Check your email"
+      // or just clear the form.
+      setEmail('');
+
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
-        title: "Login Failed",
-        description: "Invalid email or password. Please try again.",
+        title: "Failed to Send Link",
+        description: "Please check the email address and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -47,7 +54,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
           <CardDescription>
-            Enter your email below to login to your admin account.
+            Enter your email below to receive a magic link to log in.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -63,26 +70,8 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="#"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
-              <Input 
-                id="password" 
-                type="password" 
-                required 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" /> : 'Login'}
+              {isLoading ? <Loader2 className="animate-spin" /> : 'Send Magic Link'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

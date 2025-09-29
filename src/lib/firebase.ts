@@ -15,10 +15,19 @@ const firebaseConfig = {
   databaseURL: "https://studio-4048203700-4cec7-default-rtdb.firebaseio.com/"
 };
 
+// Configuration for email link sign-in
+const actionCodeSettings = {
+  // URL you want to redirect back to. The domain (www.example.com) for this
+  // URL must be whitelisted in the Firebase Console.
+  url: typeof window !== 'undefined' ? `${window.location.origin}/finish-login` : 'http://localhost:9002/finish-login',
+  // This must be true.
+  handleCodeInApp: true,
+};
+
 // Initialize Firebase
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 const storage = getStorage(app);
 
-export { app, auth, db, storage };
+export { app, auth, db, storage, actionCodeSettings };
