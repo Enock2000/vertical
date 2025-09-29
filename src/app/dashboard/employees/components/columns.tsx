@@ -27,6 +27,7 @@ import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { differenceInYears } from "date-fns"
 import { PromoteEmployeeDialog } from "./promote-employee-dialog"
+import { DemoteAdminDialog } from "./demote-admin-dialog"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
@@ -178,11 +179,22 @@ export const columns = (departments: Department[], banks: Bank[], roles: Role[],
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
-                         <div className="w-full text-left">Promote to Admin</div>
-                    </PromoteEmployeeDialog>
-                </DropdownMenuItem>
+                
+                {employee.role === 'Admin' ? (
+                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <DemoteAdminDialog employee={employee} onEmployeeDemoted={onAction}>
+                            <div className="w-full text-left">Demote from Admin</div>
+                        </DemoteAdminDialog>
+                    </DropdownMenuItem>
+                ) : (
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
+                             <div className="w-full text-left">Promote to Admin</div>
+                        </PromoteEmployeeDialog>
+                    </DropdownMenuItem>
+                )}
+
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <EditEmployeeDialog employee={employee} departments={departments} banks={banks} onEmployeeUpdated={onAction}>
