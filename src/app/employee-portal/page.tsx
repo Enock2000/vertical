@@ -9,6 +9,7 @@ import { auth, db } from '@/lib/firebase';
 import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Goal, JobVacancy, RosterAssignment } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
+import { reportEmergency } from '@/ai/flows/report-emergency-flow';
 import { UserNav } from "@/components/user-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,17 @@ import { AttendanceTab } from './components/attendance-tab';
 import { PerformanceTab } from './components/performance-tab';
 import { JobsTab } from './components/jobs-tab';
 import { RosterTab } from './components/roster-tab';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 
 export default function EmployeePortalPage() {
@@ -38,6 +50,7 @@ export default function EmployeePortalPage() {
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isReportingEmergency, setIsReportingEmergency] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
     const { toast } = useToast();
 
@@ -188,11 +201,32 @@ export default function EmployeePortalPage() {
         }
     };
 
-    const handleReportEmergency = () => {
-        const adminEmail = "admin@verticalsync.com";
-        const subject = `Emergency Report from ${employee?.name}`;
-        const body = `This is an automated emergency alert from the employee portal.\n\nEmployee: ${employee?.name}\nEmail: ${employee?.email}\n\nPlease contact them immediately to ensure their safety.`;
-        window.location.href = `mailto:${adminEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const handleReportEmergency = async () => {
+        if (!employee) return;
+        setIsReportingEmergency(true);
+        try {
+            const result = await reportEmergency({ employeeId: employee.id, employeeName: employee.name });
+            if(result.success) {
+                 toast({
+                    title: "Alert Sent",
+                    description: result.message,
+                });
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Failed to Send Alert",
+                    description: result.message,
+                });
+            }
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not send emergency alert. Please try again or contact HR directly.",
+            });
+        } finally {
+            setIsReportingEmergency(false);
+        }
     };
 
     if (loadingAuth || loadingData) {
@@ -340,10 +374,32 @@ export default function EmployeePortalPage() {
                                             View Latest Payslip
                                         </Button>
                                     </EmployeePayslipDialog>
-                                    <Button variant="destructive" onClick={handleReportEmergency}>
-                                        <ShieldAlert className="mr-2 h-4 w-4" />
-                                        Report Emergency
-                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive">
+                                                <ShieldAlert className="mr-2 h-4 w-4" />
+                                                Report Emergency
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirm Emergency Report</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will immediately alert all HR administrators that you have an emergency. Are you sure you want to proceed?
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel disabled={isReportingEmergency}>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleReportEmergency} disabled={isReportingEmergency}>
+                                                    {isReportingEmergency ? (
+                                                        <>
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/> Sending...
+                                                        </>
+                                                    ) : "Yes, Send Alert"}
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </CardContent>
                             </Card>
                         </div>
