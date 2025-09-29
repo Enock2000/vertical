@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -32,7 +33,7 @@ import { useTheme } from 'next-themes';
 import { Moon, Sun, Bell, Check } from 'lucide-react';
 
 export function UserNav() {
-  const { user, employee, loading } = useAuth();
+  const { user, employee, companyId, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -40,9 +41,9 @@ export function UserNav() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    if (user) {
+    if (user && companyId) {
       const notificationsQuery = query(
-        ref(db, 'notifications'),
+        ref(db, `companies/${companyId}/notifications`),
         orderByChild('userId'),
         equalTo(user.uid)
       );
@@ -59,18 +60,15 @@ export function UserNav() {
       });
       return () => unsubscribe();
     }
-  }, [user]);
+  }, [user, companyId]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      if (employee?.role === 'Admin') {
-        router.push('/login');
-      } else {
-        router.push('/employee-login');
-      }
+      // After sign out, auth state will change and redirection will be handled by layout components
+      router.push(employee?.role === 'Admin' ? '/login' : '/employee-login');
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -82,8 +80,8 @@ export function UserNav() {
   };
   
   const handleNotificationClick = async (notification: Notification) => {
-    if (!notification.isRead) {
-        await update(ref(db, `notifications/${notification.id}`), { isRead: true });
+    if (!notification.isRead && companyId) {
+        await update(ref(db, `companies/${companyId}/notifications/${notification.id}`), { isRead: true });
     }
     if (notification.link && notification.link !== pathname) {
         router.push(notification.link);
@@ -182,17 +180,11 @@ export function UserNav() {
           <DropdownMenuSeparator />
            {isAdmin && (
             <DropdownMenuGroup>
-                <DropdownMenuItem>
-                Profile
-                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                <DropdownMenuItem onClick={() => router.push('/dashboard/employees')}>
+                    Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                Billing
-                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                Settings
-                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+                <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+                    Settings
                 </DropdownMenuItem>
             </DropdownMenuGroup>
            )}

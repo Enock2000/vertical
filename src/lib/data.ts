@@ -1,3 +1,4 @@
+
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
@@ -300,13 +301,12 @@ export const createNotification = async (companyId: string, notification: Omit<N
   try {
     const notificationsRef = ref(db, `companies/${companyId}/notifications`);
     const newNotificationRef = push(notificationsRef);
-    const newNotification: Omit<Notification, 'id'> = {
+    const newNotification: Omit<Notification, 'id' | 'companyId'> = {
       ...notification,
-      companyId,
       isRead: false,
       timestamp: new Date().toISOString(),
     };
-    await set(newNotificationRef, newNotification);
+    await set(newNotificationRef, { ...newNotification, id: newNotificationRef.key });
   } catch (error) {
     console.error('Error creating notification:', error);
   }
@@ -314,11 +314,13 @@ export const createNotification = async (companyId: string, notification: Omit<N
 
 // Helper function to get all admin user IDs for a company
 export const getAdminUserIds = async (companyId: string): Promise<string[]> => {
-    const employeesRef = ref(db, `companies/${companyId}/employees`);
-    const snapshot = await get(employeesRef);
+    const employeesRef = ref(db, 'employees');
+    const q = query(employeesRef, orderByChild('companyId'), equalTo(companyId));
+    const snapshot = await get(q);
+
     if (snapshot.exists()) {
-        const allEmployees: Record<string, Employee> = snapshot.val();
-        const adminIds = Object.values(allEmployees)
+        const companyEmployees: Record<string, Employee> = snapshot.val();
+        const adminIds = Object.values(companyEmployees)
             .filter(employee => employee.role === 'Admin')
             .map(admin => admin.id);
         return adminIds;

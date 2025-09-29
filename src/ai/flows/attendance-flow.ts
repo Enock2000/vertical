@@ -86,7 +86,7 @@ const attendanceFlow = ai.defineFlow(
             }
         }
 
-        const record: Omit<AttendanceRecord, 'id' | 'companyId'> = {
+        const record: Omit<AttendanceRecord, 'id'> = {
             employeeId: userId,
             employeeName: employee.name,
             date: todayString,
@@ -99,6 +99,10 @@ const attendanceFlow = ai.defineFlow(
       } 
       
       if (action === 'clockOut') {
+        const snapshot = await get(attendanceRef);
+        if (!snapshot.exists()) {
+            return { success: false, message: 'Cannot clock out. No clock-in record found for today.' };
+        }
         await update(attendanceRef, { checkOutTime: now });
         return { success: true, message: 'Clocked out successfully.' };
       }

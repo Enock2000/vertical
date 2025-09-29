@@ -1,3 +1,4 @@
+
 // src/app/employee-portal/components/employee-leave-request-dialog.tsx
 'use client';
 
@@ -82,11 +83,11 @@ export function EmployeeLeaveRequestDialog({
     setIsLoading(true);
     
     try {
-      const leaveRequestsRef = ref(db, 'leaveRequests');
+      const leaveRequestsRef = ref(db, `companies/${employee.companyId}/leaveRequests`);
       const newRequestRef = push(leaveRequestsRef);
       
-      const requestData: LeaveRequest = {
-          id: newRequestRef.key!,
+      const requestData: Omit<LeaveRequest, 'id'> = {
+          companyId: employee.companyId,
           employeeId: employee.id,
           employeeName: employee.name,
           leaveType: values.leaveType,
@@ -96,12 +97,12 @@ export function EmployeeLeaveRequestDialog({
           status: 'Pending',
       };
 
-      await set(newRequestRef, requestData);
+      await set(newRequestRef, { ...requestData, id: newRequestRef.key });
 
       // Notify admins
-      const adminIds = await getAdminUserIds();
+      const adminIds = await getAdminUserIds(employee.companyId);
       for (const adminId of adminIds) {
-        await createNotification({
+        await createNotification(employee.companyId, {
           userId: adminId,
           title: 'New Leave Request',
           message: `${employee.name} has requested ${values.leaveType} leave.`,

@@ -1,3 +1,4 @@
+
 // src/ai/flows/report-emergency-flow.ts
 'use server';
 
@@ -33,10 +34,10 @@ export async function reportEmergency(input: EmergencyInput): Promise<EmergencyO
 }
 
 // Helper function to create an audit log
-async function createAuditLog(companyId: string, log: Omit<AuditLog, 'id' | 'companyId'>) {
+async function createAuditLog(companyId: string, log: Omit<AuditLog, 'id'>) {
     const logRef = ref(db, `companies/${companyId}/auditLogs`);
     const newLogRef = push(logRef);
-    await set(newLogRef, { ...log, id: newLogRef.key, companyId, ...log });
+    await set(newLogRef, { ...log, id: newLogRef.key, companyId });
 }
 
 

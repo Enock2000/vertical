@@ -1,8 +1,9 @@
+
 // src/app/employee-portal/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
+import { useRouter } from 'next/navigation';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { format } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
@@ -41,6 +42,7 @@ import { useAuth } from '../auth-provider';
 
 export default function EmployeePortalPage() {
     const { user, employee, companyId, loading: loadingAuth } = useAuth();
+    const router = useRouter();
     const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
     const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
@@ -62,9 +64,15 @@ export default function EmployeePortalPage() {
     }, []);
 
     useEffect(() => {
+        if (!loadingAuth && !user) {
+          router.push('/employee-login');
+        }
+    }, [user, loadingAuth, router]);
+
+    useEffect(() => {
         if (user && companyId) {
             let loadedCount = 0;
-            const totalToLoad = 7;
+            const totalToLoad = 6; // employee is already loaded via auth context
             
             const checkLoading = () => {
                 loadedCount++;
@@ -72,12 +80,6 @@ export default function EmployeePortalPage() {
                     setLoadingData(false);
                 }
             }
-
-            const todayAttendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${user.uid}`);
-            const payrollConfigRef = ref(db, `companies/${companyId}/payrollConfig`);
-            const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
-            const goalsQuery = query(ref(db, `companies/${companyId}/goals`), orderByChild('employeeId'), equalTo(user.uid));
-            const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
 
             const onValueCallback = (setter: React.Dispatch<any>, isObject: boolean = false) => (snapshot: any) => {
                 const data = snapshot.val();
@@ -89,45 +91,56 @@ export default function EmployeePortalPage() {
                 checkLoading();
             };
             
-            const onErrorCallback = (error: Error) => {
-                console.error(error);
+            const onErrorCallback = (name: string) => (error: Error) => {
+                console.error(`Firebase read failed (${name}):`, error);
                 checkLoading();
             };
             
-            const allAttendanceUnsubscribe = onValue(ref(db, `companies/${companyId}/attendance`), (snapshot) => {
+            const allAttendanceQuery = query(ref(db, `companies/${companyId}/attendance`), orderByChild('employeeId'), equalTo(user.uid));
+            const allAttendanceUnsubscribe = onValue(allAttendanceQuery, (snapshot) => {
                 const allData = snapshot.val();
                 const userRecords: AttendanceRecord[] = [];
                 if (allData) {
                     Object.keys(allData).forEach(date => {
-                        const dayRecord = allData[date][user.uid];
-                        if (dayRecord) {
-                            userRecords.push({ ...dayRecord, id: `${date}-${user.uid}`, date });
+                        const recordsForDate = allData[date];
+                        if (recordsForDate[user.uid]) {
+                             userRecords.push({ ...recordsForDate[user.uid], id: `${date}-${user.uid}`, date });
                         }
                     });
                 }
                 setAllAttendance(userRecords.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                 checkLoading();
-            }, onErrorCallback);
+            }, onErrorCallback('all attendance'));
 
-            const rosterUnsubscribe = onValue(ref(db, `companies/${companyId}/rosters`), (snapshot) => {
+            const rosterQuery = query(ref(db, `companies/${companyId}/rosters`), orderByChild('employeeId'), equalTo(user.uid));
+            const rosterUnsubscribe = onValue(rosterQuery, (snapshot) => {
                 const allData = snapshot.val();
                 const userAssignments: RosterAssignment[] = [];
                 if (allData) {
                     Object.keys(allData).forEach(date => {
-                        const dayAssignment = allData[date][user.uid];
-                        if (dayAssignment) {
-                             userAssignments.push({ ...dayAssignment, id: `${date}-${user.uid}`});
-                        }
+                         const assignmentsForDate = allData[date];
+                         if (assignmentsForDate[user.uid]) {
+                            userAssignments.push({ ...assignmentsForDate[user.uid], id: `${date}-${user.uid}`});
+                         }
                     });
                 }
                 setRosterAssignments(userAssignments.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                 checkLoading();
-            }, onErrorCallback);
+            }, onErrorCallback('roster'));
 
-            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, onValueCallback(setTodayAttendance, true), onErrorCallback);
-            const payrollConfigUnsubscribe = onValue(payrollConfigRef, onValueCallback(setPayrollConfig, true), onErrorCallback);
-            const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, onValueCallback(setLeaveRequests), onErrorCallback);
-            const goalsUnsubscribe = onValue(goalsQuery, onValueCallback(setGoals), onErrorCallback);
+            const todayAttendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${user.uid}`);
+            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, onValueCallback(setTodayAttendance, true), onErrorCallback('today attendance'));
+
+            const payrollConfigRef = ref(db, `companies/${companyId}/payrollConfig`);
+            const payrollConfigUnsubscribe = onValue(payrollConfigRef, onValueCallback(setPayrollConfig, true), onErrorCallback('payroll config'));
+
+            const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
+            const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, onValueCallback(setLeaveRequests), onErrorCallback('leave requests'));
+
+            const goalsQuery = query(ref(db, `companies/${companyId}/goals`), orderByChild('employeeId'), equalTo(user.uid));
+            const goalsUnsubscribe = onValue(goalsQuery, onValueCallback(setGoals), onErrorCallback('goals'));
+            
+            const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
             const jobsUnsubscribe = onValue(jobsRef, (snapshot) => {
                 const data = snapshot.val();
                 if(data) {
@@ -137,11 +150,8 @@ export default function EmployeePortalPage() {
                     setJobVacancies([]);
                 }
                 checkLoading();
-            }, onErrorCallback);
+            }, onErrorCallback('jobs'));
             
-            // Employee is already loaded from AuthProvider, so we can count it as loaded.
-            checkLoading();
-
             return () => {
                 todayAttendanceUnsubscribe();
                 allAttendanceUnsubscribe();
@@ -154,7 +164,7 @@ export default function EmployeePortalPage() {
         } else if (!loadingAuth) {
             setLoadingData(false);
         }
-    }, [user, loadingAuth, companyId, todayString]);
+    }, [user, loadingAuth, companyId, todayString, router]);
 
     const payrollDetails = useMemo(() => {
         if (employee && payrollConfig) {

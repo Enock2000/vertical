@@ -72,7 +72,7 @@ const handleApplicationFlow = ai.defineFlow(
         const newApplicantRef = push(applicantsRef);
         const newApplicantId = newApplicantRef.key!;
 
-        const newApplicant: Omit<Applicant, 'id' | 'companyId'> = {
+        const newApplicant: Omit<Applicant, 'id'> = {
             jobVacancyId,
             name,
             email,
@@ -84,7 +84,8 @@ const handleApplicationFlow = ai.defineFlow(
 
         await set(newApplicantRef, {
             ...newApplicant,
-            id: newApplicantId
+            id: newApplicantId,
+            companyId: companyId,
         });
         
         // 3. Notify admins

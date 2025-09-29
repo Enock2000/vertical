@@ -1,3 +1,4 @@
+
 // src/app/dashboard/page.tsx
 'use client';
 
@@ -44,6 +45,7 @@ import {
     ChartConfig,
     ChartContainer,
 } from "@/components/ui/chart"
+import { useAuth } from '@/app/auth-provider';
 
   const chartConfig = {
     value: {
@@ -68,13 +70,16 @@ import {
   } satisfies ChartConfig
 
   export default function Dashboard() {
+    const { companyId } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!companyId) return;
+
         const employeesRef = ref(db, 'employees');
-        const configRef = ref(db, 'payrollConfig');
+        const configRef = ref(db, `companies/${companyId}/payrollConfig`);
         let employeesLoaded = false;
         let configLoaded = false;
 
@@ -87,10 +92,7 @@ import {
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const employeeList = Object.keys(data).map(key => ({
-                    ...data[key],
-                    id: key,
-                }));
+                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
                 setEmployees(employeeList);
             } else {
                 setEmployees([]);
@@ -117,7 +119,7 @@ import {
             employeesUnsubscribe();
             configUnsubscribe();
         };
-    }, []);
+    }, [companyId]);
 
     const activeEmployeesCount = useMemo(() => {
         return employees.filter(e => e.status === 'Active').length;
@@ -126,6 +128,7 @@ import {
     const totalPayroll = useMemo(() => {
         if (!payrollConfig) return 0;
         return employees.reduce((total, employee) => {
+            if (employee.status !== 'Active') return total;
             const details = calculatePayroll(employee, payrollConfig);
             return total + details.netPay;
         }, 0);
@@ -368,5 +371,3 @@ import {
         </div>
     )
   }
-
-    
