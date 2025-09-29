@@ -1,10 +1,11 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { sendSignInLinkToEmail } from 'firebase/auth';
-import { auth, actionCodeSettings } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { ref, get } from 'firebase/database';
+import type { Employee } from '@/lib/data';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function EmployeeLoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -24,20 +26,41 @@ export default function EmployeeLoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
-      window.localStorage.setItem('emailForSignIn', email);
-      toast({
-        title: "Magic Link Sent!",
-        description: "Please check your email to complete the sign-in process.",
-      });
-      setEmail('');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
       
+      // Fetch employee data to check status
+      const employeeRef = ref(db, 'employees/' + user.uid);
+      const snapshot = await get(employeeRef);
+
+      if (snapshot.exists()) {
+        const employee: Employee = snapshot.val();
+        
+        if (employee.status === 'Suspended' || employee.status === 'Inactive') {
+          await auth.signOut(); // Sign out the user
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: `Your account is currently ${employee.status}. Please contact HR.`,
+          });
+        } else {
+          router.push('/employee-portal');
+        }
+      } else {
+         await auth.signOut();
+         toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: "No employee profile found for this account.",
+          });
+      }
+
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
-        title: "Failed to Send Link",
-        description: "Please ensure you are using your registered employee email.",
+        title: "Login Failed",
+        description: "Please check your credentials and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -53,7 +76,7 @@ export default function EmployeeLoginPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Employee Portal Login</CardTitle>
           <CardDescription>
-            Enter your email to receive a secure login link.
+            Enter your email and password to access your portal.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -69,8 +92,12 @@ export default function EmployeeLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
+             <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" /> : 'Send Magic Link'}
+              {isLoading ? <Loader2 className="animate-spin" /> : 'Log In'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
