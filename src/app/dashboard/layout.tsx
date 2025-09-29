@@ -19,6 +19,7 @@ import {
   Briefcase,
   Trophy,
   Loader2,
+  CalendarCheck,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
@@ -57,6 +58,7 @@ const navItems = [
   { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods" },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave" },
   { href: "/dashboard/attendance", icon: ClipboardCheck, label: "Attendance" },
+  { href: "/dashboard/roster", icon: CalendarCheck, label: "Roster" },
   { href: "/dashboard/performance", icon: Trophy, label: "Performance" },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting" },
   { href: "/dashboard/organization", icon: Network, label: "Organization" },

@@ -1,3 +1,4 @@
+// src/app/employee-portal/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -5,14 +6,14 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { format } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
-import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Goal, JobVacancy } from '@/lib/data';
+import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Goal, JobVacancy, RosterAssignment } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { UserNav } from "@/components/user-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays } from "lucide-react";
+import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays, CalendarCheck } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-dialog';
@@ -22,6 +23,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceTab } from './components/attendance-tab';
 import { PerformanceTab } from './components/performance-tab';
 import { JobsTab } from './components/jobs-tab';
+import { RosterTab } from './components/roster-tab';
+
 
 export default function EmployeePortalPage() {
     const [user, loadingAuth] = useAuthState(auth);
@@ -32,6 +35,7 @@ export default function EmployeePortalPage() {
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
     const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
+    const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -47,7 +51,7 @@ export default function EmployeePortalPage() {
     useEffect(() => {
         if (user) {
             let loadedCount = 0;
-            const totalToLoad = 6;
+            const totalToLoad = 7;
             
             const checkLoading = () => {
                 loadedCount++;
@@ -58,7 +62,6 @@ export default function EmployeePortalPage() {
 
             const employeeRef = ref(db, 'employees/' + user.uid);
             const todayAttendanceRef = ref(db, `attendance/${todayString}/${user.uid}`);
-            const allAttendanceRef = ref(db, 'attendance');
             const payrollConfigRef = ref(db, 'payrollConfig');
             const leaveRequestsQuery = query(ref(db, 'leaveRequests'), orderByChild('employeeId'), equalTo(user.uid));
             const goalsQuery = query(ref(db, 'goals'), orderByChild('employeeId'), equalTo(user.uid));
@@ -79,7 +82,6 @@ export default function EmployeePortalPage() {
                 checkLoading();
             };
             
-            // Fetch all attendance and then filter client-side
             const allAttendanceUnsubscribe = onValue(ref(db, 'attendance'), (snapshot) => {
                 const allData = snapshot.val();
                 const userRecords: AttendanceRecord[] = [];
@@ -92,6 +94,21 @@ export default function EmployeePortalPage() {
                     });
                 }
                 setAllAttendance(userRecords.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+                checkLoading();
+            }, onErrorCallback);
+
+            const rosterUnsubscribe = onValue(ref(db, 'rosters'), (snapshot) => {
+                const allData = snapshot.val();
+                const userAssignments: RosterAssignment[] = [];
+                if (allData) {
+                    Object.keys(allData).forEach(date => {
+                        const dayAssignment = allData[date][user.uid];
+                        if (dayAssignment) {
+                             userAssignments.push({ ...dayAssignment, id: `${date}-${user.uid}`});
+                        }
+                    });
+                }
+                setRosterAssignments(userAssignments.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
                 checkLoading();
             }, onErrorCallback);
 
@@ -121,6 +138,7 @@ export default function EmployeePortalPage() {
                 leaveRequestsUnsubscribe();
                 goalsUnsubscribe();
                 jobsUnsubscribe();
+                rosterUnsubscribe();
             };
         } else if (!loadingAuth) {
             setLoadingData(false);
@@ -222,9 +240,10 @@ export default function EmployeePortalPage() {
                     </CardHeader>
                 </Card>
                 <Tabs defaultValue="dashboard">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
                         <TabsTrigger value="attendance">Attendance</TabsTrigger>
+                        <TabsTrigger value="roster">My Roster</TabsTrigger>
                         <TabsTrigger value="performance">Performance</TabsTrigger>
                         <TabsTrigger value="jobs">Available Jobs</TabsTrigger>
                     </TabsList>
@@ -331,6 +350,9 @@ export default function EmployeePortalPage() {
                     </TabsContent>
                     <TabsContent value="attendance">
                         <AttendanceTab attendanceRecords={allAttendance} />
+                    </TabsContent>
+                    <TabsContent value="roster">
+                        <RosterTab rosterAssignments={rosterAssignments} leaveRequests={leaveRequests} />
                     </TabsContent>
                     <TabsContent value="performance">
                         <PerformanceTab goals={goals} />

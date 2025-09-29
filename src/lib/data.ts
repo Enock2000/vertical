@@ -245,6 +245,14 @@ export type AuditLog = {
     timestamp: string; // ISO 8601
 };
 
+export type RosterAssignment = {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    date: string; // YYYY-MM-DD
+    status: 'On Duty' | 'Off Day';
+};
+
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
     let basePay = 0;
     if (employee.workerType === 'Salaried') {
