@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { ref, get } from 'firebase/database';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,6 +20,7 @@ import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import type { Company, Employee } from '@/lib/data';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -30,8 +33,51 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      const employeeRef = ref(db, 'employees/' + user.uid);
+      const employeeSnap = await get(employeeRef);
+
+      if (!employeeSnap.exists()) {
+        await auth.signOut();
+        toast({ variant: "destructive", title: "Login Failed", description: "No employee profile found." });
+        setIsLoading(false);
+        return;
+      }
+      
+      const employee: Employee = employeeSnap.val();
+      
+      // Super Admins don't have a companyId
+      if (employee.role === 'Super Admin') {
+          router.push('/super-admin');
+          return;
+      }
+      
+      // Check company status for all other users
+      const companyRef = ref(db, 'companies/' + employee.companyId);
+      const companySnap = await get(companyRef);
+
+      if (!companySnap.exists()) {
+          await auth.signOut();
+          toast({ variant: "destructive", title: "Login Failed", description: "Associated company not found." });
+          setIsLoading(false);
+          return;
+      }
+
+      const company: Company = companySnap.val();
+
+      if (company.status === 'Pending') {
+          await auth.signOut();
+          toast({ variant: "destructive", title: "Account Pending", description: "Your company's registration is still under review." });
+      } else if (company.status === 'Rejected') {
+          await auth.signOut();
+          toast({ variant: "destructive", title: "Access Denied", description: "Your company's registration has been rejected." });
+      } else {
+          // If company is Active, proceed to correct dashboard
+          router.push('/dashboard');
+      }
+
     } catch (error: any) {
       console.error("Login error:", error);
       toast({

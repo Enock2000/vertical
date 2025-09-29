@@ -1,25 +1,28 @@
+
 // src/app/dashboard/layout.tsx
 "use client";
 
 import Link from "next/link";
 import React, { useEffect } from "react";
 import {
-  Users,
-  Home,
-  FileText,
-  ShieldCheck,
-  PanelLeft,
-  Search,
-  CalendarPlus,
-  BarChart3,
-  Settings,
-  Network,
-  ClipboardCheck,
-  Landmark,
-  Briefcase,
-  Trophy,
-  Loader2,
-  CalendarCheck,
+    Users,
+    Home,
+    FileText,
+    ShieldCheck,
+    PanelLeft,
+    Search,
+    CalendarPlus,
+    BarChart3,
+    Settings,
+    Network,
+    ClipboardCheck,
+    Landmark,
+    Briefcase,
+    Trophy,
+    Loader2,
+    CalendarCheck,
+    AlertTriangle,
+    Clock,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
@@ -49,6 +52,7 @@ import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/logo";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard" },
@@ -66,6 +70,23 @@ const navItems = [
   { href: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
+const AccessDenied = ({ title, description }: { title: string, description: string }) => (
+    <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+            <CardHeader>
+                <CardTitle className="flex items-center justify-center gap-2">
+                   {title === 'Pending Approval' ? <Clock className="text-yellow-500" /> : <AlertTriangle className="text-destructive" />}
+                    {title}
+                </CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <Button onClick={() => auth.signOut()}>Logout</Button>
+            </CardContent>
+        </Card>
+    </div>
+)
+
 export default function DashboardLayout({
   children,
 }: {
@@ -73,34 +94,36 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, employee, loading } = useAuth();
+  const { user, employee, company, loading } = useAuth();
+  const auth = require('firebase/auth').getAuth();
 
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        // Not logged in, redirect to login page
         router.push('/login');
-      } else if (employee) {
-        if (employee.role === 'Super Admin') {
-            router.push('/super-admin');
-        } else if (employee.role !== 'Admin') {
-            // Logged in but not an admin, redirect to employee portal
-            router.push('/employee-portal');
-        }
-      } else {
-        // User exists in auth, but not in DB (or is not an admin)
+      } else if (employee?.role === 'Super Admin') {
+        router.push('/super-admin');
+      } else if (employee?.role !== 'Admin') {
         router.push('/employee-portal');
       }
     }
   }, [user, employee, loading, router]);
 
 
-  if (loading || !employee || employee.role !== 'Admin') {
+  if (loading || !employee || !company) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
+  }
+
+  if (company.status === 'Pending') {
+      return <AccessDenied title="Pending Approval" description="Your company registration is currently under review. You will be notified once it has been approved." />
+  }
+  
+  if (company.status === 'Rejected') {
+      return <AccessDenied title="Registration Rejected" description="Your company registration has been rejected. Please contact support for more information." />
   }
 
   const breadcrumbItems = pathname.split('/').filter(Boolean).map((part, index, arr) => {

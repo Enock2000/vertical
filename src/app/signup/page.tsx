@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -43,8 +44,7 @@ export default function SignUpPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. Create Company Profile in Realtime Database
-      // The company ID will be the UID of the admin who created it.
+      // 2. Create Company Profile in Realtime Database with 'Pending' status
       const companyId = user.uid; 
       const companyRef = ref(db, `companies/${companyId}`);
       const newCompany: Company = {
@@ -56,43 +56,47 @@ export default function SignUpPage() {
         contactNumber: contactNumber,
         adminEmail: email,
         createdAt: new Date().toISOString(),
+        status: 'Pending',
       };
       await set(companyRef, newCompany);
 
-      // 3. Create an initial Admin Employee record for the new user
+      // 3. Create an initial Admin Employee record for the new user with 'Pending Approval' status
       const employeeRef = ref(db, `employees/${user.uid}`);
       const newEmployee: Omit<Employee, 'id'> = {
-        companyId: companyId,
-        name: contactName,
-        email: email,
-        role: 'Admin', // The first user is always an Admin
-        status: 'Active',
-        avatar: `https://avatar.vercel.sh/${email}.png`,
-        location: '',
-        departmentId: 'admin',
-        departmentName: 'Administration',
-        workerType: 'Salaried',
-        salary: 0,
-        hourlyRate: 0,
-        hoursWorked: 0,
-        allowances: 0,
-        deductions: 0,
-        overtime: 0,
-        bonus: 0,
-        reimbursements: 0,
-        joinDate: new Date().toISOString(),
-        annualLeaveBalance: 21,
+          companyId: companyId,
+          name: contactName,
+          email: email,
+          role: 'Admin',
+          status: 'Pending Approval',
+          avatar: `https://avatar.vercel.sh/${email}.png`,
+          location: '',
+          departmentId: 'admin',
+          departmentName: 'Administration',
+          workerType: 'Salaried',
+          salary: 0,
+          hourlyRate: 0,
+          hoursWorked: 0,
+          allowances: 0,
+          deductions: 0,
+          overtime: 0,
+          bonus: 0,
+          reimbursements: 0,
+          joinDate: new Date().toISOString(),
+          annualLeaveBalance: 21,
       };
       await set(employeeRef, {
         ...newEmployee,
         id: user.uid,
       });
+      
+      // Sign out the user immediately after signup, as they need to be approved
+      await auth.signOut();
 
       toast({
-        title: "Account Created!",
-        description: "Your company profile and admin account have been successfully created.",
+        title: "Registration Submitted!",
+        description: "Your company profile is under review. You will be notified once it's approved.",
       });
-      router.push('/dashboard');
+      router.push('/login');
 
     } catch (error: any) {
       console.error("Sign up error:", error);

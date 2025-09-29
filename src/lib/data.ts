@@ -11,6 +11,7 @@ export type Company = {
     contactNumber: string;
     adminEmail: string;
     createdAt: string; // ISO 8601
+    status: 'Pending' | 'Active' | 'Rejected';
 };
 
 export type WorkerType = 'Salaried' | 'Hourly' | 'Contractor';
@@ -21,7 +22,7 @@ export type Employee = {
   name: string;
   email: string;
   role: string;
-  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick';
+  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval';
   avatar: string;
   location: string;
   departmentId: string;
