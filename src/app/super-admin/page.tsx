@@ -55,12 +55,17 @@ export default function SuperAdminPage() {
         };
     }, []);
 
+    const nonAdminEmployees = useMemo(() => {
+        return allEmployees.filter(emp => emp.role !== 'Super Admin');
+    }, [allEmployees]);
+
+
     const enrichedCompanies = useMemo((): EnrichedCompany[] => {
         return companies.map(company => {
-            const employeeCount = allEmployees.filter(emp => emp.companyId === company.id).length;
+            const employeeCount = nonAdminEmployees.filter(emp => emp.companyId === company.id).length;
             return { ...company, employeeCount };
         });
-    }, [companies, allEmployees]);
+    }, [companies, nonAdminEmployees]);
 
     if (authLoading || loadingData) {
         return (
@@ -101,7 +106,7 @@ export default function SuperAdminPage() {
                             <Users className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">{allEmployees.length}</div>
+                            <div className="text-2xl font-bold">{nonAdminEmployees.length}</div>
                             <p className="text-xs text-muted-foreground">
                                 across all companies
                             </p>
