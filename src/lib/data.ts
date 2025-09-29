@@ -1,10 +1,22 @@
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
+export type Company = {
+    id: string;
+    name: string;
+    tpin: string;
+    address: string;
+    contactName: string;
+    contactNumber: string;
+    adminEmail: string;
+    createdAt: string; // ISO 8601
+};
+
 export type WorkerType = 'Salaried' | 'Hourly' | 'Contractor';
 
 export type Employee = {
   id: string;
+  companyId: string; // Multi-tenancy key
   name: string;
   email: string;
   role: string;
@@ -36,6 +48,7 @@ export type Employee = {
 
 export type JobVacancy = {
   id: string;
+  companyId: string;
   title: string;
   departmentId: string;
   departmentName: string;
@@ -58,6 +71,7 @@ export type ApplicantStatus = (typeof ApplicantStatus)[keyof typeof ApplicantSta
 
 export type Applicant = {
   id: string;
+  companyId: string;
   jobVacancyId: string;
   name: string;
   email: string;
@@ -102,6 +116,7 @@ export type PayrollRunEmployee = PayrollDetails & {
 
 export type PayrollRun = {
   id: string;
+  companyId: string;
   runDate: string; // ISO 8601 date string
   employeeCount: number;
   totalAmount: number;
@@ -112,6 +127,7 @@ export type PayrollRun = {
 
 export type LeaveRequest = {
   id: string;
+  companyId: string;
   employeeId: string;
   employeeName: string;
   leaveType: 'Annual' | 'Sick' | 'Unpaid' | 'Maternity';
@@ -123,6 +139,7 @@ export type LeaveRequest = {
 
 export type AttendanceRecord = {
     id: string;
+    companyId: string;
     employeeId: string;
     employeeName: string;
     date: string; // YYYY-MM-DD
@@ -138,6 +155,7 @@ export type AttendanceRecord = {
 
 export type Department = {
     id: string;
+    companyId: string;
     name: string;
     minSalary: number;
     maxSalary: number;
@@ -168,6 +186,7 @@ export const permissionsList: { id: Permission, label: string }[] = [
 
 export type Role = {
     id: string;
+    companyId: string;
     name: string;
     departmentId: string;
     departmentName: string;
@@ -176,6 +195,7 @@ export type Role = {
 
 export type Goal = {
   id: string;
+  companyId: string;
   employeeId: string;
   title: string;
   description: string;
@@ -186,6 +206,7 @@ export type Goal = {
 
 export type PerformanceReview = {
   id: string;
+  companyId: string;
   employeeId: string;
   reviewerId: string; // Manager's ID
   reviewDate: string; // ISO 8601
@@ -198,6 +219,7 @@ export type PerformanceReview = {
 
 export type Feedback = {
   id: string;
+  companyId: string;
   subjectEmployeeId: string; // Employee being reviewed
   providerEmployeeId: string; // Employee giving feedback
   providerEmployeeName: string; // Denormalized for easy display
@@ -210,6 +232,7 @@ export type Feedback = {
 
 export type TrainingCourse = {
   id: string;
+  companyId: string;
   title: string;
   category: string;
   provider: string;
@@ -219,6 +242,7 @@ export type TrainingCourse = {
 
 export type Enrollment = {
   id: string;
+  companyId: string;
   employeeId: string;
   courseId: string;
   enrollmentDate: string; // ISO 8601
@@ -227,6 +251,7 @@ export type Enrollment = {
 
 export type Certification = {
   id: string;
+  companyId: string;
   employeeId: string;
   name: string;
   issuingBody: string;
@@ -236,12 +261,14 @@ export type Certification = {
 
 export type Bank = {
     id: string;
+    companyId: string;
     name: string;
     swiftCode: string;
 };
 
 export type AuditLog = {
     id: string;
+    companyId: string;
     actor: string; // Who performed the action (e.g., "System", "Admin User")
     action: string; // What was done (e.g., "Payroll Run Executed")
     details: string; // A descriptive summary
@@ -250,6 +277,7 @@ export type AuditLog = {
 
 export type RosterAssignment = {
     id: string;
+    companyId: string;
     employeeId: string;
     employeeName: string;
     date: string; // YYYY-MM-DD
@@ -258,6 +286,7 @@ export type RosterAssignment = {
 
 export type Notification = {
   id: string;
+  companyId: string;
   userId: string; // The user who should receive the notification
   title: string;
   message: string;
@@ -267,12 +296,13 @@ export type Notification = {
 };
 
 // Helper function to create a notification
-export const createNotification = async (notification: Omit<Notification, 'id' | 'isRead' | 'timestamp'>) => {
+export const createNotification = async (companyId: string, notification: Omit<Notification, 'id' | 'companyId' | 'isRead' | 'timestamp'>) => {
   try {
-    const notificationsRef = ref(db, 'notifications');
+    const notificationsRef = ref(db, `companies/${companyId}/notifications`);
     const newNotificationRef = push(notificationsRef);
     const newNotification: Omit<Notification, 'id'> = {
       ...notification,
+      companyId,
       isRead: false,
       timestamp: new Date().toISOString(),
     };
@@ -282,9 +312,9 @@ export const createNotification = async (notification: Omit<Notification, 'id' |
   }
 };
 
-// Helper function to get all admin user IDs
-export const getAdminUserIds = async (): Promise<string[]> => {
-    const employeesRef = ref(db, 'employees');
+// Helper function to get all admin user IDs for a company
+export const getAdminUserIds = async (companyId: string): Promise<string[]> => {
+    const employeesRef = ref(db, `companies/${companyId}/employees`);
     const snapshot = await get(employeesRef);
     if (snapshot.exists()) {
         const allEmployees: Record<string, Employee> = snapshot.val();

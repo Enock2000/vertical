@@ -36,11 +36,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useAuth } from '../auth-provider';
 
 
 export default function EmployeePortalPage() {
-    const [user, loadingAuth] = useAuthState(auth);
-    const [employee, setEmployee] = useState<Employee | null>(null);
+    const { user, employee, companyId, loading: loadingAuth } = useAuth();
     const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
     const [allAttendance, setAllAttendance] = useState<AttendanceRecord[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
@@ -62,7 +62,7 @@ export default function EmployeePortalPage() {
     }, []);
 
     useEffect(() => {
-        if (user) {
+        if (user && companyId) {
             let loadedCount = 0;
             const totalToLoad = 7;
             
@@ -73,12 +73,11 @@ export default function EmployeePortalPage() {
                 }
             }
 
-            const employeeRef = ref(db, 'employees/' + user.uid);
-            const todayAttendanceRef = ref(db, `attendance/${todayString}/${user.uid}`);
-            const payrollConfigRef = ref(db, 'payrollConfig');
-            const leaveRequestsQuery = query(ref(db, 'leaveRequests'), orderByChild('employeeId'), equalTo(user.uid));
-            const goalsQuery = query(ref(db, 'goals'), orderByChild('employeeId'), equalTo(user.uid));
-            const jobsRef = ref(db, 'jobVacancies');
+            const todayAttendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${user.uid}`);
+            const payrollConfigRef = ref(db, `companies/${companyId}/payrollConfig`);
+            const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
+            const goalsQuery = query(ref(db, `companies/${companyId}/goals`), orderByChild('employeeId'), equalTo(user.uid));
+            const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
 
             const onValueCallback = (setter: React.Dispatch<any>, isObject: boolean = false) => (snapshot: any) => {
                 const data = snapshot.val();
@@ -95,7 +94,7 @@ export default function EmployeePortalPage() {
                 checkLoading();
             };
             
-            const allAttendanceUnsubscribe = onValue(ref(db, 'attendance'), (snapshot) => {
+            const allAttendanceUnsubscribe = onValue(ref(db, `companies/${companyId}/attendance`), (snapshot) => {
                 const allData = snapshot.val();
                 const userRecords: AttendanceRecord[] = [];
                 if (allData) {
@@ -110,7 +109,7 @@ export default function EmployeePortalPage() {
                 checkLoading();
             }, onErrorCallback);
 
-            const rosterUnsubscribe = onValue(ref(db, 'rosters'), (snapshot) => {
+            const rosterUnsubscribe = onValue(ref(db, `companies/${companyId}/rosters`), (snapshot) => {
                 const allData = snapshot.val();
                 const userAssignments: RosterAssignment[] = [];
                 if (allData) {
@@ -125,8 +124,6 @@ export default function EmployeePortalPage() {
                 checkLoading();
             }, onErrorCallback);
 
-
-            const employeeUnsubscribe = onValue(employeeRef, onValueCallback(setEmployee, true), onErrorCallback);
             const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, onValueCallback(setTodayAttendance, true), onErrorCallback);
             const payrollConfigUnsubscribe = onValue(payrollConfigRef, onValueCallback(setPayrollConfig, true), onErrorCallback);
             const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, onValueCallback(setLeaveRequests), onErrorCallback);
@@ -141,10 +138,11 @@ export default function EmployeePortalPage() {
                 }
                 checkLoading();
             }, onErrorCallback);
-
             
+            // Employee is already loaded from AuthProvider, so we can count it as loaded.
+            checkLoading();
+
             return () => {
-                employeeUnsubscribe();
                 todayAttendanceUnsubscribe();
                 allAttendanceUnsubscribe();
                 payrollConfigUnsubscribe();
@@ -156,7 +154,7 @@ export default function EmployeePortalPage() {
         } else if (!loadingAuth) {
             setLoadingData(false);
         }
-    }, [user, loadingAuth, todayString]);
+    }, [user, loadingAuth, companyId, todayString]);
 
     const payrollDetails = useMemo(() => {
         if (employee && payrollConfig) {
@@ -166,10 +164,10 @@ export default function EmployeePortalPage() {
     }, [employee, payrollConfig]);
 
     const handleClockIn = async () => {
-        if (!user) return;
+        if (!user || !companyId) return;
         setIsSubmitting(true);
         try {
-            const result = await recordAttendance({ userId: user.uid, action: 'clockIn' });
+            const result = await recordAttendance({ userId: user.uid, action: 'clockIn', companyId });
             if (result.success) {
                 toast({ title: "Clocked In", description: result.message });
             } else {
@@ -184,10 +182,10 @@ export default function EmployeePortalPage() {
     };
 
     const handleClockOut = async () => {
-        if (!user) return;
+        if (!user || !companyId) return;
         setIsSubmitting(true);
         try {
-            const result = await recordAttendance({ userId: user.uid, action: 'clockOut' });
+            const result = await recordAttendance({ userId: user.uid, action: 'clockOut', companyId });
             if (result.success) {
                 toast({ title: "Clocked Out", description: result.message });
             } else {
@@ -202,10 +200,10 @@ export default function EmployeePortalPage() {
     };
 
     const handleReportEmergency = async () => {
-        if (!employee) return;
+        if (!employee || !companyId) return;
         setIsReportingEmergency(true);
         try {
-            const result = await reportEmergency({ employeeId: employee.id, employeeName: employee.name });
+            const result = await reportEmergency({ employeeId: employee.id, employeeName: employee.name, companyId });
             if(result.success) {
                  toast({
                     title: "Alert Sent",

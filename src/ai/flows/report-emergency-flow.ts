@@ -18,6 +18,7 @@ import { createNotification, getAdminUserIds, type AuditLog } from '@/lib/data';
 const EmergencyInputSchema = z.object({
   employeeId: z.string(),
   employeeName: z.string(),
+  companyId: z.string(),
 });
 export type EmergencyInput = z.infer<typeof EmergencyInputSchema>;
 
@@ -32,10 +33,10 @@ export async function reportEmergency(input: EmergencyInput): Promise<EmergencyO
 }
 
 // Helper function to create an audit log
-async function createAuditLog(log: Omit<AuditLog, 'id'>) {
-    const logRef = ref(db, 'auditLogs');
+async function createAuditLog(companyId: string, log: Omit<AuditLog, 'id' | 'companyId'>) {
+    const logRef = ref(db, `companies/${companyId}/auditLogs`);
     const newLogRef = push(logRef);
-    await set(newLogRef, { ...log, id: newLogRef.key, ...log });
+    await set(newLogRef, { ...log, id: newLogRef.key, companyId, ...log });
 }
 
 
@@ -45,29 +46,29 @@ const reportEmergencyFlow = ai.defineFlow(
     inputSchema: EmergencyInputSchema,
     outputSchema: EmergencyOutputSchema,
   },
-  async ({ employeeId, employeeName }) => {
+  async ({ employeeId, employeeName, companyId }) => {
     try {
         const timestamp = new Date().toISOString();
 
         // 1. Create a critical audit log entry
-        await createAuditLog({
+        await createAuditLog(companyId, {
             actor: employeeName,
             action: 'Emergency Alert Triggered',
             details: `An emergency alert was triggered by ${employeeName} (ID: ${employeeId}).`,
             timestamp,
         });
 
-        // 2. Get all admin user IDs
-        const adminIds = await getAdminUserIds();
+        // 2. Get all admin user IDs for the specific company
+        const adminIds = await getAdminUserIds(companyId);
         if (adminIds.length === 0) {
-            console.warn("Emergency reported, but no admin users found to notify.");
+            console.warn("Emergency reported, but no admin users found to notify for company:", companyId);
             // Still return success as the audit log was created.
             return { success: true, message: "Emergency logged. No admins available for notification." };
         }
 
-        // 3. Send a notification to each admin
+        // 3. Send a notification to each admin in the company
         for (const adminId of adminIds) {
-            await createNotification({
+            await createNotification(companyId, {
                 userId: adminId,
                 title: '🚨 Emergency Alert 🚨',
                 message: `${employeeName} has reported an emergency. Please contact them immediately.`,
