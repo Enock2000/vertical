@@ -13,7 +13,6 @@ import { useAuth } from '../auth-provider';
 import type { Company, Employee } from '@/lib/data';
 import { DataTable } from './components/data-table';
 import { columns, type EnrichedCompany } from './components/columns';
-import { AddSuperAdminDialog } from './components/add-super-admin-dialog';
 import { Button } from '@/components/ui/button';
 
 export default function SuperAdminPage() {
@@ -121,14 +120,12 @@ export default function SuperAdminPage() {
                                 A list of all companies registered on the platform.
                             </CardDescription>
                         </div>
-                        <AddSuperAdminDialog>
-                            <Button size="sm" className="gap-1">
-                                <PlusCircle className="h-3.5 w-3.5" />
-                                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                                Add Super Admin
-                                </span>
-                            </Button>
-                        </AddSuperAdminDialog>
+                        <Button size="sm" className="gap-1" onClick={() => router.push('/super-admin-signup')}>
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                            Add Super Admin
+                            </span>
+                        </Button>
                     </CardHeader>
                     <CardContent>
                          <DataTable columns={columns} data={enrichedCompanies} />
