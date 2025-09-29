@@ -19,7 +19,7 @@ const firebaseConfig = {
 const actionCodeSettings = {
   // URL you want to redirect back to. The domain (www.example.com) for this
   // URL must be whitelisted in the Firebase Console.
-  url: 'http://localhost:9002/finish-login',
+  url: 'https://6000-firebase-studio-1758966024117.cluster-fbfjltn375c6wqxlhoehbz44sk.cloudworkstations.dev/finish-login',
   // This must be true.
   handleCodeInApp: true,
 };
