@@ -89,6 +89,11 @@ export default function LoginPage() {
               Sign up
             </Link>
           </div>
+           <div className="mt-8 text-center text-xs text-muted-foreground">
+            <Link href="/super-admin-signup" className="underline">
+              Super Admin Setup
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>
