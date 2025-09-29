@@ -34,6 +34,7 @@ import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Employee, Goal } from '@/lib/data';
+import { createNotification } from '@/lib/data';
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
@@ -83,6 +84,14 @@ export function AddGoalDialog({
 
       await set(newGoalRef, newGoal);
       
+      // Notify the employee
+      await createNotification({
+        userId: employee.id,
+        title: 'New Goal Set',
+        message: `Your manager has set a new performance goal: "${values.title}"`,
+        link: '/employee-portal',
+      });
+
       setOpen(false);
       form.reset();
       toast({

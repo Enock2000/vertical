@@ -1,3 +1,6 @@
+import { db } from './firebase';
+import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
+
 export type WorkerType = 'Salaried' | 'Hourly' | 'Contractor';
 
 export type Employee = {
@@ -251,6 +254,44 @@ export type RosterAssignment = {
     employeeName: string;
     date: string; // YYYY-MM-DD
     status: 'On Duty' | 'Off Day';
+};
+
+export type Notification = {
+  id: string;
+  userId: string; // The user who should receive the notification
+  title: string;
+  message: string;
+  link: string; // Link to the relevant page
+  isRead: boolean;
+  timestamp: string; // ISO 8601 string
+};
+
+// Helper function to create a notification
+export const createNotification = async (notification: Omit<Notification, 'id' | 'isRead' | 'timestamp'>) => {
+  try {
+    const notificationsRef = ref(db, 'notifications');
+    const newNotificationRef = push(notificationsRef);
+    const newNotification: Omit<Notification, 'id'> = {
+      ...notification,
+      isRead: false,
+      timestamp: new Date().toISOString(),
+    };
+    await set(newNotificationRef, newNotification);
+  } catch (error) {
+    console.error('Error creating notification:', error);
+  }
+};
+
+// Helper function to get all admin user IDs
+export const getAdminUserIds = async (): Promise<string[]> => {
+    const employeesRef = ref(db, 'employees');
+    const adminQuery = query(employeesRef, orderByChild('role'), equalTo('Admin'));
+    const snapshot = await get(adminQuery);
+    if (snapshot.exists()) {
+        const admins = snapshot.val();
+        return Object.keys(admins);
+    }
+    return [];
 };
 
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {

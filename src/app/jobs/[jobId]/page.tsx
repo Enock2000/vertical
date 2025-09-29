@@ -132,6 +132,7 @@ export default function JobApplicationPage() {
                             <CardContent>
                                 <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
                                     <input type="hidden" name="jobVacancyId" value={jobId} />
+                                    <input type="hidden" name="vacancyTitle" value={vacancy.title} />
                                     <div className="space-y-2">
                                         <Label htmlFor="name">Full Name</Label>
                                         <Input id="name" name="name" required disabled={isSubmitting} />

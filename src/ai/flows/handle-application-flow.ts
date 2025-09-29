@@ -11,7 +11,8 @@ import { z } from 'zod';
 import { db, storage } from '@/lib/firebase';
 import { ref as dbRef, push, set } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import type { Applicant } from '@/lib/data';
+import type { Applicant, JobVacancy } from '@/lib/data';
+import { createNotification, getAdminUserIds } from '@/lib/data';
 
 const ApplicationInputSchema = z.object({
   jobVacancyId: z.string(),
@@ -35,6 +36,7 @@ export async function handleApplication(
         phone: formData.get('phone'),
     };
     const resumeFile = formData.get('resume') as File | null;
+    const vacancyTitle = formData.get('vacancyTitle') as string;
 
     if (!resumeFile) {
         return { success: false, message: 'Resume file is required.' };
@@ -45,17 +47,17 @@ export async function handleApplication(
         return { success: false, message: 'Invalid form data.' };
     }
 
-    return handleApplicationFlow({ ...validatedFields.data, resumeFile });
+    return handleApplicationFlow({ ...validatedFields.data, resumeFile, vacancyTitle });
 }
 
 
 const handleApplicationFlow = ai.defineFlow(
   {
     name: 'handleApplicationFlow',
-    inputSchema: ApplicationInputSchema.extend({ resumeFile: z.any() }),
+    inputSchema: ApplicationInputSchema.extend({ resumeFile: z.any(), vacancyTitle: z.string() }),
     outputSchema: ApplicationOutputSchema,
   },
-  async ({ jobVacancyId, name, email, phone, resumeFile }) => {
+  async ({ jobVacancyId, name, email, phone, resumeFile, vacancyTitle }) => {
     try {
         // 1. Upload resume to Firebase Storage
         const fileRef = storageRef(storage, `resumes/${jobVacancyId}/${Date.now()}-${resumeFile.name}`);
@@ -81,6 +83,17 @@ const handleApplicationFlow = ai.defineFlow(
             ...newApplicant,
             id: newApplicantId
         });
+        
+        // 3. Notify admins
+        const adminIds = await getAdminUserIds();
+        for (const adminId of adminIds) {
+            await createNotification({
+                userId: adminId,
+                title: 'New Job Application',
+                message: `${name} has applied for the ${vacancyTitle} position.`,
+                link: `/dashboard/recruitment?vacancy=${jobVacancyId}`,
+            });
+        }
 
         return { success: true, message: 'Application submitted successfully!' };
 

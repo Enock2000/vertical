@@ -13,6 +13,7 @@ import {
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
 import type { LeaveRequest, Employee } from '@/lib/data';
+import { createNotification } from '@/lib/data';
 import { RequestLeaveDialog } from './components/request-leave-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
@@ -86,9 +87,21 @@ export default function LeavePage() {
   };
 
   const handleStatusUpdate = async (id: string, status: 'Approved' | 'Rejected') => {
+    const request = leaveRequests.find(r => r.id === id);
+    if (!request) return;
+
     try {
         const requestRef = ref(db, `leaveRequests/${id}`);
         await update(requestRef, { status });
+        
+        // Notify the employee
+        await createNotification({
+            userId: request.employeeId,
+            title: `Leave Request ${status}`,
+            message: `Your leave request for ${request.leaveType} has been ${status.toLowerCase()}.`,
+            link: '/employee-portal',
+        });
+
         toast({
             title: `Request ${status}`,
             description: `The leave request has been successfully ${status.toLowerCase()}.`
@@ -115,7 +128,7 @@ export default function LeavePage() {
         <RequestLeaveDialog employees={employees} onLeaveRequestAdded={handleLeaveRequestAdded}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+            <span className="sr-only sm:not-sr-only sm:whitespace-rap">
               Request Leave
             </span>
           </Button>

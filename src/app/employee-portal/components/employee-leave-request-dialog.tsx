@@ -35,6 +35,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import type { Employee, LeaveRequest } from '@/lib/data';
+import { createNotification, getAdminUserIds } from '@/lib/data';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -96,6 +97,17 @@ export function EmployeeLeaveRequestDialog({
       };
 
       await set(newRequestRef, requestData);
+
+      // Notify admins
+      const adminIds = await getAdminUserIds();
+      for (const adminId of adminIds) {
+        await createNotification({
+          userId: adminId,
+          title: 'New Leave Request',
+          message: `${employee.name} has requested ${values.leaveType} leave.`,
+          link: '/dashboard/leave',
+        });
+      }
 
       setIsLoading(false);
       setOpen(false);
