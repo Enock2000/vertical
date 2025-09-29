@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,6 +11,7 @@ import {
     Users,
     Loader2,
     Cake,
+    ShieldCheck,
   } from "lucide-react"
   
   import {
@@ -36,7 +38,38 @@ import {
   import Link from "next/link"
   import type { Employee, PayrollConfig } from '@/lib/data';
   import { calculatePayroll } from '@/lib/data';
-  import { isThisMonth, parseISO, format, getMonth } from 'date-fns';
+  import { isThisMonth, parseISO, format, getMonth, lastDayOfMonth } from 'date-fns';
+  import { Pie, PieChart, Cell } from "recharts"
+   import {
+    ChartConfig,
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+    ChartLegend,
+    ChartLegendContent
+} from "@/components/ui/chart"
+
+  const chartConfig = {
+    value: {
+        label: 'Value',
+    },
+    payroll: {
+      label: "Payroll",
+      color: "hsl(var(--chart-1))",
+    },
+    employees: {
+      label: "Employees",
+      color: "hsl(var(--chart-2))",
+    },
+    compliance: {
+        label: "Compliance",
+        color: "hsl(var(--chart-3))"
+    },
+    payrollDate: {
+        label: "Payroll Date",
+        color: "hsl(var(--chart-4))"
+    }
+  } satisfies ChartConfig
 
   export default function Dashboard() {
     const [employees, setEmployees] = useState<Employee[]>([]);
@@ -118,7 +151,15 @@ import {
     const currencyFormatter = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "ZMW",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
     });
+    
+    const numberFormatter = new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 0,
+    });
+    
+    const lastDay = lastDayOfMonth(new Date());
 
     if (loading) {
         return (
@@ -132,68 +173,90 @@ import {
         <div className="grid gap-4 md:gap-8 lg:grid-cols-3 xl:grid-cols-4">
           <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2 xl:col-span-3">
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              <Card>
+               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Payroll
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Payroll</CardTitle>
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{currencyFormatter.format(totalPayroll)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Estimated for this month
-                  </p>
+                <CardContent className="flex items-end justify-between">
+                    <div>
+                        <div className="text-2xl font-bold">{currencyFormatter.format(totalPayroll)}</div>
+                        <p className="text-xs text-muted-foreground">
+                            Estimated for this month
+                        </p>
+                    </div>
+                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                        <PieChart>
+                          <Pie data={[{ value: 1 }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
+                             <Cell fill="var(--color-payroll)" />
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Active Employees
-                  </CardTitle>
+                  <CardTitle className="text-sm font-medium">Active Employees</CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{activeEmployeesCount}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Currently employed
-                  </p>
+                <CardContent className="flex items-end justify-between">
+                    <div>
+                        <div className="text-2xl font-bold">{activeEmployeesCount}</div>
+                        <p className="text-xs text-muted-foreground">
+                           out of {employees.length} total
+                        </p>
+                    </div>
+                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                        <PieChart>
+                          <Pie data={[{ value: activeEmployeesCount }, { value: employees.length - activeEmployeesCount }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
+                             <Cell fill="var(--color-employees)" />
+                             <Cell fill="var(--color-muted)" opacity={0.3} />
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Compliance Issues</CardTitle>
-                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    className="h-4 w-4 text-muted-foreground"
-                  >
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-                    <path d="m9 12 2 2 4-4" />
-                  </svg>
+                  <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">0</div>
-                  <p className="text-xs text-muted-foreground">
-                    No open issues
-                  </p>
+                <CardContent className="flex items-end justify-between">
+                    <div>
+                        <div className="text-2xl font-bold">0</div>
+                        <p className="text-xs text-muted-foreground">
+                            No open issues
+                        </p>
+                    </div>
+                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                        <PieChart>
+                          <Pie data={[{ value: 1 }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
+                             <Cell fill="var(--color-compliance)" />
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
                 </CardContent>
               </Card>
-              <Card>
+               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Next Payroll Run</CardTitle>
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">Not Scheduled</div>
-                  <p className="text-xs text-muted-foreground">
-                    Setup a payroll schedule
-                  </p>
+                 <CardContent className="flex items-end justify-between">
+                    <div>
+                        <div className="text-2xl font-bold">{format(lastDay, "do")}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {format(lastDay, "MMMM")}
+                        </p>
+                    </div>
+                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                        <PieChart>
+                          <Pie data={[{ value: new Date().getDate() }, { value: lastDay.getDate() - new Date().getDate() }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
+                             <Cell fill="var(--color-payrollDate)" />
+                              <Cell fill="var(--color-muted)" opacity={0.3} />
+                          </Pie>
+                        </PieChart>
+                      </ChartContainer>
                 </CardContent>
               </Card>
             </div>
@@ -305,3 +368,5 @@ import {
         </div>
     )
   }
+
+    
