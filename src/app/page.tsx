@@ -223,8 +223,7 @@ export default function HomePage() {
       {/* Footer */}
         <footer className="border-t">
             <div className="container py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <Logo />
-                <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync Inc. All rights reserved.</p>
+                <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.</p>
                  <nav className="flex items-center space-x-6 text-sm font-medium">
                     <Link href="/careers">Careers</Link>
                     <Link href="#">Terms of Service</Link>

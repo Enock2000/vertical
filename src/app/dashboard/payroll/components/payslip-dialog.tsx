@@ -47,7 +47,7 @@ export function PayslipDialog({ employee, payrollDetails, children }: PayslipDia
               <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                       <h3 className="font-semibold">Company Name</h3>
-                      <p>VerticalSync Inc.</p>
+                      <p>VerticalSync powered by Oran Investment</p>
                   </div>
                   <div className="text-right">
                       <h3 className="font-semibold">Employee Details</h3>
