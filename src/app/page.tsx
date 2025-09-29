@@ -154,24 +154,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-        
-         {/* Careers Section */}
-        <section id="careers" className="py-20 md:py-28">
-          <div className="container text-center">
-            <Users className="mx-auto h-12 w-12 text-primary" />
-            <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl">
-              Join Our Team
-            </h2>
-            <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-              We're always looking for talented individuals to help us build the future of HR.
-            </p>
-            <div className="mt-8">
-              <Button size="lg" asChild>
-                <Link href="/careers">View Open Positions</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
 
         {/* Testimonials Section */}
         <section id="testimonials" className="py-20 md:py-28 bg-muted/50">
