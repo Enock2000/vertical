@@ -30,11 +30,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentUser) {
         const employeeRef = ref(db, 'employees/' + currentUser.uid);
         const employeeUnsubscribe = onValue(employeeRef, (snapshot) => {
-          setEmployee(snapshot.val());
+          const employeeData = snapshot.val();
+          if (employeeData) {
+            setEmployee(employeeData);
+          } else {
+            // If no employee record, assume it's an admin without a profile
+            // This prevents getting stuck for non-employee admin users
+             setEmployee({
+                id: currentUser.uid,
+                name: currentUser.email || 'Admin User',
+                email: currentUser.email!,
+                role: 'Admin',
+                status: 'Active',
+                avatar: `https://avatar.vercel.sh/${currentUser.email}.png`,
+             } as Employee);
+          }
           setLoading(false);
         }, (error) => {
             console.error("Failed to fetch employee data:", error);
-            setEmployee(null); // Ensure employee is null on error
+            setEmployee(null); 
             setLoading(false);
         });
         return () => employeeUnsubscribe();
