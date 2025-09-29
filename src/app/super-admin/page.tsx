@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { Loader2, Users } from 'lucide-react';
+import { Loader2, Users, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserNav } from '@/components/user-nav';
 import Logo from '@/components/logo';
@@ -13,6 +13,8 @@ import { useAuth } from '../auth-provider';
 import type { Company, Employee } from '@/lib/data';
 import { DataTable } from './components/data-table';
 import { columns, type EnrichedCompany } from './components/columns';
+import { AddSuperAdminDialog } from './components/add-super-admin-dialog';
+import { Button } from '@/components/ui/button';
 
 export default function SuperAdminPage() {
     const { user, employee, loading: authLoading } = useAuth();
@@ -73,7 +75,10 @@ export default function SuperAdminPage() {
     return (
         <div className="flex min-h-screen w-full flex-col">
             <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-                <Logo />
+                <div className="flex items-center gap-4">
+                    <Logo />
+                    <h1 className="text-lg font-semibold">Super Admin Portal</h1>
+                </div>
                 <UserNav />
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -104,11 +109,21 @@ export default function SuperAdminPage() {
                     </Card>
                 </div>
                  <Card>
-                    <CardHeader>
-                        <CardTitle>Company Management</CardTitle>
-                        <CardDescription>
-                            A list of all companies registered on the platform.
-                        </CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Company Management</CardTitle>
+                            <CardDescription>
+                                A list of all companies registered on the platform.
+                            </CardDescription>
+                        </div>
+                        <AddSuperAdminDialog>
+                            <Button size="sm" className="gap-1">
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                                Add Super Admin
+                                </span>
+                            </Button>
+                        </AddSuperAdminDialog>
                     </CardHeader>
                     <CardContent>
                          <DataTable columns={columns} data={enrichedCompanies} />
