@@ -1,3 +1,4 @@
+
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
@@ -14,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import type { Employee, AuditLog } from '@/lib/data';
 import { format } from 'date-fns';
+import { useAuth } from '@/app/auth-provider';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -23,13 +25,16 @@ const availableReports = [
 ];
 
 export default function ReportingPage() {
+    const { companyId } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!companyId) return;
+
         const employeesRef = ref(db, 'employees');
-        const auditLogsRef = ref(db, 'auditLogs');
+        const auditLogsRef = ref(db, `companies/${companyId}/auditLogs`);
         
         let employeesLoaded = false;
         let auditLogsLoaded = false;
@@ -43,7 +48,8 @@ export default function ReportingPage() {
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                setEmployees(Object.values(data));
+                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
+                setEmployees(employeeList);
             } else {
                 setEmployees([]);
             }
@@ -59,7 +65,6 @@ export default function ReportingPage() {
             const data = snapshot.val();
             if (data) {
                 const logs: AuditLog[] = Object.values(data);
-                // Sort logs by timestamp descending
                 logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 setAuditLogs(logs);
             } else {
@@ -77,7 +82,7 @@ export default function ReportingPage() {
             employeesUnsubscribe();
             auditLogsUnsubscribe();
         };
-    }, []);
+    }, [companyId]);
 
     return (
         <Tabs defaultValue="overview">

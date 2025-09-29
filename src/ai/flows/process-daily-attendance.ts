@@ -1,9 +1,10 @@
+
 'use server';
 
 /**
  * @fileOverview A flow to process daily attendance records automatically.
  * It handles auto clock-out for employees who forgot and marks absent employees.
- * This flow is intended to be run once a day by a scheduler.
+ * This flow is intended to be run once a day by a scheduler for a specific company.
  */
 
 import { ai } from '@/ai/genkit';
@@ -13,6 +14,10 @@ import { db } from '@/lib/firebase';
 import type { Employee, PayrollConfig, AttendanceRecord } from '@/lib/data';
 import { format, addHours, parseISO, differenceInHours } from 'date-fns';
 
+const ProcessAttendanceInputSchema = z.object({
+    companyId: z.string(),
+});
+
 const ProcessAttendanceOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -21,17 +26,19 @@ const ProcessAttendanceOutputSchema = z.object({
   autoClockedOutRecords: z.number(),
 });
 
-export async function processDailyAttendance(): Promise<z.infer<typeof ProcessAttendanceOutputSchema>> {
-  return processDailyAttendanceFlow({});
+export async function processDailyAttendance(
+    companyId: string
+): Promise<z.infer<typeof ProcessAttendanceOutputSchema>> {
+  return processDailyAttendanceFlow({ companyId });
 }
 
 const processDailyAttendanceFlow = ai.defineFlow(
   {
     name: 'processDailyAttendanceFlow',
-    inputSchema: z.object({}),
+    inputSchema: ProcessAttendanceInputSchema,
     outputSchema: ProcessAttendanceOutputSchema,
   },
-  async () => {
+  async ({ companyId }) => {
     try {
       const todayString = format(new Date(), 'yyyy-MM-dd');
       let processedCount = 0;
@@ -39,23 +46,22 @@ const processDailyAttendanceFlow = ai.defineFlow(
       let autoClockOutCount = 0;
 
       // 1. Get payroll config for working hours
-      const configRef = ref(db, 'payrollConfig');
+      const configRef = ref(db, `companies/${companyId}/payrollConfig`);
       const configSnapshot = await get(configRef);
       const config: PayrollConfig = configSnapshot.val();
       const dailyTargetHours = config?.dailyTargetHours || 8; // Default to 8 hours
 
-      // 2. Get all active employees
-      const employeesRef = ref(db, 'employees');
-      const employeesSnapshot = await get(employeesRef);
-      const employees: { [key: string]: Employee } = employeesSnapshot.val();
-      const activeEmployees = Object.values(employees).filter(e => e.status === 'Active');
+      // 2. Get all active employees for the company
+      const employeesSnapshot = await get(ref(db, 'employees'));
+      const allEmployees: { [key: string]: Employee } = employeesSnapshot.val();
+      const activeEmployees = Object.values(allEmployees).filter(e => e.companyId === companyId && e.status === 'Active');
 
       if (!activeEmployees.length) {
         return { success: true, message: "No active employees to process.", processedRecords: 0, absentRecords: 0, autoClockedOutRecords: 0 };
       }
 
       // 3. Get today's attendance records
-      const attendanceRef = ref(db, `attendance/${todayString}`);
+      const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}`);
       const attendanceSnapshot = await get(attendanceRef);
       const attendanceRecords: { [key: string]: AttendanceRecord } = attendanceSnapshot.val() || {};
 
@@ -82,7 +88,7 @@ const processDailyAttendanceFlow = ai.defineFlow(
           }
         } else {
           // Employee did not clock in today, mark as absent
-          const absentRecord: Omit<AttendanceRecord, 'id'> = {
+          const absentRecord: Omit<AttendanceRecord, 'id' | 'companyId'> = {
             employeeId: employeeId,
             employeeName: employee.name,
             date: todayString,

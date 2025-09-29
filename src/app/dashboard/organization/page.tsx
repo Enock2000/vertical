@@ -1,3 +1,4 @@
+
 // src/app/dashboard/organization/page.tsx
 'use client';
 
@@ -9,15 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RolesTab } from './components/roles-tab';
 import { DepartmentsTab } from './components/departments-tab';
 import type { Role, Department } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 export default function OrganizationPage() {
+    const { companyId } = useAuth();
     const [roles, setRoles] = useState<Role[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const rolesRef = ref(db, 'roles');
-        const departmentsRef = ref(db, 'departments');
+        if (!companyId) return;
+
+        const rolesRef = ref(db, `companies/${companyId}/roles`);
+        const departmentsRef = ref(db, `companies/${companyId}/departments`);
         
         let rolesLoaded = false;
         let deptsLoaded = false;
@@ -70,7 +75,7 @@ export default function OrganizationPage() {
             rolesUnsubscribe();
             departmentsUnsubscribe();
         };
-    }, []);
+    }, [companyId]);
 
     const handleAction = () => {
         // The onValue listeners will handle UI updates automatically.

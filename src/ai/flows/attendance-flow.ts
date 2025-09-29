@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 
 const AttendanceInputSchema = z.object({
   userId: z.string(),
+  companyId: z.string(),
   action: z.enum(['clockIn', 'clockOut']),
 });
 
@@ -44,14 +45,14 @@ const attendanceFlow = ai.defineFlow(
     inputSchema: AttendanceInputSchema,
     outputSchema: AttendanceOutputSchema,
   },
-  async ({ userId, action }) => {
+  async ({ userId, companyId, action }) => {
     try {
       // 1. Get request IP address from headers
       const headersList = headers();
       const ip = (headersList.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0].trim();
 
       // 2. Get allowed IP from settings
-      const configRef = ref(db, 'payrollConfig');
+      const configRef = ref(db, `companies/${companyId}/payrollConfig`);
       const configSnapshot = await get(configRef);
       const config: PayrollConfig | null = configSnapshot.val();
       const allowedIp = config?.allowedIpAddress;
@@ -65,14 +66,14 @@ const attendanceFlow = ai.defineFlow(
       }
       
       const todayString = format(new Date(), 'yyyy-MM-dd');
-      const attendanceRef = ref(db, `attendance/${todayString}/${userId}`);
+      const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${userId}`);
       const now = new Date().toISOString();
       
       const employeeRef = ref(db, 'employees/' + userId);
       const employeeSnapshot = await get(employeeRef);
       const employee: Employee = employeeSnapshot.val();
 
-      if (!employee) {
+      if (!employee || employee.companyId !== companyId) {
            return { success: false, message: 'Employee not found.' };
       }
 
@@ -85,7 +86,7 @@ const attendanceFlow = ai.defineFlow(
             }
         }
 
-        const record: Omit<AttendanceRecord, 'id'> = {
+        const record: Omit<AttendanceRecord, 'id' | 'companyId'> = {
             employeeId: userId,
             employeeName: employee.name,
             date: todayString,

@@ -1,3 +1,4 @@
+
 // src/app/dashboard/recruitment/components/generate-offer-dialog.tsx
 'use client';
 
@@ -20,6 +21,7 @@ import type { Applicant, Department, JobVacancy } from '@/lib/data';
 import { generateOfferLetter } from '@/ai/flows/generate-offer-letter';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/app/auth-provider';
 
 interface GenerateOfferDialogProps {
   children: React.ReactNode;
@@ -34,6 +36,7 @@ export function GenerateOfferDialog({
   vacancy,
   department,
 }: GenerateOfferDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -70,11 +73,12 @@ export function GenerateOfferDialog({
   }, [open, applicant, vacancy, department, toast]);
 
   const handleSendOffer = async () => {
+    if (!companyId) return;
     setIsSending(true);
     try {
         // Here you would integrate with an email service to send the offer.
         // For now, we will simulate it by updating the applicant's status.
-        await update(ref(db, `applicants/${applicant.id}`), { status: 'Onboarding' });
+        await update(ref(db, `companies/${companyId}/applicants/${applicant.id}`), { status: 'Onboarding' });
         toast({
             title: 'Offer Sent!',
             description: `${applicant.name} has been moved to the Onboarding stage.`,

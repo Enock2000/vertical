@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,18 +17,21 @@ import type { Employee, Department, Bank } from '@/lib/data';
 import { AddEmployeeDialog } from './components/add-employee-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { EditEmployeeDialog } from './components/edit-employee-dialog';
+import { useAuth } from '@/app/auth-provider';
 
 export default function EmployeesPage() {
+  const { companyId } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!companyId) return;
+
     const employeesRef = ref(db, 'employees');
-    const departmentsRef = ref(db, 'departments');
-    const banksRef = ref(db, 'banks');
+    const departmentsRef = ref(db, `companies/${companyId}/departments`);
+    const banksRef = ref(db, `companies/${companyId}/banks`);
     
     let employeesLoaded = false;
     let deptsLoaded = false;
@@ -42,10 +46,7 @@ export default function EmployeesPage() {
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const employeeList = Object.keys(data).map(key => ({
-          ...data[key],
-          id: key,
-        }));
+        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
         setEmployees(employeeList);
       } else {
         setEmployees([]);
@@ -89,7 +90,7 @@ export default function EmployeesPage() {
         departmentsUnsubscribe();
         banksUnsubscribe();
     };
-  }, []);
+  }, [companyId]);
 
   const handleAction = () => {
     // The onValue listener will automatically update the state

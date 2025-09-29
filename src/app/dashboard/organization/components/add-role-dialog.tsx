@@ -1,3 +1,4 @@
+
 // src/app/dashboard/organization/components/add-role-dialog.tsx
 'use client';
 
@@ -39,6 +40,7 @@ import type { Department, Role, Permission } from '@/lib/data';
 import { permissionsList } from '@/lib/data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/app/auth-provider';
 
 
 const formSchema = z.object({
@@ -62,6 +64,7 @@ export function AddRoleDialog({
   departments,
   onRoleAdded,
 }: AddRoleDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -76,13 +79,17 @@ export function AddRoleDialog({
   });
 
   async function onSubmit(values: AddRoleFormValues) {
+    if (!companyId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Company not found.' });
+        return;
+    }
     setIsLoading(true);
     try {
-        const rolesRef = ref(db, 'roles');
+        const rolesRef = ref(db, `companies/${companyId}/roles`);
         const newRoleRef = push(rolesRef);
         const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
 
-        const newRole: Omit<Role, 'id'> = {
+        const newRole: Omit<Role, 'id' | 'companyId'> = {
             name: values.name,
             departmentId: values.departmentId,
             departmentName: departmentName,

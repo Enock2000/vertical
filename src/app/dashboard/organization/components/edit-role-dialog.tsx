@@ -1,3 +1,4 @@
+
 // src/app/dashboard/organization/components/edit-role-dialog.tsx
 'use client';
 
@@ -39,6 +40,7 @@ import type { Department, Role, Permission } from '@/lib/data';
 import { permissionsList } from '@/lib/data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/app/auth-provider';
 
 
 const formSchema = z.object({
@@ -64,6 +66,7 @@ export function EditRoleDialog({
   departments,
   onRoleUpdated,
 }: EditRoleDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -78,12 +81,13 @@ export function EditRoleDialog({
   });
 
   async function onSubmit(values: EditRoleFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-        const roleRef = ref(db, `roles/${role.id}`);
+        const roleRef = ref(db, `companies/${companyId}/roles/${role.id}`);
         const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
 
-        const updatedRole: Omit<Role, 'id'> = {
+        const updatedRole: Omit<Role, 'id' | 'companyId'> = {
             name: values.name,
             departmentId: values.departmentId,
             departmentName: departmentName,

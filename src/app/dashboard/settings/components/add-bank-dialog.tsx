@@ -1,3 +1,4 @@
+
 // src/app/dashboard/settings/components/add-bank-dialog.tsx
 'use client';
 
@@ -28,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Bank name is required.'),
@@ -41,6 +43,7 @@ interface AddBankDialogProps {
 }
 
 export function AddBankDialog({ children }: AddBankDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -54,9 +57,10 @@ export function AddBankDialog({ children }: AddBankDialogProps) {
   });
 
   async function onSubmit(values: AddBankFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      const banksRef = ref(db, 'banks');
+      const banksRef = ref(db, `companies/${companyId}/banks`);
       const newBankRef = push(banksRef);
       
       await set(newBankRef, {

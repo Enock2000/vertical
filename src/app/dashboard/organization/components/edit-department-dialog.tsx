@@ -1,3 +1,4 @@
+
 // src/app/dashboard/organization/components/edit-department-dialog.tsx
 'use client';
 
@@ -29,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Department } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Department name must be at least 2 characters.'),
@@ -52,6 +54,7 @@ export function EditDepartmentDialog({
   department,
   onDepartmentUpdated,
 }: EditDepartmentDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -66,9 +69,10 @@ export function EditDepartmentDialog({
   });
 
   async function onSubmit(values: EditDepartmentFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      const departmentRef = ref(db, `departments/${department.id}`);
+      const departmentRef = ref(db, `companies/${companyId}/departments/${department.id}`);
       
       const updatedDepartmentData = {
         name: values.name,

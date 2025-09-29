@@ -1,3 +1,4 @@
+
 // src/app/dashboard/settings/components/edit-bank-dialog.tsx
 'use client';
 
@@ -29,6 +30,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Bank } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Bank name is required.'),
@@ -43,6 +45,7 @@ interface EditBankDialogProps {
 }
 
 export function EditBankDialog({ children, bank }: EditBankDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -56,9 +59,10 @@ export function EditBankDialog({ children, bank }: EditBankDialogProps) {
   });
 
   async function onSubmit(values: EditBankFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      const bankRef = ref(db, `banks/${bank.id}`);
+      const bankRef = ref(db, `companies/${companyId}/banks/${bank.id}`);
       await update(bankRef, values);
       
       setOpen(false);

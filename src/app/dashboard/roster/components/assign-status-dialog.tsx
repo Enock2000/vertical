@@ -1,3 +1,4 @@
+
 // src/app/dashboard/roster/components/assign-status-dialog.tsx
 'use client';
 
@@ -24,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Employee, RosterAssignment } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 interface AssignStatusDialogProps {
   open: boolean;
@@ -34,14 +36,15 @@ interface AssignStatusDialogProps {
 }
 
 export function AssignStatusDialog({ open, onOpenChange, employee, date, assignment }: AssignStatusDialogProps) {
+  const { companyId } = useAuth();
   const [status, setStatus] = useState<RosterAssignment['status'] | ''>(assignment?.status || '');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  if (!employee || !date) return null;
+  if (!employee || !date || !companyId) return null;
 
   const dateString = format(date, 'yyyy-MM-dd');
-  const rosterRef = ref(db, `rosters/${dateString}/${employee.id}`);
+  const rosterRef = ref(db, `companies/${companyId}/rosters/${dateString}/${employee.id}`);
 
   const handleSave = async () => {
     if (!status) {
@@ -50,7 +53,7 @@ export function AssignStatusDialog({ open, onOpenChange, employee, date, assignm
     }
     setIsLoading(true);
     try {
-        const newAssignment: Omit<RosterAssignment, 'id'> = {
+        const newAssignment: Omit<RosterAssignment, 'id' | 'companyId'> = {
             employeeId: employee.id,
             employeeName: employee.name,
             date: dateString,

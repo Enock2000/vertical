@@ -1,3 +1,4 @@
+
 // src/app/dashboard/recruitment/page.tsx
 'use client';
 
@@ -15,8 +16,10 @@ import { ApplicantsTable } from './components/applicants-table';
 import { OnboardingTab } from './components/onboarding-tab';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
+import { useAuth } from '@/app/auth-provider';
 
 export default function RecruitmentPage() {
+  const { companyId } = useAuth();
   const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
@@ -24,9 +27,11 @@ export default function RecruitmentPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const jobsRef = ref(db, 'jobVacancies');
-    const deptsRef = ref(db, 'departments');
-    const applicantsRef = ref(db, 'applicants');
+    if (!companyId) return;
+
+    const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
+    const deptsRef = ref(db, `companies/${companyId}/departments`);
+    const applicantsRef = ref(db, `companies/${companyId}/applicants`);
 
     let jobsLoaded = false, deptsLoaded = false, applicantsLoaded = false;
     const checkLoading = () => {
@@ -42,7 +47,6 @@ export default function RecruitmentPage() {
       if (!selectedVacancy && list.length > 0) {
         setSelectedVacancy(list[0]);
       } else if (selectedVacancy) {
-        // Update selected vacancy if it changed
         const updatedVacancy = list.find(v => v.id === selectedVacancy.id);
         setSelectedVacancy(updatedVacancy || (list.length > 0 ? list[0] : null));
       }
@@ -65,7 +69,7 @@ export default function RecruitmentPage() {
       deptsUnsubscribe();
       applicantsUnsubscribe();
     };
-  }, []);
+  }, [companyId]);
 
   const filteredApplicants = applicants.filter(
     (app) => app.jobVacancyId === selectedVacancy?.id
@@ -73,7 +77,6 @@ export default function RecruitmentPage() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
-      {/* Job Vacancies Column */}
       <Card className="md:col-span-1 flex flex-col">
         <CardHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -118,7 +121,6 @@ export default function RecruitmentPage() {
         </CardContent>
       </Card>
 
-      {/* Applicant Tracking Column */}
       <Card className="md:col-span-2">
         {selectedVacancy ? (
           <>
@@ -131,7 +133,7 @@ export default function RecruitmentPage() {
                         </CardDescription>
                     </div>
                     <Button asChild variant="outline" size="sm">
-                        <Link href={`/jobs/${selectedVacancy.id}`} target="_blank">
+                        <Link href={`/jobs/${selectedVacancy.id}?companyId=${companyId}`} target="_blank">
                             <ExternalLink className="mr-2 h-3.5 w-3.5" />
                             View Job
                         </Link>

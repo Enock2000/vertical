@@ -1,3 +1,4 @@
+
 // src/app/dashboard/organization/components/delete-department-alert.tsx
 'use client';
 
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/app/auth-provider';
 
 interface DeleteDepartmentAlertProps {
   children: React.ReactNode;
@@ -31,14 +33,16 @@ export function DeleteDepartmentAlert({
   departmentName,
   onDepartmentDeleted,
 }: DeleteDepartmentAlertProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      await remove(ref(db, `departments/${departmentId}`));
+      await remove(ref(db, `companies/${companyId}/departments/${departmentId}`));
       onDepartmentDeleted();
       setOpen(false);
       toast({

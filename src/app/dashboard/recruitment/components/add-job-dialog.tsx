@@ -1,3 +1,4 @@
+
 // src/app/dashboard/recruitment/components/add-job-dialog.tsx
 'use client';
 
@@ -31,6 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Department, JobVacancy } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   title: z.string().min(3, 'Job title must be at least 3 characters.'),
@@ -51,6 +53,7 @@ export function AddJobDialog({
   departments,
   onJobAdded,
 }: AddJobDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -65,14 +68,14 @@ export function AddJobDialog({
   });
 
   async function onSubmit(values: AddJobFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      const jobsRef = ref(db, 'jobVacancies');
+      const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
       const newJobRef = push(jobsRef);
       const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
 
-      const newJob: JobVacancy = {
-        id: newJobRef.key!,
+      const newJob: Omit<JobVacancy, 'id' | 'companyId'> = {
         title: values.title,
         departmentId: values.departmentId,
         departmentName,
@@ -81,7 +84,7 @@ export function AddJobDialog({
         createdAt: new Date().toISOString(),
       };
       
-      await set(newJobRef, newJob);
+      await set(newJobRef, { ...newJob, id: newJobRef.key });
 
       onJobAdded();
       setOpen(false);

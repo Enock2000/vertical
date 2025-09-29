@@ -1,14 +1,14 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import type { JobVacancy } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, Building2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -16,9 +16,12 @@ import { handleApplication } from '@/ai/flows/handle-application-flow';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 
-export default function JobApplicationPage() {
+function JobApplicationForm() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const jobId = params.jobId as string;
+    const companyId = searchParams.get('companyId');
+
     const [vacancy, setVacancy] = useState<JobVacancy | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,8 +31,8 @@ export default function JobApplicationPage() {
     const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
-        if (jobId) {
-            const jobRef = ref(db, `jobVacancies/${jobId}`);
+        if (jobId && companyId) {
+            const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
             const unsubscribe = onValue(jobRef, (snapshot) => {
                 setVacancy(snapshot.val());
                 setLoading(false);
@@ -39,8 +42,10 @@ export default function JobApplicationPage() {
             });
 
             return () => unsubscribe();
+        } else {
+            setLoading(false);
         }
-    }, [jobId]);
+    }, [jobId, companyId]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -88,10 +93,82 @@ export default function JobApplicationPage() {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     }
 
-    if (!vacancy) {
+    if (!vacancy || !companyId) {
         return <div className="flex h-screen items-center justify-center">Job vacancy not found.</div>;
     }
 
+    return (
+         <div className="container grid md:grid-cols-3 gap-8">
+            <div className="md:col-span-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-3xl">{vacancy.title}</CardTitle>
+                        <CardDescription className="flex items-center gap-2 pt-2">
+                            <Building2 className="h-4 w-4" />
+                            {vacancy.departmentName}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="prose dark:prose-invert max-w-none">
+                            <p>{vacancy.description}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="md:col-span-1">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Apply Now</CardTitle>
+                        <CardDescription>Fill out the form below to apply.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                            <input type="hidden" name="companyId" value={companyId} />
+                            <input type="hidden" name="jobVacancyId" value={jobId} />
+                            <input type="hidden" name="vacancyTitle" value={vacancy.title} />
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name</Label>
+                                <Input id="name" name="name" required disabled={isSubmitting} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" name="email" type="email" required disabled={isSubmitting} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input id="phone" name="phone" type="tel" required disabled={isSubmitting} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="resume">Resume</Label>
+                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {fileName || 'Upload your resume'}
+                                </Button>
+                                <Input 
+                                    ref={fileInputRef} 
+                                    id="resume" 
+                                    name="resume" 
+                                    type="file" 
+                                    className="hidden" 
+                                    required 
+                                    onChange={handleFileChange}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
+                                Submit Application
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    )
+}
+
+
+export default function JobApplicationPage() {
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -106,71 +183,9 @@ export default function JobApplicationPage() {
                 </div>
             </header>
             <main className="flex-1 py-12">
-                <div className="container grid md:grid-cols-3 gap-8">
-                    <div className="md:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-3xl">{vacancy.title}</CardTitle>
-                                <CardDescription className="flex items-center gap-2 pt-2">
-                                    <Building2 className="h-4 w-4" />
-                                    {vacancy.departmentName}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="prose dark:prose-invert max-w-none">
-                                    <p>{vacancy.description}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <div className="md:col-span-1">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Apply Now</CardTitle>
-                                <CardDescription>Fill out the form below to apply.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-                                    <input type="hidden" name="jobVacancyId" value={jobId} />
-                                    <input type="hidden" name="vacancyTitle" value={vacancy.title} />
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Full Name</Label>
-                                        <Input id="name" name="name" required disabled={isSubmitting} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input id="email" name="email" type="email" required disabled={isSubmitting} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="phone">Phone Number</Label>
-                                        <Input id="phone" name="phone" type="tel" required disabled={isSubmitting} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="resume">Resume</Label>
-                                        <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
-                                            <Upload className="mr-2 h-4 w-4" />
-                                            {fileName || 'Upload your resume'}
-                                        </Button>
-                                        <Input 
-                                            ref={fileInputRef} 
-                                            id="resume" 
-                                            name="resume" 
-                                            type="file" 
-                                            className="hidden" 
-                                            required 
-                                            onChange={handleFileChange}
-                                            disabled={isSubmitting}
-                                        />
-                                    </div>
-                                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                        {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                                        Submit Application
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
+                <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
+                    <JobApplicationForm />
+                </Suspense>
             </main>
         </div>
     );

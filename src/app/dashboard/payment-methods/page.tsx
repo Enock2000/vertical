@@ -1,3 +1,4 @@
+
 // src/app/dashboard/payment-methods/page.tsx
 'use client';
 
@@ -9,15 +10,19 @@ import { columns } from './components/columns';
 import type { Employee, Bank } from '@/lib/data';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import { useAuth } from '@/app/auth-provider';
 
 export default function PaymentMethodsPage() {
+  const { companyId } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!companyId) return;
+
     const employeesRef = ref(db, 'employees');
-    const banksRef = ref(db, 'banks');
+    const banksRef = ref(db, `companies/${companyId}/banks`);
 
     let employeesLoaded = false;
     let banksLoaded = false;
@@ -31,10 +36,7 @@ export default function PaymentMethodsPage() {
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const employeeList = Object.keys(data).map(key => ({
-          ...data[key],
-          id: key,
-        }));
+        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
         setEmployees(employeeList);
       } else {
         setEmployees([]);
@@ -59,7 +61,7 @@ export default function PaymentMethodsPage() {
         employeesUnsubscribe();
         banksUnsubscribe();
     };
-  }, []);
+  }, [companyId]);
 
   const handleAction = () => {
     // The onValue listener will automatically update the state

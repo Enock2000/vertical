@@ -1,3 +1,4 @@
+
 // src/app/dashboard/organization/components/add-department-dialog.tsx
 'use client';
 
@@ -28,6 +29,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Department name must be at least 2 characters.'),
@@ -49,6 +51,7 @@ export function AddDepartmentDialog({
   children,
   onDepartmentAdded,
 }: AddDepartmentDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -63,9 +66,13 @@ export function AddDepartmentDialog({
   });
 
   async function onSubmit(values: AddDepartmentFormValues) {
+    if (!companyId) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Company not found.' });
+        return;
+    }
     setIsLoading(true);
     try {
-      const departmentsRef = ref(db, 'departments');
+      const departmentsRef = ref(db, `companies/${companyId}/departments`);
       const newDeptRef = push(departmentsRef);
       
       await set(newDeptRef, {

@@ -1,3 +1,4 @@
+
 // src/ai/flows/run-payroll-flow.ts
 'use server';
 
@@ -10,7 +11,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { ref, get, set, push, child } from 'firebase/database';
+import { ref, get, set, push } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import {
   type Employee,
@@ -22,6 +23,11 @@ import {
 } from '@/lib/data';
 import { format } from 'date-fns';
 
+const PayrollRunInputSchema = z.object({
+  companyId: z.string(),
+  actorName: z.string(),
+});
+
 const PayrollRunOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -31,13 +37,13 @@ const PayrollRunOutputSchema = z.object({
 
 export type PayrollRunOutput = z.infer<typeof PayrollRunOutputSchema>;
 
-export async function runPayroll(): Promise<PayrollRunOutput> {
-  return runPayrollFlow({});
+export async function runPayroll(companyId: string, actorName: string): Promise<PayrollRunOutput> {
+  return runPayrollFlow({ companyId, actorName });
 }
 
 // Helper function to create an audit log
-async function createAuditLog(log: Omit<AuditLog, 'id'>) {
-    const logRef = ref(db, 'auditLogs');
+async function createAuditLog(companyId: string, log: Omit<AuditLog, 'id' | 'companyId'>) {
+    const logRef = ref(db, `companies/${companyId}/auditLogs`);
     const newLogRef = push(logRef);
     await set(newLogRef, { ...log, id: newLogRef.key });
 }
@@ -45,24 +51,23 @@ async function createAuditLog(log: Omit<AuditLog, 'id'>) {
 const runPayrollFlow = ai.defineFlow(
   {
     name: 'runPayrollFlow',
-    inputSchema: z.object({}),
+    inputSchema: PayrollRunInputSchema,
     outputSchema: PayrollRunOutputSchema,
   },
-  async () => {
+  async ({ companyId, actorName }) => {
     try {
       // 1. Fetch payroll configuration
-      const configRef = ref(db, 'payrollConfig');
+      const configRef = ref(db, `companies/${companyId}/payrollConfig`);
       const configSnapshot = await get(configRef);
       const config: PayrollConfig | null = configSnapshot.val();
       if (!config) {
         return { success: false, message: 'Payroll configuration not found. Please set it up in Settings.' };
       }
 
-      // 2. Fetch all active employees
-      const employeesRef = ref(db, 'employees');
-      const employeesSnapshot = await get(employeesRef);
+      // 2. Fetch all active employees for the company
+      const employeesSnapshot = await get(ref(db, 'employees'));
       const allEmployees: Record<string, Employee> = employeesSnapshot.val();
-      const activeEmployees = Object.values(allEmployees).filter(e => e.status === 'Active');
+      const activeEmployees = Object.values(allEmployees).filter(e => e.companyId === companyId && e.status === 'Active');
 
       if (activeEmployees.length === 0) {
         return { success: false, message: 'No active employees found to process payroll for.' };
@@ -94,12 +99,11 @@ const runPayrollFlow = ai.defineFlow(
 
       // 4. Create the main payroll run record
       const runDate = new Date().toISOString();
-      const payrollRunsRef = ref(db, 'payrollRuns');
+      const payrollRunsRef = ref(db, `companies/${companyId}/payrollRuns`);
       const newPayrollRunRef = push(payrollRunsRef);
       const payrollRunId = newPayrollRunRef.key!;
 
-      const payrollRunData: PayrollRun = {
-        id: payrollRunId,
+      const payrollRunData: Omit<PayrollRun, 'id' | 'companyId'> = {
         runDate,
         employeeCount,
         totalAmount,
@@ -123,8 +127,8 @@ const runPayrollFlow = ai.defineFlow(
       const base64Csv = Buffer.from(csvContent).toString('base64');
 
       // 6. Create an audit log for the successful payroll run
-      await createAuditLog({
-          actor: 'System',
+      await createAuditLog(companyId, {
+          actor: actorName,
           action: 'Payroll Run Executed',
           details: `Processed payroll for ${employeeCount} employees. Total amount: ${totalAmount.toFixed(2)}. ACH file generated.`,
           timestamp: runDate,
@@ -138,8 +142,8 @@ const runPayrollFlow = ai.defineFlow(
       };
     } catch (error: any) {
       console.error('Error running payroll flow:', error);
-       await createAuditLog({
-          actor: 'System',
+       await createAuditLog(companyId, {
+          actor: actorName,
           action: 'Payroll Run Failed',
           details: error.message || 'An unexpected error occurred during payroll processing.',
           timestamp: new Date().toISOString(),

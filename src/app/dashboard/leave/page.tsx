@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,16 +19,19 @@ import { RequestLeaveDialog } from './components/request-leave-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { ref, onValue, update } from 'firebase/database';
+import { useAuth } from '@/app/auth-provider';
 
 export default function LeavePage() {
+  const { companyId } = useAuth();
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("Initializing leave page data fetch."); // Temporary log to trigger re-build
-    const requestsRef = ref(db, 'leaveRequests');
+    if (!companyId) return;
+
+    const requestsRef = ref(db, `companies/${companyId}/leaveRequests`);
     const employeesRef = ref(db, 'employees');
     let requestsLoaded = false;
     let employeesLoaded = false;
@@ -60,10 +64,7 @@ export default function LeavePage() {
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const employeeList = Object.keys(data).map(key => ({
-          ...data[key],
-          id: key,
-        }));
+        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
         setEmployees(employeeList);
       } else {
         setEmployees([]);
@@ -80,7 +81,7 @@ export default function LeavePage() {
       requestsUnsubscribe();
       employeesUnsubscribe();
     };
-  }, []);
+  }, [companyId]);
 
   const handleLeaveRequestAdded = () => {
     // onValue listener will handle updates
@@ -88,14 +89,14 @@ export default function LeavePage() {
 
   const handleStatusUpdate = async (id: string, status: 'Approved' | 'Rejected') => {
     const request = leaveRequests.find(r => r.id === id);
-    if (!request) return;
+    if (!request || !companyId) return;
 
     try {
-        const requestRef = ref(db, `leaveRequests/${id}`);
+        const requestRef = ref(db, `companies/${companyId}/leaveRequests/${id}`);
         await update(requestRef, { status });
         
         // Notify the employee
-        await createNotification({
+        await createNotification(companyId, {
             userId: request.employeeId,
             title: `Leave Request ${status}`,
             message: `Your leave request for ${request.leaveType} has been ${status.toLowerCase()}.`,

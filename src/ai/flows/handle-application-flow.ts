@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -11,10 +12,11 @@ import { z } from 'zod';
 import { db, storage } from '@/lib/firebase';
 import { ref as dbRef, push, set } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import type { Applicant, JobVacancy } from '@/lib/data';
+import type { Applicant } from '@/lib/data';
 import { createNotification, getAdminUserIds } from '@/lib/data';
 
 const ApplicationInputSchema = z.object({
+  companyId: z.string(),
   jobVacancyId: z.string(),
   name: z.string(),
   email: z.string().email(),
@@ -30,6 +32,7 @@ export async function handleApplication(
   formData: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
     const rawData = {
+        companyId: formData.get('companyId'),
         jobVacancyId: formData.get('jobVacancyId'),
         name: formData.get('name'),
         email: formData.get('email'),
@@ -57,19 +60,19 @@ const handleApplicationFlow = ai.defineFlow(
     inputSchema: ApplicationInputSchema.extend({ resumeFile: z.any(), vacancyTitle: z.string() }),
     outputSchema: ApplicationOutputSchema,
   },
-  async ({ jobVacancyId, name, email, phone, resumeFile, vacancyTitle }) => {
+  async ({ companyId, jobVacancyId, name, email, phone, resumeFile, vacancyTitle }) => {
     try {
         // 1. Upload resume to Firebase Storage
-        const fileRef = storageRef(storage, `resumes/${jobVacancyId}/${Date.now()}-${resumeFile.name}`);
+        const fileRef = storageRef(storage, `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`);
         const snapshot = await uploadBytes(fileRef, resumeFile);
         const resumeUrl = await getDownloadURL(snapshot.ref);
 
         // 2. Create applicant record in Realtime Database
-        const applicantsRef = dbRef(db, 'applicants');
+        const applicantsRef = dbRef(db, `companies/${companyId}/applicants`);
         const newApplicantRef = push(applicantsRef);
         const newApplicantId = newApplicantRef.key!;
 
-        const newApplicant: Omit<Applicant, 'id'> = {
+        const newApplicant: Omit<Applicant, 'id' | 'companyId'> = {
             jobVacancyId,
             name,
             email,
@@ -85,9 +88,9 @@ const handleApplicationFlow = ai.defineFlow(
         });
         
         // 3. Notify admins
-        const adminIds = await getAdminUserIds();
+        const adminIds = await getAdminUserIds(companyId);
         for (const adminId of adminIds) {
-            await createNotification({
+            await createNotification(companyId, {
                 userId: adminId,
                 title: 'New Job Application',
                 message: `${name} has applied for the ${vacancyTitle} position.`,

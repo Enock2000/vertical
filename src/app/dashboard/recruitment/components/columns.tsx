@@ -1,3 +1,4 @@
+
 // src/app/dashboard/recruitment/components/columns.tsx
 "use client"
 
@@ -25,14 +26,17 @@ import { useToast } from "@/hooks/use-toast"
 import { GenerateOfferDialog } from "./generate-offer-dialog"
 import type { Department } from "@/lib/data"
 import { ViewDocumentsDialog } from "./view-documents-dialog"
+import { useAuth } from "@/app/auth-provider"
 
 
 const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, status: ApplicantStatus }) => {
+    const { companyId } = useAuth();
     const { toast } = useToast();
 
     const handleStatusChange = async () => {
+        if (!companyId) return;
         try {
-            await update(ref(db, `applicants/${applicantId}`), { status });
+            await update(ref(db, `companies/${companyId}/applicants/${applicantId}`), { status });
             toast({
                 title: "Status Updated",
                 description: `Applicant status has been changed to "${status}".`,

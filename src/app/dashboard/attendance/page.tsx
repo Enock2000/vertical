@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -9,21 +10,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
 import type { AttendanceRecord, Employee, PayrollConfig } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 export default function AttendancePage() {
+    const { companyId } = useAuth();
     const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [loading, setLoading] = useState(true);
     
-    // For now, we'll just fetch today's attendance.
-    // A date picker could be added for more functionality.
     const todayString = format(new Date(), 'yyyy-MM-dd');
 
     useEffect(() => {
-        const attendanceRef = ref(db, `attendance/${todayString}`);
+        if (!companyId) return;
+
+        const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}`);
         const employeesRef = ref(db, 'employees');
-        const configRef = ref(db, 'payrollConfig');
+        const configRef = ref(db, `companies/${companyId}/payrollConfig`);
 
         let attendanceLoaded = false;
         let employeesLoaded = false;
@@ -57,10 +60,7 @@ export default function AttendancePage() {
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const employeeList = Object.keys(data).map(key => ({
-                    ...data[key],
-                    id: key,
-                }));
+                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
                 setEmployees(employeeList);
             } else {
                 setEmployees([]);
@@ -84,7 +84,7 @@ export default function AttendancePage() {
             employeesUnsubscribe();
             configUnsubscribe();
         };
-    }, [todayString]);
+    }, [companyId, todayString]);
     
     const enrichedAttendanceRecords = useMemo(() => {
         const employeeMap = new Map(employees.map(e => [e.id, e]));

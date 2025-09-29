@@ -1,3 +1,4 @@
+
 // src/app/dashboard/roster/page.tsx
 'use client';
 
@@ -8,17 +9,21 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Employee, LeaveRequest, RosterAssignment } from '@/lib/data';
 import { RosterCalendar } from './components/roster-calendar';
+import { useAuth } from '@/app/auth-provider';
 
 export default function RosterPage() {
+    const { companyId } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!companyId) return;
+
         const employeesRef = ref(db, 'employees');
-        const leaveRef = ref(db, 'leaveRequests');
-        const rosterRef = ref(db, 'rosters');
+        const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
+        const rosterRef = ref(db, `companies/${companyId}/rosters`);
 
         let loadedCount = 0;
         const totalToLoad = 3;
@@ -30,25 +35,22 @@ export default function RosterPage() {
             }
         };
 
-        const createOnValueCallback = (setter: React.Dispatch<any>) => {
-            return (snapshot: any) => {
-                const data = snapshot.val();
-                if (data) {
-                    setter(Object.values(data));
-                } else {
-                    setter([]);
-                }
-                checkLoading();
-            };
-        };
-
-        const onErrorCallback = (error: Error) => {
-            console.error("Firebase read failed:", error.message);
+        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const companyEmployees = Object.values<Employee>(data).filter(e => e.companyId === companyId);
+                setEmployees(companyEmployees);
+            } else {
+                setEmployees([]);
+            }
             checkLoading();
-        };
+        }, (error) => { console.error(error); checkLoading(); });
 
-        const employeesUnsubscribe = onValue(employeesRef, createOnValueCallback(setEmployees), onErrorCallback);
-        const leaveUnsubscribe = onValue(leaveRef, createOnValueCallback(setLeaveRequests), onErrorCallback);
+        const leaveUnsubscribe = onValue(leaveRef, (snapshot) => {
+            setLeaveRequests(snapshot.val() ? Object.values(snapshot.val()) : []);
+            checkLoading();
+        }, (error) => { console.error(error); checkLoading(); });
+
         const rosterUnsubscribe = onValue(rosterRef, (snapshot) => {
             const data = snapshot.val();
             const assignments: RosterAssignment[] = [];
@@ -64,7 +66,7 @@ export default function RosterPage() {
             }
             setRosterAssignments(assignments);
             checkLoading();
-        }, onErrorCallback);
+        }, (error) => { console.error(error); checkLoading(); });
 
 
         return () => {
@@ -72,7 +74,7 @@ export default function RosterPage() {
             leaveUnsubscribe();
             rosterUnsubscribe();
         };
-    }, []);
+    }, [companyId]);
 
     return (
         <Card>

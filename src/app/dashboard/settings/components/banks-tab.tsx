@@ -1,3 +1,4 @@
+
 // src/app/dashboard/settings/components/banks-tab.tsx
 'use client';
 
@@ -23,12 +24,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useAuth } from '@/app/auth-provider';
 
 interface BanksTabProps {
     banks: Bank[];
 }
 
 export function BanksTab({ banks }: BanksTabProps) {
+    const { companyId } = useAuth();
     const { toast } = useToast();
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [bankToDelete, setBankToDelete] = useState<Bank | null>(null);
@@ -39,9 +42,9 @@ export function BanksTab({ banks }: BanksTabProps) {
     };
 
     const handleDeleteConfirm = async () => {
-        if (!bankToDelete) return;
+        if (!bankToDelete || !companyId) return;
         try {
-            await remove(ref(db, `banks/${bankToDelete.id}`));
+            await remove(ref(db, `companies/${companyId}/banks/${bankToDelete.id}`));
             toast({
                 title: "Bank Deleted",
                 description: `"${bankToDelete.name}" has been removed.`,

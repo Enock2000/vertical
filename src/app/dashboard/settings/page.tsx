@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,6 +13,7 @@ import type { PayrollConfig, Bank } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PayrollSettingsTab } from './components/payroll-settings-tab';
 import { BanksTab } from './components/banks-tab';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -31,6 +33,7 @@ const formSchema = z.object({
 type SettingsFormValues = z.infer<typeof formSchema>;
 
 export default function SettingsPage() {
+  const { companyId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [banks, setBanks] = useState<Bank[]>([]);
   const { toast } = useToast();
@@ -53,8 +56,10 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    const configRef = ref(db, 'payrollConfig');
-    const banksRef = ref(db, 'banks');
+    if (!companyId) return;
+    
+    const configRef = ref(db, `companies/${companyId}/payrollConfig`);
+    const banksRef = ref(db, `companies/${companyId}/banks`);
 
     let configLoaded = false;
     let banksLoaded = false;
@@ -89,7 +94,7 @@ export default function SettingsPage() {
         configUnsubscribe();
         banksUnsubscribe();
     };
-  }, [form]);
+  }, [companyId, form]);
 
 
   if (loading) {

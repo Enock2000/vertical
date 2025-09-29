@@ -1,3 +1,4 @@
+
 // src/app/careers/page.tsx
 'use client';
 
@@ -16,10 +17,23 @@ export default function CareersPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // In a multi-tenant app, this page would need a way to know which company's jobs to show.
+        // For a public careers page, one might show all jobs or have a selector.
+        // For this example, we'll assume we fetch from a specific or all companies.
+        // This implementation will fetch ALL open jobs from ALL companies.
         const jobsQuery = query(ref(db, 'jobVacancies'), orderByChild('status'), equalTo('Open'));
         const unsubscribe = onValue(jobsQuery, (snapshot) => {
-            const data = snapshot.val();
-            const list: JobVacancy[] = data ? Object.values(data) : [];
+            const companiesData = snapshot.val();
+            const list: JobVacancy[] = [];
+            if (companiesData) {
+                 Object.keys(companiesData).forEach(companyId => {
+                    const companyJobs = companiesData[companyId];
+                    Object.keys(companyJobs).forEach(jobId => {
+                        list.push({ ...companyJobs[jobId], id: jobId, companyId });
+                    });
+                });
+            }
+
             list.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setVacancies(list);
             setLoading(false);
@@ -68,7 +82,7 @@ export default function CareersPage() {
                                                 </CardDescription>
                                             </div>
                                             <Button asChild>
-                                                <Link href={`/jobs/${job.id}`}>
+                                                <Link href={`/jobs/${job.id}?companyId=${job.companyId}`}>
                                                     View & Apply
                                                     <ArrowRight className="ml-2 h-4 w-4" />
                                                 </Link>

@@ -1,9 +1,9 @@
+
 // src/app/dashboard/settings/components/payroll-settings-tab.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm, UseFormReturn } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
+import { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -37,17 +38,19 @@ interface PayrollSettingsTabProps {
 }
 
 export function PayrollSettingsTab({ form }: PayrollSettingsTabProps) {
+  const { companyId } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   async function onSubmit(values: SettingsFormValues) {
+    if (!companyId) return;
     setIsSaving(true);
     try {
       const newValues = {
         ...values,
         allowedIpAddress: values.allowedIpAddress || null, // Store as null if empty
       };
-      await set(ref(db, 'payrollConfig'), newValues);
+      await set(ref(db, `companies/${companyId}/payrollConfig`), newValues);
       toast({
         title: 'Settings Saved',
         description: 'Your payroll configuration has been updated.',

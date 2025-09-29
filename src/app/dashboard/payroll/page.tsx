@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { columns } from "./components/columns";
 import { Employee, calculatePayroll, PayrollConfig, PayrollDetails, PayrollRun } from '@/lib/data';
 import { PayslipDialog } from './components/payslip-dialog';
 import { db } from '@/lib/firebase';
-import { ref, onValue, get } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,11 +25,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { runPayroll } from '@/ai/flows/run-payroll-flow';
 import { format } from 'date-fns';
-import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
+import { useAuth } from '@/app/auth-provider';
 
 export default function PayrollPage() {
+    const { companyId, employee: adminEmployee } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
@@ -37,9 +38,11 @@ export default function PayrollPage() {
     const { toast } = useToast();
 
     useEffect(() => {
+        if (!companyId) return;
+
         const employeesRef = ref(db, 'employees');
-        const configRef = ref(db, 'payrollConfig');
-        const runsRef = ref(db, 'payrollRuns');
+        const configRef = ref(db, `companies/${companyId}/payrollConfig`);
+        const runsRef = ref(db, `companies/${companyId}/payrollRuns`);
 
         let employeesLoaded = false;
         let configLoaded = false;
@@ -54,7 +57,7 @@ export default function PayrollPage() {
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const employeeList = Object.values<Employee>(data).filter(e => e.status === 'Active');
+                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.status === 'Active');
                 setEmployees(employeeList);
             } else {
                 setEmployees([]);
@@ -86,7 +89,7 @@ export default function PayrollPage() {
             configUnsubscribe();
             runsUnsubscribe();
         };
-    }, []);
+    }, [companyId]);
 
     const payrollDetailsMap = useMemo(() => {
         if (!payrollConfig || employees.length === 0) {
@@ -111,9 +114,10 @@ export default function PayrollPage() {
     }, [payrollDetailsMap]);
     
     const handleRunPayroll = async () => {
+        if (!companyId || !adminEmployee) return;
         setIsProcessing(true);
         try {
-            const result = await runPayroll();
+            const result = await runPayroll(companyId, adminEmployee.name);
             if(result.success && result.achFileContent) {
                 toast({
                     title: "Payroll Processed",
