@@ -80,13 +80,20 @@ export default function DashboardLayout({
       if (!user) {
         // Not logged in, redirect to login page
         router.push('/login');
-      } else if (employee && employee.role !== 'Admin') {
-        // Logged in but not an admin, redirect to employee portal
+      } else if (employee) {
+        if (employee.role === 'Super Admin') {
+            router.push('/super-admin');
+        } else if (employee.role !== 'Admin') {
+            // Logged in but not an admin, redirect to employee portal
+            router.push('/employee-portal');
+        }
+      } else {
+        // User exists in auth, but not in DB (or is not an admin)
         router.push('/employee-portal');
       }
-      // If user is logged in and is an admin, they can stay.
     }
   }, [user, employee, loading, router]);
+
 
   if (loading || !employee || employee.role !== 'Admin') {
     return (

@@ -30,7 +30,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useTheme } from 'next-themes';
-import { Moon, Sun, Bell, Check } from 'lucide-react';
+import { Moon, Sun, Bell, Check, UserCog } from 'lucide-react';
 
 export function UserNav() {
   const { user, employee, companyId, loading } = useAuth();
@@ -106,6 +106,8 @@ export function UserNav() {
   }
   
   const isAdmin = employee.role === 'Admin';
+  const isSuperAdmin = employee.role === 'Super Admin';
+
 
   return (
     <div className="flex items-center gap-2">
@@ -185,6 +187,14 @@ export function UserNav() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
                     Settings
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
+           )}
+           {isSuperAdmin && (
+             <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => router.push('/super-admin')}>
+                    <UserCog className="mr-2 h-4 w-4" />
+                    Super Admin
                 </DropdownMenuItem>
             </DropdownMenuGroup>
            )}
