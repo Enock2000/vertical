@@ -2,11 +2,14 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Calendar } from '@/components/ui/calendar';
-import { format, isSameDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameMonth, isToday } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import type { Employee, LeaveRequest, RosterAssignment } from '@/lib/data';
 import { AssignStatusDialog } from './assign-status-dialog';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface RosterCalendarProps {
   employees: Employee[];
@@ -15,17 +18,17 @@ interface RosterCalendarProps {
 }
 
 export function RosterCalendar({ employees, leaveRequests, rosterAssignments }: RosterCalendarProps) {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const eventsByDate = useMemo(() => {
-    const events: { [key: string]: (RosterAssignment | LeaveRequest)[] } = {};
+  const eventsByDateAndEmployee = useMemo(() => {
+    const events: { [key: string]: RosterAssignment | { status: 'On Leave' } } = {};
+    const key = (date: string, employeeId: string) => `${date}-${employeeId}`;
 
     rosterAssignments.forEach(assignment => {
-      const dateKey = assignment.date;
-      if (!events[dateKey]) events[dateKey] = [];
-      events[dateKey].push(assignment);
+      events[key(assignment.date, assignment.employeeId)] = assignment;
     });
 
     leaveRequests.forEach(leave => {
@@ -34,8 +37,7 @@ export function RosterCalendar({ employees, leaveRequests, rosterAssignments }: 
             const endDate = new Date(leave.endDate);
             while (currentDate <= endDate) {
                 const dateKey = format(currentDate, 'yyyy-MM-dd');
-                if (!events[dateKey]) events[dateKey] = [];
-                events[dateKey].push({ ...leave, date: dateKey, status: 'On Leave' } as any);
+                events[key(dateKey, leave.employeeId)] = { status: 'On Leave' };
                 currentDate.setDate(currentDate.getDate() + 1);
             }
         }
@@ -53,64 +55,82 @@ export function RosterCalendar({ employees, leaveRequests, rosterAssignments }: 
   const currentAssignment = useMemo(() => {
     if (!selectedDate || !selectedEmployee) return null;
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
-    return rosterAssignments.find(a => a.date === dateKey && a.employeeId === selectedEmployee.id) || null;
-  }, [selectedDate, selectedEmployee, rosterAssignments]);
+    const event = eventsByDateAndEmployee[`${dateKey}-${selectedEmployee.id}`];
+    if (event && 'id' in event) { // Check if it's a RosterAssignment
+        return event as RosterAssignment;
+    }
+    return null;
+  }, [selectedDate, selectedEmployee, eventsByDateAndEmployee]);
 
-  const DayContent = (day: Date) => {
-    const dateKey = format(day, 'yyyy-MM-dd');
-    const dayEvents = eventsByDate[dateKey] || [];
-    
-    return (
-        <div className="h-full w-full">
-            <div className="absolute top-1 right-1 text-xs">{format(day, 'd')}</div>
-            <div className="mt-4 space-y-1 p-1">
-                 {employees.map(employee => {
-                    const event = dayEvents.find(e => e.employeeId === employee.id);
-                    let variant: "default" | "secondary" | "destructive" | "outline" = "secondary";
-                    let text = 'N/A';
-                    if (event) {
-                        if (event.status === 'On Duty') { variant = 'default'; text = 'Duty'; }
-                        else if (event.status === 'Off Day') { variant = 'outline'; text = 'Off'; }
-                        else if (event.status === 'On Leave') { variant = 'destructive'; text = 'Leave'; }
-                    }
-
-                    return (
-                        <div key={employee.id} onClick={() => handleDayClick(employee, day)} className="cursor-pointer">
-                             <Badge variant={variant} className="w-full justify-center truncate">{text}</Badge>
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-  };
+  const start = startOfMonth(currentMonth);
+  const end = endOfMonth(currentMonth);
+  const days = eachDayOfInterval({ start, end });
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="md:col-span-1 p-4 border rounded-md h-fit">
-            <h3 className="font-semibold mb-2">Employees</h3>
-            <ul className="space-y-2">
-            {employees.map(employee => (
-                <li key={employee.id} className="text-sm p-2 rounded-md bg-muted">
-                    {employee.name}
-                </li>
-            ))}
-            </ul>
+    <div className="space-y-4">
+        <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">{format(currentMonth, 'MMMM yyyy')}</h3>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                 <Button variant="outline" size="sm" onClick={() => setCurrentMonth(new Date())}>
+                    Today
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
-        <div className="md:col-span-3">
-             <Calendar
-                mode="single"
-                className="p-0 [&_td]:p-0 [&_tr]:border-0 [&_tbody]:divide-y-0"
-                components={{
-                    DayContent: ({ date }) => DayContent(date),
-                }}
-                styles={{
-                    head_cell: { width: '14.28%', textAlign: 'center' },
-                    day: { height: '120px', width: '14.28%', verticalAlign: 'top', border: '1px solid hsl(var(--border))' },
-                    table: { width: '100%', borderCollapse: 'collapse' },
-                }}
-            />
+
+        <div className="rounded-md border">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[150px] sticky left-0 bg-background z-10">Employee</TableHead>
+                        {days.map(day => (
+                            <TableHead key={day.toString()} className="text-center">
+                                <div className={cn("flex flex-col items-center", isToday(day) && "text-primary")}>
+                                    <span className="text-xs">{weekDays[getDay(day)]}</span>
+                                    <span>{format(day, 'd')}</span>
+                                </div>
+                            </TableHead>
+                        ))}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {employees.map(employee => (
+                        <TableRow key={employee.id}>
+                            <TableCell className="font-medium sticky left-0 bg-background z-10">{employee.name}</TableCell>
+                            {days.map(day => {
+                                const dateKey = format(day, 'yyyy-MM-dd');
+                                const event = eventsByDateAndEmployee[`${dateKey}-${employee.id}`];
+                                let variant: "default" | "secondary" | "destructive" | "outline" | null = null;
+                                let text = 'N/A';
+
+                                if (event) {
+                                    if (event.status === 'On Duty') { variant = 'default'; text = 'Duty'; }
+                                    else if (event.status === 'Off Day') { variant = 'outline'; text = 'Off'; }
+                                    else if (event.status === 'On Leave') { variant = 'destructive'; text = 'Leave'; }
+                                }
+                                
+                                return (
+                                    <TableCell key={day.toString()} className="text-center p-2 cursor-pointer hover:bg-muted" onClick={() => handleDayClick(employee, day)}>
+                                        {variant ? (
+                                             <Badge variant={variant}>{text}</Badge>
+                                        ) : (
+                                            <span className="text-muted-foreground">{text}</span>
+                                        )}
+                                    </TableCell>
+                                )
+                            })}
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </div>
+        
         <AssignStatusDialog
             open={isDialogOpen}
             onOpenChange={setIsDialogOpen}
