@@ -43,10 +43,6 @@ import {
    import {
     ChartConfig,
     ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent
 } from "@/components/ui/chart"
 
   const chartConfig = {
@@ -155,11 +151,15 @@ import {
         maximumFractionDigits: 0,
     });
     
-    const numberFormatter = new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: 0,
-    });
-    
     const lastDay = lastDayOfMonth(new Date());
+
+    const getDayWithSuffix = (date: Date) => {
+        const day = format(date, 'd');
+        if (day.endsWith('1') && day !== '11') return `${day}st`;
+        if (day.endsWith('2') && day !== '12') return `${day}nd`;
+        if (day.endsWith('3') && day !== '13') return `${day}rd`;
+        return `${day}th`;
+    }
 
     if (loading) {
         return (
@@ -179,13 +179,13 @@ import {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="flex items-end justify-between">
-                    <div>
-                        <div className="text-2xl font-bold">{currencyFormatter.format(totalPayroll)}</div>
+                    <div className="flex-1">
+                        <div className="text-2xl font-bold">ZMW {totalPayroll.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">
                             Estimated for this month
                         </p>
                     </div>
-                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                     <ChartContainer config={chartConfig} className="w-16 h-16 -mr-4">
                         <PieChart>
                           <Pie data={[{ value: 1 }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
                              <Cell fill="var(--color-payroll)" />
@@ -200,13 +200,13 @@ import {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="flex items-end justify-between">
-                    <div>
+                    <div className="flex-1">
                         <div className="text-2xl font-bold">{activeEmployeesCount}</div>
                         <p className="text-xs text-muted-foreground">
                            out of {employees.length} total
                         </p>
                     </div>
-                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                     <ChartContainer config={chartConfig} className="w-16 h-16 -mr-4">
                         <PieChart>
                           <Pie data={[{ value: activeEmployeesCount }, { value: employees.length - activeEmployeesCount }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
                              <Cell fill="var(--color-employees)" />
@@ -222,13 +222,13 @@ import {
                   <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent className="flex items-end justify-between">
-                    <div>
+                    <div className="flex-1">
                         <div className="text-2xl font-bold">0</div>
                         <p className="text-xs text-muted-foreground">
                             No open issues
                         </p>
                     </div>
-                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                     <ChartContainer config={chartConfig} className="w-16 h-16 -mr-4">
                         <PieChart>
                           <Pie data={[{ value: 1 }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
                              <Cell fill="var(--color-compliance)" />
@@ -243,13 +243,13 @@ import {
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                  <CardContent className="flex items-end justify-between">
-                    <div>
-                        <div className="text-2xl font-bold">{format(lastDay, "do")}</div>
+                    <div className="flex-1">
+                        <div className="text-2xl font-bold">{getDayWithSuffix(lastDay)}</div>
                         <p className="text-xs text-muted-foreground">
                             {format(lastDay, "MMMM")}
                         </p>
                     </div>
-                     <ChartContainer config={chartConfig} className="w-16 h-16">
+                     <ChartContainer config={chartConfig} className="w-16 h-16 -mr-4">
                         <PieChart>
                           <Pie data={[{ value: new Date().getDate() }, { value: lastDay.getDate() - new Date().getDate() }]} dataKey="value" nameKey="name" innerRadius={18} outerRadius={24} >
                              <Cell fill="var(--color-payrollDate)" />
