@@ -286,6 +286,15 @@ export type Enrollment = {
   status: 'Enrolled' | 'In Progress' | 'Completed';
 };
 
+export type TrainingSubmission = {
+    id: string;
+    companyId: string;
+    employeeId: string;
+    courseId: string;
+    submissionDate: string;
+    answers: Record<string, string>; // questionId: answer
+};
+
 export type Certification = {
   id: string;
   companyId: string;
