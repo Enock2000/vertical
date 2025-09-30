@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
@@ -267,6 +266,7 @@ export type Question = {
     text: string;
     type: 'multiple-choice' | 'short-answer';
     options?: string[];
+    correctAnswer?: string;
 };
 
 export type TrainingCourse = {
@@ -284,6 +284,7 @@ export type Enrollment = {
   courseId: string;
   enrollmentDate: string; // ISO 8601
   status: 'Enrolled' | 'In Progress' | 'Completed';
+  score?: number; // Percentage score
 };
 
 export type TrainingSubmission = {
@@ -293,6 +294,7 @@ export type TrainingSubmission = {
     courseId: string;
     submissionDate: string;
     answers: Record<string, string>; // questionId: answer
+    score: number; // Percentage score
 };
 
 export type Certification = {

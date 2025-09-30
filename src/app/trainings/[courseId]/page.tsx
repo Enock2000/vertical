@@ -76,7 +76,7 @@ export default function TrainingCoursePage() {
             if (result.success) {
                 toast({
                     title: 'Training Completed!',
-                    description: 'Your answers have been submitted successfully.',
+                    description: `Your answers have been submitted successfully. Your score: ${result.score}%`,
                 });
                 router.push('/employee-portal');
             } else {

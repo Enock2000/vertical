@@ -7,6 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Check, Clock } from 'lucide-react';
 import type { Enrollment, TrainingCourse } from '@/lib/data';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+
 
 interface TrainingsTabProps {
   enrollments: Enrollment[];
@@ -39,24 +41,31 @@ export function TrainingsTab({ enrollments, courses }: TrainingsTabProps) {
               {enrichedEnrollments.map((enrollment) => (
                 <div key={enrollment.id} className="border p-4 rounded-lg">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className='flex-1'>
                       <h3 className="font-semibold">{enrollment.courseTitle}</h3>
                        <p className="text-sm mt-1 text-muted-foreground line-clamp-2">
                         {enrollment.courseDescription}
-                    </p>
+                       </p>
                     </div>
-                     {enrollment.status === 'Completed' ? (
-                        <Button variant="secondary" disabled>
-                            <Check className="mr-2 h-4 w-4" />
-                            Completed
-                        </Button>
-                     ) : (
-                        <Button asChild>
-                            <Link href={`/trainings/${enrollment.courseId}`}>
-                                Start Training
-                            </Link>
-                        </Button>
-                     )}
+                     <div className="ml-4 flex flex-col items-end gap-2">
+                        {enrollment.status === 'Completed' ? (
+                            <Button variant="secondary" disabled>
+                                <Check className="mr-2 h-4 w-4" />
+                                Completed
+                            </Button>
+                        ) : (
+                            <Button asChild>
+                                <Link href={`/trainings/${enrollment.courseId}`}>
+                                    Start Training
+                                </Link>
+                            </Button>
+                        )}
+                        {enrollment.score !== undefined && (
+                            <Badge variant={enrollment.score >= 80 ? "default" : "destructive"}>
+                                Score: {enrollment.score}%
+                            </Badge>
+                        )}
+                    </div>
                   </div>
                   <div className="text-xs text-muted-foreground mt-2 flex items-center">
                     {enrollment.status === 'Completed' ? <Check className="h-3 w-3 mr-1 text-green-500"/> : <Clock className="h-3 w-3 mr-1"/>}
