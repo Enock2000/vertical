@@ -1,3 +1,4 @@
+
 // A simplified data table for the employee portal
 "use client"
 
