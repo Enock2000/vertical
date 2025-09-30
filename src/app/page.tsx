@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -225,6 +226,7 @@ export default function HomePage() {
             <div className="container py-8 flex flex-col md:flex-row justify-between items-center gap-4">
                 <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.</p>
                  <nav className="flex items-center space-x-6 text-sm font-medium">
+                    <Link href="/documentation">Documentation</Link>
                     <Link href="/careers">Careers</Link>
                     <Link href="#">Terms of Service</Link>
                     <Link href="#">Privacy Policy</Link>
