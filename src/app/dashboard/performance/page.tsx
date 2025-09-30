@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PerformanceReviewsTab } from './components/performance-reviews-tab';
@@ -28,7 +28,7 @@ export default function PerformancePage() {
         const employeesRef = ref(db, 'employees');
         const goalsRef = query(ref(db, 'goals'), orderByChild('companyId'), equalTo(companyId));
         const feedbackRef = query(ref(db, 'feedback'), orderByChild('companyId'), equalTo(companyId));
-        const coursesRef = query(ref(db, 'trainingCourses'), orderByChild('companyId'), equalTo(companyId));
+        const coursesRef = query(ref(db, `companies/${companyId}/trainingCourses`));
         const certificationsRef = query(ref(db, 'certifications'), orderByChild('companyId'), equalTo(companyId));
 
         let loadedCount = 0;
@@ -58,7 +58,7 @@ export default function PerformancePage() {
         const employeesUnsubscribe = onValue(query(employeesRef, orderByChild('companyId'), equalTo(companyId)), createOnValueCallback(setEmployees, true), onErrorCallback('employees'));
         const goalsUnsubscribe = onValue(goalsRef, createOnValueCallback(setGoals), onErrorCallback('goals'));
         const feedbackUnsubscribe = onValue(feedbackRef, createOnValueCallback(setFeedback), onErrorCallback('feedback'));
-        const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setCourses), onErrorCallback('courses'));
+        const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setCourses, true), onErrorCallback('courses'));
         const certificationsUnsubscribe = onValue(certificationsRef, createOnValueCallback(setCertifications), onErrorCallback('certifications'));
         
         return () => {

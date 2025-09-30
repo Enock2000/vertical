@@ -82,14 +82,13 @@ export default function EmployeePortalPage() {
                 }
             }
 
-            const onValueCallback = (setter: React.Dispatch<any>, isObject: boolean = false) => (snapshot: any) => {
-                const data = snapshot.val();
-                if (data) {
-                    setter(isObject ? data : Object.values(data));
-                } else {
-                    setter(isObject ? null : []);
-                }
-                checkLoading();
+            const createOnValueCallback = (setter: React.Dispatch<any>, isObject: boolean = false) => {
+                return (snapshot: any) => {
+                    const data = snapshot.val();
+                    const list = data ? (isObject ? data : Object.values(data)) : (isObject ? null : []);
+                    setter(list);
+                    checkLoading();
+                };
             };
             
             const onErrorCallback = (name: string) => (error: Error) => {
@@ -130,13 +129,13 @@ export default function EmployeePortalPage() {
             }, onErrorCallback('roster'));
 
             const todayAttendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${user.uid}`);
-            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, onValueCallback(setTodayAttendance, true), onErrorCallback('today attendance'));
+            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, createOnValueCallback(setTodayAttendance, true), onErrorCallback('today attendance'));
 
             const payrollConfigRef = ref(db, `companies/${companyId}/payrollConfig`);
-            const payrollConfigUnsubscribe = onValue(payrollConfigRef, onValueCallback(setPayrollConfig, true), onErrorCallback('payroll config'));
+            const payrollConfigUnsubscribe = onValue(payrollConfigRef, createOnValueCallback(setPayrollConfig, true), onErrorCallback('payroll config'));
 
             const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
-            const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, onValueCallback(setLeaveRequests), onErrorCallback('leave requests'));
+            const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, createOnValueCallback(setLeaveRequests), onErrorCallback('leave requests'));
 
             const goalsQuery = query(ref(db, 'goals'), orderByChild('employeeId'), equalTo(user.uid));
             const goalsUnsubscribe = onValue(goalsQuery, createOnValueCallback(setGoals), onErrorCallback('goals'));
@@ -145,7 +144,7 @@ export default function EmployeePortalPage() {
             const enrollmentsUnsubscribe = onValue(enrollmentsQuery, createOnValueCallback(setEnrollments), onErrorCallback('enrollments'));
 
             const coursesRef = ref(db, `companies/${companyId}/trainingCourses`);
-            const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setTrainingCourses), onErrorCallback('training courses'));
+            const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setTrainingCourses, true), onErrorCallback('training courses'));
             
             return () => {
                 todayAttendanceUnsubscribe();
