@@ -1,4 +1,3 @@
-
 // src/app/dashboard/performance/components/add-course-dialog.tsx
 'use client';
 
@@ -34,6 +33,7 @@ import type { TrainingCourse, Question } from '@/lib/data';
 import { useAuth } from '@/app/auth-provider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const questionSchema = z.object({
   id: z.string().optional(),
@@ -121,6 +121,7 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
             Build a new training module with a title, description, and custom questions.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="max-h-[60vh] pr-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -222,13 +223,14 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
               </div>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="sticky bottom-0 bg-background py-4">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Course'}
               </Button>
             </DialogFooter>
           </form>
         </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
