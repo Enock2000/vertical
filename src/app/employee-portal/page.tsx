@@ -33,7 +33,7 @@ import { useAuth } from '../auth-provider';
 
 
 export default function EmployeePortalDashboardPage() {
-    const { user, employee, companyId, loading: loadingAuth } = useAuth();
+    const { user, employee, companyId, company, loading: loadingAuth } = useAuth();
     const router = useRouter();
     const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
@@ -287,7 +287,7 @@ export default function EmployeePortalDashboardPage() {
                                 Request Leave
                             </Button>
                         </EmployeeLeaveRequestDialog>}
-                        {employee && <EmployeePayslipDialog employee={employee} payrollDetails={payrollDetails}>
+                        {employee && <EmployeePayslipDialog employee={employee} payrollDetails={payrollDetails} companyName={company?.name || ''}>
                             <Button variant="secondary">
                                 <Receipt className="mr-2 h-4 w-4" />
                                 View Latest Payslip

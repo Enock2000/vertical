@@ -29,7 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useAuth } from '@/app/auth-provider';
 
 export default function PayrollPage() {
-    const { companyId, employee: adminEmployee } = useAuth();
+    const { companyId, employee: adminEmployee, company } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
@@ -159,7 +159,7 @@ export default function PayrollPage() {
                 const payrollDetails = getPayrollDetails(row.original);
                  return (
                      <div className="text-right">
-                        <PayslipDialog employee={row.original} payrollDetails={payrollDetails}>
+                        <PayslipDialog employee={row.original} payrollDetails={payrollDetails} companyName={company?.name || ''}>
                             <Button variant="ghost" size="sm">
                                 <Receipt className="mr-2 h-4 w-4" />
                                 Payslip
