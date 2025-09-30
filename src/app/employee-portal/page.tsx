@@ -85,8 +85,20 @@ export default function EmployeePortalPage() {
             const createOnValueCallback = (setter: React.Dispatch<any>, isObject: boolean = false) => {
                 return (snapshot: any) => {
                     const data = snapshot.val();
-                    const list = data ? (isObject ? data : Object.values(data)) : (isObject ? null : []);
+                    let list;
+                    if (isObject) {
+                        list = data ? Object.values(data) : [];
+                    } else {
+                        list = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
+                    }
                     setter(list);
+                    checkLoading();
+                };
+            };
+            
+             const createSingleItemCallback = (setter: React.Dispatch<any>) => {
+                return (snapshot: any) => {
+                    setter(snapshot.val());
                     checkLoading();
                 };
             };
@@ -129,10 +141,10 @@ export default function EmployeePortalPage() {
             }, onErrorCallback('roster'));
 
             const todayAttendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${user.uid}`);
-            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, createOnValueCallback(setTodayAttendance, true), onErrorCallback('today attendance'));
+            const todayAttendanceUnsubscribe = onValue(todayAttendanceRef, createSingleItemCallback(setTodayAttendance), onErrorCallback('today attendance'));
 
             const payrollConfigRef = ref(db, `companies/${companyId}/payrollConfig`);
-            const payrollConfigUnsubscribe = onValue(payrollConfigRef, createOnValueCallback(setPayrollConfig, true), onErrorCallback('payroll config'));
+            const payrollConfigUnsubscribe = onValue(payrollConfigRef, createSingleItemCallback(setPayrollConfig), onErrorCallback('payroll config'));
 
             const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
             const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, createOnValueCallback(setLeaveRequests), onErrorCallback('leave requests'));
