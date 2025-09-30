@@ -8,6 +8,7 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { Copy, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from './ui/scroll-area';
 
 function extractHsl(style) {
   const match = style.match(/hsl\(([\d.]+)\s*([\d.]+)%\s*([\d.]+)%\)/);
@@ -76,43 +77,45 @@ export function ThemeCustomizer() {
           Adjust the colors of your interface. Changes are applied live.
         </DialogDescription>
       </DialogHeader>
-      <div className="space-y-6 py-4">
-        {Object.entries(colors).map(([name, hsl]) => (
-          <div key={name} className="space-y-2">
-            <Label className="capitalize">{name}</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <Label htmlFor={`${name}-h`} className="text-xs">H</Label>
-                <Input
-                  id={`${name}-h`}
-                  value={hsl.h}
-                  onChange={(e) => handleColorChange(name, 'h', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`${name}-s`} className="text-xs">S</Label>
-                <Input
-                  id={`${name}-s`}
-                  value={hsl.s}
-                  onChange={(e) => handleColorChange(name, 's', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor={`${name}-l`} className="text-xs">L</Label>
-                <Input
-                  id={`${name}-l`}
-                  value={hsl.l}
-                  onChange={(e) => handleColorChange(name, 'l', e.target.value)}
-                />
-              </div>
+      <ScrollArea className="max-h-[70vh] pr-4">
+        <div className="space-y-6 py-4">
+            {Object.entries(colors).map(([name, hsl]) => (
+            <div key={name} className="space-y-2">
+                <Label className="capitalize">{name}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                <div>
+                    <Label htmlFor={`${name}-h`} className="text-xs">H</Label>
+                    <Input
+                    id={`${name}-h`}
+                    value={hsl.h}
+                    onChange={(e) => handleColorChange(name, 'h', e.target.value)}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor={`${name}-s`} className="text-xs">S</Label>
+                    <Input
+                    id={`${name}-s`}
+                    value={hsl.s}
+                    onChange={(e) => handleColorChange(name, 's', e.target.value)}
+                    />
+                </div>
+                <div>
+                    <Label htmlFor={`${name}-l`} className="text-xs">L</Label>
+                    <Input
+                    id={`${name}-l`}
+                    value={hsl.l}
+                    onChange={(e) => handleColorChange(name, 'l', e.target.value)}
+                    />
+                </div>
+                </div>
             </div>
-          </div>
-        ))}
-         <Button variant="outline" onClick={handleReset}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Reset to Default
-        </Button>
-      </div>
+            ))}
+            <Button variant="outline" onClick={handleReset}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Reset to Default
+            </Button>
+        </div>
+      </ScrollArea>
     </DialogContent>
   );
 }
