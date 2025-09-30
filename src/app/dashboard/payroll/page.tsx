@@ -75,7 +75,10 @@ export default function PayrollPage() {
         const runsUnsubscribe = onValue(runsRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const runsList = Object.values<PayrollRun>(data).sort((a,b) => new Date(b.runDate).getTime() - new Date(a.runDate).getTime());
+                const runsList = Object.keys(data).map(key => ({
+                    ...data[key],
+                    id: key,
+                })).sort((a,b) => new Date(b.runDate).getTime() - new Date(a.runDate).getTime());
                 setPayrollRuns(runsList);
             } else {
                 setPayrollRuns([]);
