@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,12 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Briefcase, Building2 } from 'lucide-react';
 import type { JobVacancy } from '@/lib/data';
 import Link from 'next/link';
+import { useAuth } from '@/app/auth-provider';
 
 interface JobsTabProps {
   jobs: JobVacancy[];
 }
 
 export function JobsTab({ jobs }: JobsTabProps) {
+  const { companyId } = useAuth();
   return (
     <Card>
       <CardHeader>
@@ -34,7 +37,7 @@ export function JobsTab({ jobs }: JobsTabProps) {
                       </p>
                     </div>
                      <Button asChild>
-                        <Link href={`/jobs/${job.id}`} target="_blank">
+                        <Link href={`/jobs/${job.id}?companyId=${companyId}`} target="_blank">
                             Apply Now
                         </Link>
                      </Button>

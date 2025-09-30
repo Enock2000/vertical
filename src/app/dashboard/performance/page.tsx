@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,8 +11,10 @@ import { FeedbackTab } from './components/feedback-tab';
 import { TrainingCatalogTab } from './components/training-catalog-tab';
 import { CertificationsTab } from './components/certifications-tab';
 import type { Employee, Goal, Feedback, TrainingCourse, Certification } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 export default function PerformancePage() {
+    const { companyId } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
     const [feedback, setFeedback] = useState<Feedback[]>([]);
@@ -20,11 +23,13 @@ export default function PerformancePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!companyId) return;
+
         const employeesRef = ref(db, 'employees');
-        const goalsRef = ref(db, 'goals');
-        const feedbackRef = ref(db, 'feedback');
-        const coursesRef = ref(db, 'trainingCourses');
-        const certificationsRef = ref(db, 'certifications');
+        const goalsRef = query(ref(db, 'goals'), orderByChild('companyId'), equalTo(companyId));
+        const feedbackRef = query(ref(db, 'feedback'), orderByChild('companyId'), equalTo(companyId));
+        const coursesRef = query(ref(db, 'trainingCourses'), orderByChild('companyId'), equalTo(companyId));
+        const certificationsRef = query(ref(db, 'certifications'), orderByChild('companyId'), equalTo(companyId));
 
         let loadedCount = 0;
         const totalToLoad = 5;
@@ -39,27 +44,22 @@ export default function PerformancePage() {
         const createOnValueCallback = (setter: React.Dispatch<any>, isObject?: boolean) => {
             return (snapshot: any) => {
                 const data = snapshot.val();
-                if (data) {
-                    setter(isObject ? Object.values(data) : Object.keys(data).map(key => ({ ...data[key], id: key })));
-                } else {
-                    setter([]);
-                }
+                const list = data ? (isObject ? Object.values(data) : Object.keys(data).map(key => ({ ...data[key], id: key }))) : [];
+                setter(list);
                 checkLoading();
             };
         };
         
-        const createOnErrorCallback = () => {
-             return (error: Error) => {
-                console.error("Firebase read failed:", error.message);
-                checkLoading();
-            }
+        const onErrorCallback = (name: string) => (error: Error) => {
+            console.error(`Firebase read failed for ${name}:`, error.message);
+            checkLoading();
         };
 
-        const employeesUnsubscribe = onValue(employeesRef, createOnValueCallback(setEmployees, true), createOnErrorCallback());
-        const goalsUnsubscribe = onValue(goalsRef, createOnValueCallback(setGoals), createOnErrorCallback());
-        const feedbackUnsubscribe = onValue(feedbackRef, createOnValueCallback(setFeedback), createOnErrorCallback());
-        const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setCourses), createOnErrorCallback());
-        const certificationsUnsubscribe = onValue(certificationsRef, createOnValueCallback(setCertifications), createOnErrorCallback());
+        const employeesUnsubscribe = onValue(query(employeesRef, orderByChild('companyId'), equalTo(companyId)), createOnValueCallback(setEmployees, true), onErrorCallback('employees'));
+        const goalsUnsubscribe = onValue(goalsRef, createOnValueCallback(setGoals), onErrorCallback('goals'));
+        const feedbackUnsubscribe = onValue(feedbackRef, createOnValueCallback(setFeedback), onErrorCallback('feedback'));
+        const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setCourses), onErrorCallback('courses'));
+        const certificationsUnsubscribe = onValue(certificationsRef, createOnValueCallback(setCertifications), onErrorCallback('certifications'));
         
         return () => {
             employeesUnsubscribe();
@@ -68,7 +68,7 @@ export default function PerformancePage() {
             coursesUnsubscribe();
             certificationsUnsubscribe();
         };
-    }, []);
+    }, [companyId]);
 
     if (loading) {
         return (
@@ -93,7 +93,7 @@ export default function PerformancePage() {
                 <FeedbackTab employees={employees} allFeedback={feedback} />
             </TabsContent>
             <TabsContent value="training">
-                <TrainingCatalogTab courses={courses} />
+                <TrainingCatalogTab courses={courses} employees={employees} />
             </TabsContent>
             <TabsContent value="certifications">
                 <CertificationsTab employees={employees} allCertifications={certifications} />

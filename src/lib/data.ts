@@ -262,14 +262,19 @@ export type Feedback = {
   requestedFor: string[]; // Array of employee IDs asked to give feedback
 };
 
+export type Question = {
+    id: string;
+    text: string;
+    type: 'multiple-choice' | 'short-answer';
+    options?: string[];
+};
+
 export type TrainingCourse = {
   id: string;
   companyId: string;
   title: string;
-  category: string;
-  provider: string;
-  duration: string; // e.g., "3 hours", "5 days"
   description: string;
+  questions: Question[];
 };
 
 export type Enrollment = {

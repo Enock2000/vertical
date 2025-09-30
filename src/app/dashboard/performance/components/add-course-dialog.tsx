@@ -1,8 +1,9 @@
+
 // src/app/dashboard/performance/components/add-course-dialog.tsx
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
@@ -28,15 +29,23 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import type { TrainingCourse } from '@/lib/data';
+import { Loader2, PlusCircle, Trash2, GripVertical } from 'lucide-react';
+import type { TrainingCourse, Question } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+
+const questionSchema = z.object({
+  id: z.string().optional(),
+  text: z.string().min(1, 'Question text cannot be empty.'),
+  type: z.enum(['multiple-choice', 'short-answer']),
+  options: z.array(z.string()).optional(),
+});
 
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
-  category: z.string().min(2, 'Category is required.'),
-  provider: z.string().min(2, 'Provider is required.'),
-  duration: z.string().min(1, 'Duration is required.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
+  questions: z.array(questionSchema).min(1, 'You must add at least one question.'),
 });
 
 type AddCourseFormValues = z.infer<typeof formSchema>;
@@ -46,6 +55,7 @@ interface AddCourseDialogProps {
 }
 
 export function AddCourseDialog({ children }: AddCourseDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -54,28 +64,40 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      category: '',
-      provider: '',
-      duration: '',
       description: '',
+      questions: [],
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "questions",
+  });
+
   async function onSubmit(values: AddCourseFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      const coursesRef = ref(db, 'trainingCourses');
+      const coursesRef = ref(db, `companies/${companyId}/trainingCourses`);
       const newCourseRef = push(coursesRef);
       
-      const newCourse: Omit<TrainingCourse, 'id'> = { ...values };
+      const newCourse: Omit<TrainingCourse, 'id'> = { 
+        ...values, 
+        companyId,
+        questions: values.questions.map(q => ({
+            ...q,
+            id: push(ref(db)).key!, // Give each question a unique ID
+            options: q.type === 'multiple-choice' ? q.options : [],
+        }))
+      };
 
-      await set(newCourseRef, newCourse);
+      await set(newCourseRef, {...newCourse, id: newCourseRef.key});
       
       setOpen(false);
       form.reset();
       toast({
-        title: 'Course Added',
-        description: `The course "${values.title}" has been added to the catalog.`,
+        title: 'Course Created',
+        description: `The training course "${values.title}" has been created.`,
       });
     } catch (error: any) {
         console.error("Error adding course:", error);
@@ -92,11 +114,11 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Add New Training Course</DialogTitle>
+          <DialogTitle>Create New Training Course</DialogTitle>
           <DialogDescription>
-            Fill in the details to add a new course to the catalog.
+            Build a new training module with a title, description, and custom questions.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -108,53 +130,12 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
                 <FormItem>
                   <FormLabel>Course Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Advanced Leadership Skills" {...field} />
+                    <Input placeholder="e.g., Company Security Policy" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Management" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="provider"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Provider</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Coursera" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duration</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., 6 weeks" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
             <FormField
               control={form.control}
               name="description"
@@ -163,7 +144,7 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe the course content and objectives..."
+                      placeholder="Describe the purpose of this training..."
                       {...field}
                     />
                   </FormControl>
@@ -171,6 +152,76 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
                 </FormItem>
               )}
             />
+            
+            <Separator />
+
+            <div>
+              <h3 className="text-lg font-medium mb-2">Questions</h3>
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="p-4 border rounded-md space-y-3 bg-muted/50 relative">
+                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                     </Button>
+                     <FormField
+                        control={form.control}
+                        name={`questions.${index}.text`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Question {index + 1}</FormLabel>
+                                <FormControl><Input {...field} placeholder="Enter your question" /></FormControl>
+                                <FormMessage/>
+                            </FormItem>
+                        )}
+                     />
+                      <FormField
+                        control={form.control}
+                        name={`questions.${index}.type`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Question Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select question type" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="short-answer">Short Answer</SelectItem>
+                                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                     />
+                     {form.watch(`questions.${index}.type`) === 'multiple-choice' && (
+                        <div className="pl-4 border-l-2">
+                             <FormLabel>Options</FormLabel>
+                             <p className="text-xs text-muted-foreground mb-2">Enter options for the multiple choice question.</p>
+                             <FormField
+                                control={form.control}
+                                name={`questions.${index}.options`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                             <Input 
+                                                {...field}
+                                                placeholder="Enter options, comma separated"
+                                                onChange={(e) => field.onChange(e.target.value.split(',').map(s => s.trim()))}
+                                                value={(field.value || []).join(', ')}
+                                            />
+                                        </FormControl>
+                                        <FormMessage/>
+                                    </FormItem>
+                                )}
+                             />
+                        </div>
+                     )}
+                  </div>
+                ))}
+                 <Button type="button" variant="outline" onClick={() => append({ text: '', type: 'short-answer', options: [] })}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Question
+                </Button>
+              </div>
+            </div>
+
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Course'}

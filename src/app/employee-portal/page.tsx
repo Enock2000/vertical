@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { format } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
-import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Goal, JobVacancy, RosterAssignment } from '@/lib/data';
+import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Goal, JobVacancy, RosterAssignment, Enrollment, TrainingCourse } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { reportEmergency } from '@/ai/flows/report-emergency-flow';
@@ -15,7 +15,7 @@ import { UserNav } from "@/components/user-nav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays, CalendarCheck } from "lucide-react";
+import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays, BookOpen } from "lucide-react";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-dialog';
@@ -24,7 +24,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AttendanceTab } from './components/attendance-tab';
 import { PerformanceTab } from './components/performance-tab';
-import { JobsTab } from './components/jobs-tab';
+import { TrainingsTab } from './components/trainings-tab';
 import { RosterTab } from './components/roster-tab';
 import {
   AlertDialog,
@@ -48,7 +48,8 @@ export default function EmployeePortalPage() {
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [goals, setGoals] = useState<Goal[]>([]);
-    const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
+    const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+    const [trainingCourses, setTrainingCourses] = useState<TrainingCourse[]>([]);
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,7 +73,7 @@ export default function EmployeePortalPage() {
     useEffect(() => {
         if (user && companyId) {
             let loadedCount = 0;
-            const totalToLoad = 6; // employee is already loaded via auth context
+            const totalToLoad = 7; // employee is already loaded via auth context
             
             const checkLoading = () => {
                 loadedCount++;
@@ -137,20 +138,14 @@ export default function EmployeePortalPage() {
             const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
             const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, onValueCallback(setLeaveRequests), onErrorCallback('leave requests'));
 
-            const goalsQuery = query(ref(db, `companies/${companyId}/goals`), orderByChild('employeeId'), equalTo(user.uid));
-            const goalsUnsubscribe = onValue(goalsQuery, onValueCallback(setGoals), onErrorCallback('goals'));
+            const goalsQuery = query(ref(db, 'goals'), orderByChild('employeeId'), equalTo(user.uid));
+            const goalsUnsubscribe = onValue(goalsQuery, createOnValueCallback(setGoals), onErrorCallback('goals'));
             
-            const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
-            const jobsUnsubscribe = onValue(jobsRef, (snapshot) => {
-                const data = snapshot.val();
-                if(data) {
-                    const openJobs = Object.values<JobVacancy>(data).filter(j => j.status === 'Open');
-                    setJobVacancies(openJobs);
-                } else {
-                    setJobVacancies([]);
-                }
-                checkLoading();
-            }, onErrorCallback('jobs'));
+            const enrollmentsQuery = query(ref(db, `companies/${companyId}/enrollments`), orderByChild('employeeId'), equalTo(user.uid));
+            const enrollmentsUnsubscribe = onValue(enrollmentsQuery, createOnValueCallback(setEnrollments), onErrorCallback('enrollments'));
+
+            const coursesRef = ref(db, `companies/${companyId}/trainingCourses`);
+            const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setTrainingCourses), onErrorCallback('training courses'));
             
             return () => {
                 todayAttendanceUnsubscribe();
@@ -158,8 +153,9 @@ export default function EmployeePortalPage() {
                 payrollConfigUnsubscribe();
                 leaveRequestsUnsubscribe();
                 goalsUnsubscribe();
-                jobsUnsubscribe();
                 rosterUnsubscribe();
+                enrollmentsUnsubscribe();
+                coursesUnsubscribe();
             };
         } else if (!loadingAuth) {
             setLoadingData(false);
@@ -287,7 +283,7 @@ export default function EmployeePortalPage() {
                         <TabsTrigger value="attendance">Attendance</TabsTrigger>
                         <TabsTrigger value="roster">My Roster</TabsTrigger>
                         <TabsTrigger value="performance">Performance</TabsTrigger>
-                        <TabsTrigger value="jobs">Available Jobs</TabsTrigger>
+                        <TabsTrigger value="trainings">Trainings</TabsTrigger>
                     </TabsList>
                     <TabsContent value="dashboard" className="mt-4">
                         <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
@@ -421,8 +417,8 @@ export default function EmployeePortalPage() {
                     <TabsContent value="performance">
                         <PerformanceTab goals={goals} />
                     </TabsContent>
-                    <TabsContent value="jobs">
-                       <JobsTab jobs={jobVacancies} />
+                    <TabsContent value="trainings">
+                       <TrainingsTab enrollments={enrollments} courses={trainingCourses} />
                     </TabsContent>
                 </Tabs>
             </main>
