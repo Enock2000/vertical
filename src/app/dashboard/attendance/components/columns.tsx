@@ -1,7 +1,8 @@
+
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown } from "lucide-react"
+import { ArrowUpDown, LogIn, LogOut } from "lucide-react"
 import { format, parseISO, differenceInMilliseconds } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +10,12 @@ import type { AttendanceRecord } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 // Extends AttendanceRecord to include dailyTargetHours
-type EnrichedAttendanceRecord = AttendanceRecord & { dailyTargetHours?: number };
+type EnrichedAttendanceRecord = AttendanceRecord & { 
+    dailyTargetHours?: number,
+    onClockIn: () => void;
+    onClockOut: () => void;
+    isSubmitting: boolean;
+};
 
 const formatDuration = (ms: number) => {
     const hours = Math.floor(ms / 3600000);
@@ -62,7 +68,7 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
     cell: ({ row }) => {
         const checkInTime = row.original.checkInTime;
         const status = row.original.status;
-        if (status === 'Absent') {
+        if (status === 'Absent' || !checkInTime) {
             return <div className="text-muted-foreground">-</div>;
         }
         return <div>{format(parseISO(checkInTime), 'hh:mm:ss a')}</div>
@@ -82,7 +88,7 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
     cell: ({ row }) => {
         const { checkInTime, checkOutTime, status, dailyTargetHours } = row.original;
         
-        if (status === 'Absent' || !checkOutTime) {
+        if (status === 'Absent' || !checkOutTime || !checkInTime) {
             return <div className="text-muted-foreground">-</div>;
         }
         
@@ -120,7 +126,32 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
         status === 'Absent' ? 'destructive' :
         status === 'Auto Clock-out' ? 'outline' :
         'secondary';
-      return <Badge variant={variant}>{status}</Badge>
+      return <Badge variant={variant}>{status || 'Not Clocked In'}</Badge>
+    },
+  },
+  {
+    id: "actions",
+    header: () => <div className="text-right">Actions</div>,
+    cell: ({ row }) => {
+      const record = row.original;
+      const hasClockedIn = !!record.checkInTime;
+      const hasClockedOut = !!record.checkOutTime;
+
+      return (
+        <div className="text-right">
+          {!hasClockedIn ? (
+            <Button variant="outline" size="sm" onClick={record.onClockIn} disabled={record.isSubmitting}>
+              <LogIn className="mr-2 h-4 w-4" /> Clock In
+            </Button>
+          ) : !hasClockedOut ? (
+            <Button variant="outline" size="sm" onClick={record.onClockOut} disabled={record.isSubmitting}>
+               <LogOut className="mr-2 h-4 w-4" /> Clock Out
+            </Button>
+          ) : (
+             <span className="text-xs text-muted-foreground">Completed</span>
+          )}
+        </div>
+      );
     },
   },
 ]

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { format } from 'date-fns';
@@ -10,14 +10,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
 import type { AttendanceRecord, Employee, PayrollConfig } from '@/lib/data';
+import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { useAuth } from '@/app/auth-provider';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AttendancePage() {
     const { companyId } = useAuth();
-    const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+    const { toast } = useToast();
+    const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [loading, setLoading] = useState(true);
+    const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     
     const todayString = format(new Date(), 'yyyy-MM-dd');
 
@@ -39,16 +43,7 @@ export default function AttendancePage() {
         };
 
         const attendanceUnsubscribe = onValue(attendanceRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const recordsList = Object.keys(data).map(key => ({
-                    ...data[key],
-                    id: key,
-                }));
-                setAttendanceRecords(recordsList);
-            } else {
-                setAttendanceRecords([]);
-            }
+            setAttendanceRecords(snapshot.val() || {});
             attendanceLoaded = true;
             checkLoading();
         }, (error) => {
@@ -60,7 +55,7 @@ export default function AttendancePage() {
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
+                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.status === 'Active');
                 setEmployees(employeeList);
             } else {
                 setEmployees([]);
@@ -85,21 +80,44 @@ export default function AttendancePage() {
             configUnsubscribe();
         };
     }, [companyId, todayString]);
+
+     const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
+        if (!companyId) return;
+        setSubmittingIds(prev => [...prev, employeeId]);
+        try {
+            const result = await recordAttendance({ userId: employeeId, action, companyId });
+            if (result.success) {
+                toast({ title: `Successfully ${action === 'clockIn' ? 'Clocked In' : 'Clocked Out'}` });
+            } else {
+                toast({ variant: "destructive", title: "Action Failed", description: result.message });
+            }
+        } catch (error: any) {
+            console.error(`${action} error:`, error);
+            toast({ variant: "destructive", title: "Error", description: `An unexpected error occurred during ${action}.` });
+        } finally {
+            setSubmittingIds(prev => prev.filter(id => id !== employeeId));
+        }
+    }, [companyId, toast]);
     
     const enrichedAttendanceRecords = useMemo(() => {
-        const employeeMap = new Map(employees.map(e => [e.id, e]));
-        return attendanceRecords.map(record => {
-            const employee = employeeMap.get(record.employeeId);
+        return employees.map(employee => {
+            const record = attendanceRecords[employee.id];
             return {
                 ...record,
-                role: employee?.role || '-',
-                departmentName: employee?.departmentName || '-',
-                avatar: employee?.avatar || '',
-                email: employee?.email || '',
+                id: employee.id, // Use employee ID as the key for the row
+                employeeId: employee.id,
+                employeeName: employee.name,
+                role: employee.role,
+                departmentName: employee.departmentName,
+                avatar: employee.avatar,
+                email: employee.email,
                 dailyTargetHours: payrollConfig?.dailyTargetHours,
+                onClockIn: () => handleClockAction(employee.id, 'clockIn'),
+                onClockOut: () => handleClockAction(employee.id, 'clockOut'),
+                isSubmitting: submittingIds.includes(employee.id),
             };
         });
-    }, [attendanceRecords, employees, payrollConfig]);
+    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds]);
 
 
     return (
@@ -107,7 +125,7 @@ export default function AttendancePage() {
             <CardHeader>
                 <CardTitle>Attendance</CardTitle>
                 <CardDescription>
-                    Daily attendance records for {format(new Date(), 'MMMM d, yyyy')}.
+                    Daily attendance records for {format(new Date(), 'MMMM d, yyyy')}. Admins can manually clock employees in or out.
                 </CardDescription>
             </CardHeader>
             <CardContent>
