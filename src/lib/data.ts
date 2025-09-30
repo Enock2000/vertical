@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
@@ -12,6 +13,12 @@ export type Company = {
     adminEmail: string;
     createdAt: string; // ISO 8601
     status: 'Pending' | 'Active' | 'Rejected' | 'Suspended';
+};
+
+export type ThemeSettings = {
+  background: { h: string; s: string; l: string };
+  primary: { h: string; s: string; l: string };
+  accent: { h: string; s: string; l: string };
 };
 
 export type WorkerType = 'Salaried' | 'Hourly' | 'Contractor';
@@ -48,6 +55,7 @@ export type Employee = {
   branchCode?: string;
   jobTitle?: string; // Original job title before promotion
   adminRoleId?: string; // ID of the assigned admin Role
+  themeSettings?: ThemeSettings;
 };
 
 export type JobVacancy = {
