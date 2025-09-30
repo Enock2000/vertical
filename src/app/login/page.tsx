@@ -73,6 +73,9 @@ export default function LoginPage() {
       } else if (company.status === 'Rejected') {
           await auth.signOut();
           toast({ variant: "destructive", title: "Access Denied", description: "Your company's registration has been rejected." });
+      } else if (company.status === 'Suspended') {
+          await auth.signOut();
+          toast({ variant: "destructive", title: "Account Suspended", description: "This company account has been suspended. Please contact support." });
       } else {
           // If company is Active, proceed to correct dashboard
           router.push('/dashboard');

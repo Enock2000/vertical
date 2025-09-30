@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -5,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
-import type { Employee } from '@/lib/data';
+import type { Employee, Company } from '@/lib/data';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,31 +30,46 @@ export default function EmployeeLoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      // Fetch employee data to check status
       const employeeRef = ref(db, 'employees/' + user.uid);
-      const snapshot = await get(employeeRef);
+      const employeeSnap = await get(employeeRef);
 
-      if (snapshot.exists()) {
-        const employee: Employee = snapshot.val();
+      if (!employeeSnap.exists()) {
+        await auth.signOut();
+        toast({ variant: "destructive", title: "Login Failed", description: "No employee profile found for this account." });
+        setIsLoading(false);
+        return;
+      }
         
-        if (employee.status === 'Suspended' || employee.status === 'Inactive') {
-          await auth.signOut(); // Sign out the user
+      const employee: Employee = employeeSnap.val();
+      
+      if (employee.status === 'Suspended' || employee.status === 'Inactive') {
+        await auth.signOut(); 
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: `Your account is currently ${employee.status}. Please contact HR.`,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const companyRef = ref(db, 'companies/' + employee.companyId);
+      const companySnap = await get(companyRef);
+      if(companySnap.exists()) {
+        const company: Company = companySnap.val();
+        if(company.status === 'Suspended') {
+          await auth.signOut();
           toast({
             variant: "destructive",
             title: "Access Denied",
-            description: `Your account is currently ${employee.status}. Please contact HR.`,
+            description: "Your company's account has been suspended. Please contact your administrator.",
           });
-        } else {
-          router.push('/employee-portal');
+          setIsLoading(false);
+          return;
         }
-      } else {
-         await auth.signOut();
-         toast({
-            variant: "destructive",
-            title: "Login Failed",
-            description: "No employee profile found for this account.",
-          });
       }
+
+      router.push('/employee-portal');
 
     } catch (error: any) {
       console.error("Login error:", error);
