@@ -29,11 +29,11 @@ const AppBody = ({ children }: { children: React.ReactNode }) => {
     }, [employee]);
 
     return (
-        <body className="font-body antialiased">
+        <>
             {children}
             <Toaster />
             <SupportChat />
-        </body>
+        </>
     )
 }
 
@@ -50,6 +50,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <title>VerticalSync</title>
       </head>
+      <body className="font-body antialiased">
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -62,6 +63,7 @@ export default function RootLayout({
             </AppBody>
           </AuthProvider>
         </ThemeProvider>
+      </body>
     </html>
   );
 }
