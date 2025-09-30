@@ -158,10 +158,10 @@ export default function DashboardLayout({
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
         <div className="flex h-14 items-center border-b px-6">
            <Link
-            href="/"
+            href="/dashboard"
             className="flex items-center gap-2 font-semibold"
           >
-            <Logo />
+            <Logo companyName={company.name} />
           </Link>
         </div>
         <ScrollArea className="flex-grow">
@@ -196,10 +196,10 @@ export default function DashboardLayout({
             <SheetContent side="left" className="sm:max-w-xs">
               <nav className="grid gap-6 text-lg font-medium">
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="group flex h-10 shrink-0 items-center justify-start gap-2 rounded-full text-lg font-semibold"
                 >
-                  <Logo />
+                  <Logo companyName={company.name} />
                 </Link>
                 {visibleNavItems.map((item) => (
                   <Link
