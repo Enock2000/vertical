@@ -1,4 +1,3 @@
-
 // src/app/super-admin/components/columns.tsx
 "use client"
 
@@ -21,6 +20,7 @@ import { ref, update, remove } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { ViewCompanyProfileDialog } from "./view-company-profile-dialog"
 
 export type EnrichedCompany = Company & { employeeCount: number };
 
@@ -155,6 +155,11 @@ export const columns: ColumnDef<EnrichedCompany>[] = [
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <ViewCompanyProfileDialog company={company}>
+                        <div className="w-full text-left">View Profile</div>
+                    </ViewCompanyProfileDialog>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {company.status === 'Pending' && (
                     <>
