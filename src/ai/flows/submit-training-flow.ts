@@ -13,8 +13,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref, set, push, query, orderByChild, equalTo, get, update } from 'firebase/database';
-import type { TrainingSubmission } from '@/lib/data';
+import { ref, set, push, get, update } from 'firebase/database';
+import type { TrainingSubmission, Enrollment } from '@/lib/data';
 
 const SubmitTrainingInputSchema = z.object({
   companyId: z.string(),
@@ -58,15 +58,15 @@ const submitTrainingFlow = ai.defineFlow(
 
       // 2. Find and update the enrollment status
       const enrollmentsRef = ref(db, `companies/${companyId}/enrollments`);
-      const q = query(enrollmentsRef, orderByChild('employeeId'), equalTo(employeeId));
-      const snapshot = await get(q);
+      const snapshot = await get(enrollmentsRef);
 
       if (snapshot.exists()) {
-        const enrollments = snapshot.val();
+        const enrollments: Record<string, Enrollment> = snapshot.val();
         let enrollmentKey: string | null = null;
-        // Find the specific enrollment for this course
+        
+        // Find the specific enrollment for this employee and course
         for (const key in enrollments) {
-          if (enrollments[key].courseId === courseId) {
+          if (enrollments[key].employeeId === employeeId && enrollments[key].courseId === courseId) {
             enrollmentKey = key;
             break;
           }
