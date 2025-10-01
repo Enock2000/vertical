@@ -28,6 +28,10 @@ const chartConfig = {
     label: 'Resigned',
     color: 'hsl(var(--chart-5))',
   },
+  'Terminated': {
+    label: 'Terminated',
+    color: 'hsl(var(--destructive))',
+  },
 } satisfies ChartConfig;
 
 interface EmployeeStatusChartProps {
@@ -59,11 +63,14 @@ export default function EmployeeStatusChart({ employees, leaveRequests, resignat
     const resignedCount = resignationRequests.filter(
       req => req.status === 'Approved'
     ).length;
+    
+    const terminatedCount = employees.filter(emp => emp.status === 'Inactive' && emp.terminationDate).length;
 
     const data = [
       { name: 'On Leave', count: onLeaveCount, fill: 'var(--color-On Leave)' },
       { name: 'Sick', count: onSickLeaveCount + sickEmployeesCount, fill: 'var(--color-Sick)' },
       { name: 'Resigned', count: resignedCount, fill: 'var(--color-Resigned)' },
+      { name: 'Terminated', count: terminatedCount, fill: 'var(--color-Terminated)' },
     ];
     
     return data;
