@@ -15,4 +15,5 @@ export const permissionsList: { id: Permission, label: string }[] = [
     { id: 'organization', label: 'Manage Organization' },
     { id: 'compliance', label: 'Access Compliance Advisor' },
     { id: 'settings', label: 'Manage Settings' },
+    { id: 'announcements', label: 'Manage Announcements' },
 ];

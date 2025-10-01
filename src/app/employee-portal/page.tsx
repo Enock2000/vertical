@@ -1,4 +1,3 @@
-
 // src/app/employee-portal/page.tsx
 'use client';
 
@@ -7,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ref, onValue, query, orderByChild, equalTo, update } from 'firebase/database';
 import { format } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
-import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest } from '@/lib/data';
+import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Announcement } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { reportEmergency } from '@/ai/flows/report-emergency-flow';
@@ -39,6 +38,7 @@ export default function EmployeePortalDashboardPage() {
     const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isReportingEmergency, setIsReportingEmergency] = useState(false);
@@ -61,7 +61,7 @@ export default function EmployeePortalDashboardPage() {
     useEffect(() => {
         if (user && companyId) {
             let loadedCount = 0;
-            const totalToLoad = 3;
+            const totalToLoad = 4;
             
             const checkLoading = () => {
                 loadedCount++;
@@ -100,15 +100,27 @@ export default function EmployeePortalDashboardPage() {
             const leaveRequestsQuery = query(ref(db, `companies/${companyId}/leaveRequests`), orderByChild('employeeId'), equalTo(user.uid));
             const leaveRequestsUnsubscribe = onValue(leaveRequestsQuery, createListCallback(setLeaveRequests), onErrorCallback('leave requests'));
             
+            const announcementsRef = ref(db, `companies/${companyId}/announcements`);
+            const announcementsUnsubscribe = onValue(announcementsRef, (snapshot) => {
+                const data = snapshot.val();
+                const allAnnouncements: Announcement[] = data ? Object.values(data) : [];
+                const relevantAnnouncements = allAnnouncements.filter(ann => 
+                    ann.audience === 'all' || (Array.isArray(ann.audience) && employee && ann.audience.includes(employee.departmentId))
+                ).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setAnnouncements(relevantAnnouncements);
+                checkLoading();
+            }, onErrorCallback('announcements'));
+
             return () => {
                 todayAttendanceUnsubscribe();
                 payrollConfigUnsubscribe();
                 leaveRequestsUnsubscribe();
+                announcementsUnsubscribe();
             };
         } else if (!loadingAuth) {
             setLoadingData(false);
         }
-    }, [user, loadingAuth, companyId, todayString, router]);
+    }, [user, loadingAuth, companyId, todayString, router, employee]);
 
     const payrollDetails = useMemo(() => {
         if (employee && payrollConfig) {
@@ -202,7 +214,7 @@ export default function EmployeePortalDashboardPage() {
                     </CardDescription>
                 </CardHeader>
             </Card>
-            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card className="lg:col-span-1">
                     <CardHeader className="text-center">
                         <CardTitle>Time Clock</CardTitle>
@@ -233,51 +245,33 @@ export default function EmployeePortalDashboardPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-1">
+                <Card className="lg:col-span-2">
                     <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                            <CalendarDays className="h-5 w-5"/>
-                            Leave Balance
-                        </CardTitle>
-                        <CardDescription>Your available annual leave days.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                        <div className="text-5xl font-bold">{employee?.annualLeaveBalance}</div>
-                        <p className="text-muted-foreground">days remaining</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="lg:col-span-1">
-                    <CardHeader>
-                        <CardTitle>My Leave Requests</CardTitle>
-                        <CardDescription>A history of your recent leave applications.</CardDescription>
+                        <CardTitle>Recent Announcements</CardTitle>
+                        <CardDescription>Latest updates and news from the company.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                    {leaveRequests.length > 0 ? (
-                        <div className="space-y-4">
-                            {leaveRequests.slice(0, 3).map(req => (
-                                <div key={req.id} className="flex items-center justify-between p-2 rounded-md border">
-                                    <div>
-                                        <p className="font-medium">{req.leaveType} Leave</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {format(new Date(req.startDate), 'MMM d, yyyy')} - {format(new Date(req.endDate), 'MMM d, yyyy')}
+                        {announcements.length > 0 ? (
+                            <div className="space-y-4">
+                                {announcements.slice(0, 3).map(ann => (
+                                    <div key={ann.id} className="border-l-4 pl-4">
+                                        <p className="font-semibold">{ann.title}</p>
+                                        <p className="text-sm text-muted-foreground line-clamp-2">{ann.content}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Posted by {ann.authorName} on {format(new Date(ann.createdAt), 'MMM d, yyyy')}
                                         </p>
                                     </div>
-                                    <Badge variant={req.status === 'Approved' ? 'default' : req.status === 'Rejected' ? 'destructive' : 'secondary'}>
-                                        {req.status}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
-                            You haven't made any leave requests yet.
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        ) : (
+                             <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
+                                No recent announcements.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                    <Card className="lg:col-span-3">
+                <Card className="lg:col-span-3">
                     <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>

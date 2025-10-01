@@ -242,7 +242,8 @@ export type Permission =
     | 'reporting'
     | 'organization'
     | 'compliance'
-    | 'settings';
+    | 'settings'
+    | 'announcements';
 
 
 export const permissionsList: { id: Permission, label: string }[] = [
@@ -259,6 +260,7 @@ export const permissionsList: { id: Permission, label: string }[] = [
     { id: 'organization', label: 'Manage Organization' },
     { id: 'compliance', label: 'Access Compliance Advisor' },
     { id: 'settings', label: 'Manage Settings' },
+    { id: 'announcements', label: 'Manage Announcements' },
 ];
 
 export type Role = {
@@ -403,6 +405,16 @@ export type Notification = {
   link: string; // Link to the relevant page
   isRead: boolean;
   timestamp: string; // ISO 8601 string
+};
+
+export type Announcement = {
+  id: string;
+  companyId: string;
+  title: string;
+  content: string;
+  authorName: string;
+  createdAt: string; // ISO 8601
+  audience: 'all' | string[]; // 'all' or an array of department IDs
 };
 
 // Helper function to create a notification

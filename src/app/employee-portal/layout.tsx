@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from "next/link";
@@ -10,6 +11,7 @@ import {
     Trophy,
     BookOpen,
     PanelLeft,
+    Megaphone,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider";
@@ -27,6 +29,7 @@ const navItems = [
   { href: "/employee-portal/roster", icon: CalendarCheck, label: "My Roster" },
   { href: "/employee-portal/performance", icon: Trophy, label: "Performance" },
   { href: "/employee-portal/trainings", icon: BookOpen, label: "Trainings" },
+  { href: "/employee-portal/announcements", icon: Megaphone, label: "Announcements" },
 ];
 
 export default function EmployeePortalLayout({
