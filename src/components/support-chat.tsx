@@ -9,19 +9,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { HelpCircle, Send, Sparkles, User, Loader2 } from 'lucide-react';
-import { askVira } from '@/ai/flows/support-chat-flow';
+import { askVerticalSync } from '@/ai/flows/support-chat-flow';
 import { Skeleton } from './ui/skeleton';
 import { Label } from './ui/label';
 
 interface Message {
-    sender: 'user' | 'vira';
+    sender: 'user' | 'ai';
     text: string;
 }
 
 export function SupportChat() {
     const [user, loadingAuth] = useAuthState(auth);
     const [messages, setMessages] = useState<Message[]>([
-        { sender: 'vira', text: "Hi! I'm Vira, your AI support assistant. How can I help you today?" }
+        { sender: 'ai', text: "Hi! I'm VerticalSync, your AI support assistant. How can I help you today?" }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +33,7 @@ export function SupportChat() {
         if (guestInfo.name.trim() && guestInfo.email.trim()) {
             setIsRegistered(true);
             setMessages([
-                { sender: 'vira', text: `Thanks, ${guestInfo.name}! How can I help you today?` }
+                { sender: 'ai', text: `Thanks, ${guestInfo.name}! How can I help you today?` }
             ]);
         }
     };
@@ -47,11 +47,11 @@ export function SupportChat() {
         setIsLoading(true);
 
         try {
-            const result = await askVira(input);
-            const viraMessage: Message = { sender: 'vira', text: result.answer };
+            const result = await askVerticalSync(input);
+            const viraMessage: Message = { sender: 'ai', text: result.answer };
             setMessages(prev => [...prev, viraMessage]);
         } catch (error) {
-            const errorMessage: Message = { sender: 'vira', text: "Sorry, I'm having trouble connecting right now. Please try again later." };
+            const errorMessage: Message = { sender: 'ai', text: "Sorry, I'm having trouble connecting right now. Please try again later." };
             setMessages(prev => [...prev, errorMessage]);
         } finally {
             setIsLoading(false);
@@ -63,9 +63,9 @@ export function SupportChat() {
     return (
         <Popover onOpenChange={(open) => {
             if (open && !user && !isRegistered) {
-                setMessages([{ sender: 'vira', text: "Welcome! To get started, please tell me your name and email." }]);
+                setMessages([{ sender: 'ai', text: "Welcome! To get started, please tell me your name and email." }]);
             } else if (open) {
-                 setMessages([{ sender: 'vira', text: "Hi! I'm Vira, your AI support assistant. How can I help you today?" }]);
+                 setMessages([{ sender: 'ai', text: "Hi! I'm VerticalSync, your AI support assistant. How can I help you today?" }]);
             }
         }}>
             <PopoverTrigger asChild>
@@ -83,7 +83,7 @@ export function SupportChat() {
                             <Sparkles className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <p className="font-semibold">Vira Support</p>
+                            <p className="font-semibold">VerticalSync Support</p>
                             <p className="text-xs text-muted-foreground">AI Assistant</p>
                         </div>
                     </div>
@@ -91,7 +91,7 @@ export function SupportChat() {
                         <div className="space-y-4">
                             {messages.map((message, index) => (
                                 <div key={index} className={`flex items-start gap-2 ${message.sender === 'user' ? 'justify-end' : ''}`}>
-                                    {message.sender === 'vira' && (
+                                    {message.sender === 'ai' && (
                                         <div className="flex-shrink-0 size-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
                                             <Sparkles className="h-4 w-4" />
                                         </div>

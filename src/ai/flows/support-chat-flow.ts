@@ -4,7 +4,7 @@
 /**
  * @fileOverview Provides AI-driven support chat for the VerticalSync application.
  *
- * - askVira - A function that takes a user's question and returns a helpful answer.
+ * - askVerticalSync - A function that takes a user's question and returns a helpful answer.
  */
 
 import { ai } from '@/ai/genkit';
@@ -18,7 +18,7 @@ const SupportChatOutputSchema = z.object({
   answer: z.string().describe('The AI\'s helpful response.'),
 });
 
-export async function askVira(
+export async function askVerticalSync(
   question: string
 ): Promise<z.infer<typeof SupportChatOutputSchema>> {
   const { output } = await supportChatPrompt({ question });
@@ -29,7 +29,7 @@ const supportChatPrompt = ai.definePrompt({
   name: 'supportChatPrompt',
   input: { schema: SupportChatInputSchema },
   output: { schema: SupportChatOutputSchema },
-  prompt: `You are Vira, a friendly and knowledgeable AI support agent for VerticalSync, an all-in-one HR platform. Your goal is to answer user questions clearly and concisely based ONLY on the information provided below. Do not make up features.
+  prompt: `You are VerticalSync, a friendly and knowledgeable AI support agent for the VerticalSync HR platform. Your goal is to answer user questions clearly and concisely based ONLY on the information provided below. Do not make up features.
 
   **VerticalSync Application Knowledge Base:**
 
