@@ -12,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import DepartmentDistributionChart from './components/department-distribution-chart';
 import ActiveContractsChart from './components/active-contracts-chart';
+import EmployeeStatusChart from './components/employee-status-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -51,6 +52,7 @@ export default function ReportingPage() {
     const [shifts, setShifts] = useState<Shift[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
+    const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -74,10 +76,11 @@ export default function ReportingPage() {
         const shiftsRef = ref(db, `companies/${companyId}/shifts`);
         const configRef = ref(db, `companies/${companyId}/payrollConfig`);
         const departmentsRef = ref(db, `companies/${companyId}/departments`);
+        const resignationsRef = ref(db, `companies/${companyId}/resignationRequests`);
         
         setLoading(true); // Set loading true on date change
         let loadedCount = 0;
-        const totalToLoad = 8;
+        const totalToLoad = 9;
         
         const checkLoading = () => {
             loadedCount++;
@@ -132,6 +135,7 @@ export default function ReportingPage() {
          const shiftsUnsubscribe = onValue(shiftsRef, onValueCallback(setShifts), onErrorCallback('shifts'));
         const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), onErrorCallback('config'));
         const departmentsUnsubscribe = onValue(departmentsRef, onValueCallback(setDepartments), onErrorCallback('departments'));
+        const resignationsUnsubscribe = onValue(resignationsRef, onValueCallback(setResignationRequests), onErrorCallback('resignations'));
 
 
         return () => {
@@ -143,6 +147,7 @@ export default function ReportingPage() {
             shiftsUnsubscribe();
             configUnsubscribe();
             departmentsUnsubscribe();
+            resignationsUnsubscribe();
         };
     }, [companyId, selectedDateString]);
     
@@ -292,6 +297,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <ActiveContractsChart employees={employees} />
+                            </CardContent>
+                        </Card>
+                         <Card>
+                             <CardHeader>
+                                <CardTitle>Employee Status</CardTitle>
+                                <CardDescription>Current status of employees.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <EmployeeStatusChart employees={employees} leaveRequests={leaveRequests} resignationRequests={resignationRequests} />
                             </CardContent>
                         </Card>
                     </div>
