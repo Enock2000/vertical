@@ -185,36 +185,43 @@ export default function ReportingPage() {
     }, [employees, departments, allAttendance, performanceReviews, goals, payrollConfig]);
 
     const dailyStatusReport = useMemo(() => {
-    return employees
-        .filter(emp => emp.status === 'Active' || emp.status === 'Suspended' || emp.status === 'Sick')
-        .map(emp => {
-            const attendanceRecord = attendanceRecords[emp.id];
-            const onLeave = leaveRequests.find(req => 
-                req.employeeId === emp.id && 
-                req.status === 'Approved' &&
-                isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
-            );
+        return employees
+            .filter(emp => emp.status === 'Active' || emp.status === 'Suspended' || emp.status === 'Sick')
+            .map(emp => {
+                const attendanceRecord = attendanceRecords[emp.id];
+                const onLeave = leaveRequests.find(req => 
+                    req.employeeId === emp.id && 
+                    req.status === 'Approved' &&
+                    isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
+                );
+                const rosterInfo = rosterAssignments.find(r => r.date === selectedDateString && r.employeeId === emp.id);
 
-            let status: string;
-            
-            if (emp.status === 'Suspended') {
-                status = 'Suspended';
-            } else if (emp.status === 'Sick') {
-                status = 'Sick';
-            } else if (onLeave) {
-                status = 'On Leave';
-            } else if (attendanceRecord) {
-                status = attendanceRecord.status;
-            } else {
-                status = 'Absent';
-            }
+                let status: string;
+                
+                if (emp.status === 'Suspended') {
+                    status = 'Suspended';
+                } else if (emp.status === 'Sick') {
+                    status = 'Sick';
+                } else if (onLeave) {
+                    status = 'On Leave';
+                } else if (rosterInfo?.status === 'Off Day') {
+                    status = 'Off Day';
+                } else if (attendanceRecord) {
+                    status = attendanceRecord.status;
+                } else if (rosterInfo?.status === 'On Duty') {
+                    status = 'Absent';
+                } else {
+                    // Default to absent if no other status fits, assuming they were expected to work.
+                    // This can be refined if there's a default assumption (e.g., everyone is 'On Duty' unless specified otherwise).
+                    status = 'Absent';
+                }
 
-            return {
-                ...emp,
-                dailyStatus: status,
-            };
-        });
-    }, [employees, attendanceRecords, leaveRequests, selectedDate]);
+                return {
+                    ...emp,
+                    dailyStatus: status,
+                };
+            });
+    }, [employees, attendanceRecords, leaveRequests, rosterAssignments, selectedDate, selectedDateString]);
     
     const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
         if (!companyId) return;
@@ -631,7 +638,7 @@ export default function ReportingPage() {
                                                  <Badge variant={
                                                      emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' || emp.dailyStatus === 'Late' || emp.dailyStatus === 'Early Out' ? 'default' :
                                                      emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
-                                                     emp.dailyStatus === 'Sick' ? 'secondary' :
+                                                     emp.dailyStatus === 'Sick' || emp.dailyStatus === 'Off Day' ? 'secondary' :
                                                      'outline'
                                                  }>
                                                     {emp.dailyStatus}
