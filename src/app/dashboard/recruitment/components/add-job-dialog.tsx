@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref, push, set, update, runTransaction } from 'firebase/database';
+import { ref, push, set, runTransaction } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -83,8 +83,6 @@ export function AddJobDialog({
 
     setIsLoading(true);
     try {
-      const companyRef = ref(db, `companies/${companyId}`);
-      
       // Decrement job postings remaining
       await runTransaction(ref(db, `companies/${companyId}/subscription/jobPostingsRemaining`), (currentValue) => {
           return (currentValue || 0) - 1;
@@ -185,7 +183,7 @@ export function AddJobDialog({
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || (company?.subscription?.jobPostingsRemaining || 0) <= 0}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
