@@ -1,3 +1,4 @@
+
 // src/ai/flows/request-leave-flow.ts
 'use server';
 
@@ -89,7 +90,7 @@ const requestLeaveFlow = ai.defineFlow(
         // 3. Notify admins
         const adminIds = await getAdminUserIds(requestData.companyId);
         for (const adminId of adminIds) {
-            await createNotification(requestData.companyId, {
+            await createNotification(companyId, {
                 userId: adminId,
                 title: 'New Leave Request',
                 message: `${requestData.employeeName} has requested ${requestData.leaveType} leave.`,

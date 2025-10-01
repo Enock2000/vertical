@@ -251,8 +251,8 @@ export function EmployeeLeaveRequestDialog({
                                 <Input 
                                     ref={fileInputRef} 
                                     type="file" 
+                                    name="sickNote"
                                     className="hidden" 
-                                    {...form.register("sickNote")}
                                     onChange={(e) => {
                                         field.onChange(e.target.files ? e.target.files[0] : null);
                                         setFileName(e.target.files?.[0]?.name || '');
