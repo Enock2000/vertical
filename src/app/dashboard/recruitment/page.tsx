@@ -14,6 +14,7 @@ import type { JobVacancy, Department, Applicant } from '@/lib/data';
 import { AddJobDialog } from './components/add-job-dialog';
 import { ApplicantsTable } from './components/applicants-table';
 import { OnboardingTab } from './components/onboarding-tab';
+import { ReportingTab } from './components/reporting-tab';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { useAuth } from '@/app/auth-provider';
@@ -76,95 +77,117 @@ export default function RecruitmentPage() {
   ), [applicants, selectedVacancy]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-8rem)]">
-      <Card className="md:col-span-1 flex flex-col">
-        <CardHeader className="flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Job Vacancies</CardTitle>
-              <CardDescription>Manage your open positions.</CardDescription>
-            </div>
+    <Tabs defaultValue="vacancies" className="h-[calc(100vh-8rem)]">
+        <div className="flex items-center justify-between mb-4">
+            <TabsList>
+                <TabsTrigger value="vacancies">Vacancies & Applicants</TabsTrigger>
+                <TabsTrigger value="reporting">Reporting</TabsTrigger>
+            </TabsList>
             <AddJobDialog departments={departments} onJobAdded={() => {}}>
-                <Button size="icon" className="h-8 w-8">
-                    <PlusCircle className="h-4 w-4" />
+                <Button size="sm" className="gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                    Post Job Vacancy
+                    </span>
                 </Button>
             </AddJobDialog>
-          </div>
-        </CardHeader>
-        <CardContent className="flex-grow overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-                <Loader2 className="animate-spin" />
-            </div>
-          ) : (
-            <ScrollArea className="h-full">
-              <div className="space-y-2">
-                {jobVacancies.map((job) => (
-                  <Button
-                    key={job.id}
-                    variant={selectedVacancy?.id === job.id ? 'secondary' : 'ghost'}
-                    className="w-full h-auto justify-start p-3"
-                    onClick={() => setSelectedVacancy(job)}
-                  >
-                    <div className="text-left">
-                        <p className="font-semibold">{job.title}</p>
-                        <p className="text-sm text-muted-foreground">{job.departmentName}</p>
-                        <p className="text-xs text-muted-foreground">
-                            Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
-                        </p>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="md:col-span-2">
-        <Tabs defaultValue="applicants" className="h-full flex flex-col">
-            {selectedVacancy ? (
-            <>
-                <CardHeader>
+        </div>
+        <TabsContent value="vacancies" className="mt-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
+                <Card className="md:col-span-1 flex flex-col">
+                    <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>{selectedVacancy.title}</CardTitle>
-                            <CardDescription>
-                                {filteredApplicants.length} applicant(s) for this position.
-                            </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <TabsList>
-                                <TabsTrigger value="applicants">Applicants</TabsTrigger>
-                                <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
-                            </TabsList>
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={`/jobs/${selectedVacancy.id}?companyId=${companyId}`} target="_blank">
-                                    <ExternalLink className="mr-2 h-3.5 w-3.p" />
-                                    View Job
-                                </Link>
-                            </Button>
+                        <CardTitle>Job Vacancies</CardTitle>
+                        <CardDescription>Manage your open positions.</CardDescription>
                         </div>
                     </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                    <TabsContent value="applicants" className="mt-0">
-                        <ApplicantsTable applicants={filteredApplicants} vacancy={selectedVacancy} departments={departments} />
-                    </TabsContent>
-                    <TabsContent value="onboarding" className="mt-0">
-                        <OnboardingTab applicants={applicants} />
-                    </TabsContent>
-                </CardContent>
-            </>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                    <Search className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold">No Vacancy Selected</h3>
-                    <p className="text-muted-foreground">Select a job vacancy to view applicants or add a new one.</p>
+                    </CardHeader>
+                    <CardContent className="flex-grow overflow-hidden">
+                    {loading ? (
+                        <div className="flex items-center justify-center h-full">
+                            <Loader2 className="animate-spin" />
+                        </div>
+                    ) : (
+                        <ScrollArea className="h-full">
+                        <div className="space-y-2">
+                            {jobVacancies.map((job) => (
+                            <Button
+                                key={job.id}
+                                variant={selectedVacancy?.id === job.id ? 'secondary' : 'ghost'}
+                                className="w-full h-auto justify-start p-3"
+                                onClick={() => setSelectedVacancy(job)}
+                            >
+                                <div className="text-left">
+                                    <p className="font-semibold">{job.title}</p>
+                                    <p className="text-sm text-muted-foreground">{job.departmentName}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                                    </p>
+                                </div>
+                            </Button>
+                            ))}
+                        </div>
+                        </ScrollArea>
+                    )}
+                    </CardContent>
+                </Card>
+
+                <Card className="md:col-span-2">
+                    <Tabs defaultValue="applicants" className="h-full flex flex-col">
+                        {selectedVacancy ? (
+                        <>
+                            <CardHeader>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle>{selectedVacancy.title}</CardTitle>
+                                        <CardDescription>
+                                            {filteredApplicants.length} applicant(s) for this position.
+                                        </CardDescription>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <TabsList>
+                                            <TabsTrigger value="applicants">Applicants</TabsTrigger>
+                                            <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
+                                        </TabsList>
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/jobs/${selectedVacancy.id}?companyId=${companyId}`} target="_blank">
+                                                <ExternalLink className="mr-2 h-3.5 w-3.p" />
+                                                View Job
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                                <TabsContent value="applicants" className="mt-0">
+                                    <ApplicantsTable applicants={filteredApplicants} vacancy={selectedVacancy} departments={departments} />
+                                </TabsContent>
+                                <TabsContent value="onboarding" className="mt-0">
+                                    <OnboardingTab applicants={applicants} />
+                                </TabsContent>
+                            </CardContent>
+                        </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center">
+                                <Search className="h-12 w-12 text-muted-foreground mb-4" />
+                                <h3 className="text-lg font-semibold">No Vacancy Selected</h3>
+                                <p className="text-muted-foreground">Select a job vacancy to view applicants or add a new one.</p>
+                            </div>
+                        )}
+                    </Tabs>
+                </Card>
+            </div>
+        </TabsContent>
+        <TabsContent value="reporting" className="mt-0">
+             {loading ? (
+                <div className="flex items-center justify-center h-[calc(100vh-12rem)]">
+                    <Loader2 className="animate-spin h-8 w-8" />
                 </div>
-            )}
-        </Tabs>
-      </Card>
-    </div>
+             ) : (
+                <ReportingTab applicants={applicants} vacancies={jobVacancies} departments={departments} />
+             )}
+        </TabsContent>
+    </Tabs>
   );
 }
