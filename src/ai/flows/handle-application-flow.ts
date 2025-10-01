@@ -1,4 +1,5 @@
 
+
 'use server';
 
 /**
@@ -21,6 +22,7 @@ const ApplicationInputSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   phone: z.string(),
+  source: z.string().optional(),
 });
 
 const ApplicationOutputSchema = z.object({
@@ -37,6 +39,7 @@ export async function handleApplication(
         name: formData.get('name'),
         email: formData.get('email'),
         phone: formData.get('phone'),
+        source: formData.get('source'),
     };
     const resumeFile = formData.get('resume') as File | null;
     const vacancyTitle = formData.get('vacancyTitle') as string;
@@ -60,7 +63,7 @@ const handleApplicationFlow = ai.defineFlow(
     inputSchema: ApplicationInputSchema.extend({ resumeFile: z.any(), vacancyTitle: z.string() }),
     outputSchema: ApplicationOutputSchema,
   },
-  async ({ companyId, jobVacancyId, name, email, phone, resumeFile, vacancyTitle }) => {
+  async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle }) => {
     try {
         // 1. Upload resume to Firebase Storage
         const fileRef = storageRef(storage, `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`);
@@ -80,6 +83,7 @@ const handleApplicationFlow = ai.defineFlow(
             resumeUrl,
             status: 'New',
             appliedAt: new Date().toISOString(),
+            source: source || 'Unknown',
         };
 
         await set(newApplicantRef, {

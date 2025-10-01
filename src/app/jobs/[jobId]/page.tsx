@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -15,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { handleApplication } from '@/ai/flows/handle-application-flow';
 import Link from 'next/link';
 import Logo from '@/components/logo';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function JobApplicationForm() {
     const params = useParams();
@@ -154,6 +156,22 @@ function JobApplicationForm() {
                                     onChange={handleFileChange}
                                     disabled={isSubmitting}
                                 />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="source">How did you hear about us?</Label>
+                                <Select name="source" required disabled={isSubmitting}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select an option" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Company Website">Company Website</SelectItem>
+                                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                                        <SelectItem value="Referral">Referral</SelectItem>
+                                        <SelectItem value="Job Board">Job Board (e.g., GoZambiaJobs)</SelectItem>
+                                        <SelectItem value="Social Media">Social Media</SelectItem>
+                                        <SelectItem value="Other">Other</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <Button type="submit" className="w-full" disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}

@@ -109,6 +109,7 @@ export type Applicant = {
   status: ApplicantStatus;
   appliedAt: string; // ISO 8601 date string
   onboardingTasks?: OnboardingTask[];
+  source?: string;
 };
 
 export type PayrollConfig = {
