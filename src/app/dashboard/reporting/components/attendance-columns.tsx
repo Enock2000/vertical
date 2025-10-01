@@ -15,6 +15,7 @@ type EnrichedAttendanceRecord = AttendanceRecord & {
     onClockIn: () => void;
     onClockOut: () => void;
     isSubmitting: boolean;
+    currentTime?: Date; // Add currentTime for live updates
 };
 
 const formatDuration = (ms: number) => {
@@ -90,14 +91,15 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
     id: 'workingHours',
     header: 'Working Hours',
     cell: ({ row }) => {
-        const { checkInTime, checkOutTime, status, dailyTargetHours } = row.original;
+        const { checkInTime, checkOutTime, status, dailyTargetHours, currentTime } = row.original;
         
-        if (status === 'Absent' || !checkOutTime || !checkInTime) {
+        if (status === 'Absent' || !checkInTime) {
             return <div className="text-muted-foreground">-</div>;
         }
         
         const start = parseISO(checkInTime);
-        const end = parseISO(checkOutTime);
+        // If clocked out, use checkout time. If not, use current time for live update.
+        const end = checkOutTime ? parseISO(checkOutTime) : (currentTime || new Date());
         const diffMs = differenceInMilliseconds(end, start);
         const duration = formatDuration(diffMs);
 
@@ -111,7 +113,7 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
         return (
             <div>
                 <span>{duration}</span>
-                {deficitMs > 0 && (
+                {checkOutTime && deficitMs > 0 && (
                      <span className="ml-2 text-xs text-destructive">
                         (-{formatDuration(deficitMs)})
                      </span>

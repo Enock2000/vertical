@@ -52,8 +52,14 @@ export default function ReportingPage() {
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         if (!companyId) return;
@@ -194,9 +200,10 @@ export default function ReportingPage() {
                     checkInTime: record?.checkInTime, // Ensure these are passed
                     checkOutTime: record?.checkOutTime,
                     status: isToday ? (record?.status || 'Not Clocked In') : (record?.status || 'N/A'),
+                    currentTime: isToday ? currentTime : undefined,
                 };
         });
-    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds, selectedDateString]);
+    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds, selectedDateString, currentTime]);
 
 
     return (

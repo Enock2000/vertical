@@ -74,16 +74,17 @@ const processDailyAttendanceFlow = ai.defineFlow(
           // Employee clocked in today, check if they forgot to clock out
           if (!existingRecord.checkOutTime) {
             const checkInTime = parseISO(existingRecord.checkInTime);
-            const hoursSinceClockIn = differenceInHours(new Date(), checkInTime);
+            // Auto clock out exactly `dailyTargetHours` after their clock in time
+            const autoClockOutTime = addHours(checkInTime, dailyTargetHours);
 
-            if (hoursSinceClockIn >= dailyTargetHours) {
-              const autoClockOutTime = addHours(checkInTime, dailyTargetHours);
-              await update(child(attendanceRef, employeeId), {
-                checkOutTime: autoClockOutTime.toISOString(),
-                status: 'Auto Clock-out',
-              });
-              autoClockOutCount++;
-              processedCount++;
+            // Only auto-clock out if the calculated clock-out time is in the past
+            if (new Date() >= autoClockOutTime) {
+                await update(child(attendanceRef, employeeId), {
+                    checkOutTime: autoClockOutTime.toISOString(),
+                    status: 'Auto Clock-out',
+                });
+                autoClockOutCount++;
+                processedCount++;
             }
           }
         } else {
