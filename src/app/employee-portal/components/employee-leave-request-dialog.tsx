@@ -100,6 +100,7 @@ export function EmployeeLeaveRequestDialog({
     formData.append('companyId', employee.companyId);
     formData.append('startDate', values.dateRange.from.toISOString());
     formData.append('endDate', values.dateRange.to.toISOString());
+    formData.append('leaveType', values.leaveType); // Fix: Explicitly append leaveType
 
     try {
       const result = await requestLeave(formData);
