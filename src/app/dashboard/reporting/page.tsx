@@ -35,6 +35,7 @@ import AverageSalaryChart from './components/average-salary-chart';
 import PerformanceRatingChart from './components/performance-rating-chart';
 import AverageProductivityChart from './components/average-productivity-chart';
 import { calculateProductivityScore } from '@/lib/data';
+import TopPerformersChart from './components/top-performers-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -375,6 +376,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <AverageProductivityChart scores={productivityScores} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Top Performers Trend</CardTitle>
+                                <CardDescription>Quarterly count of top-rated employees.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <TopPerformersChart reviews={performanceReviews} />
                             </CardContent>
                         </Card>
                     </div>
