@@ -1,4 +1,3 @@
-
 // src/app/super-admin/page.tsx
 'use client';
 
@@ -11,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserNav } from '@/components/user-nav';
 import Logo from '@/components/logo';
 import { useAuth } from '../auth-provider';
-import type { Company, Employee } from '@/lib/data';
+import type { Company, Employee, SubscriptionPlan } from '@/lib/data';
 import { DataTable } from './components/data-table';
 import { columns, type EnrichedCompany } from './components/columns';
 import { Button } from '@/components/ui/button';
@@ -21,6 +20,7 @@ export default function SuperAdminPage() {
     const router = useRouter();
     const [companies, setCompanies] = useState<Company[]>([]);
     const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+    const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
     const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
@@ -32,9 +32,10 @@ export default function SuperAdminPage() {
     useEffect(() => {
         let companiesLoaded = false;
         let employeesLoaded = false;
+        let plansLoaded = false;
         
         const checkLoading = () => {
-            if (companiesLoaded && employeesLoaded) {
+            if (companiesLoaded && employeesLoaded && plansLoaded) {
                 setLoadingData(false);
             }
         };
@@ -49,9 +50,16 @@ export default function SuperAdminPage() {
             employeesLoaded = true; checkLoading();
         });
 
+        const plansUnsubscribe = onValue(ref(db, 'subscriptionPlans'), (snapshot) => {
+            setSubscriptionPlans(snapshot.val() ? Object.values(snapshot.val()) : []);
+            plansLoaded = true; checkLoading();
+        });
+
+
         return () => {
             companiesUnsubscribe();
             employeesUnsubscribe();
+            plansUnsubscribe();
         };
     }, []);
 
@@ -143,7 +151,7 @@ export default function SuperAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                         <DataTable columns={columns} data={enrichedCompanies} />
+                         <DataTable columns={columns(subscriptionPlans)} data={enrichedCompanies} />
                     </CardContent>
                 </Card>
             </main>

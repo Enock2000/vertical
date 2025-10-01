@@ -4,7 +4,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Company } from "@/lib/data"
+import type { Company, SubscriptionPlan } from "@/lib/data"
 import { format } from "date-fns"
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { ViewCompanyProfileDialog } from "./view-company-profile-dialog"
+import { ChangeSubscriptionDialog } from "./change-subscription-dialog"
 
 export type EnrichedCompany = Company & { employeeCount: number };
 
@@ -68,7 +69,7 @@ const DeleteCompanyAlert = ({ company, onConfirm, onCancel }: { company: Company
 };
 
 
-export const columns: ColumnDef<EnrichedCompany>[] = [
+export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<EnrichedCompany>[] => [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -159,6 +160,11 @@ export const columns: ColumnDef<EnrichedCompany>[] = [
                     <ViewCompanyProfileDialog company={company}>
                         <div className="w-full text-left">View Profile</div>
                     </ViewCompanyProfileDialog>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <ChangeSubscriptionDialog company={company} plans={subscriptionPlans}>
+                        <div className="w-full text-left">Change Subscription</div>
+                    </ChangeSubscriptionDialog>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {company.status === 'Pending' && (
