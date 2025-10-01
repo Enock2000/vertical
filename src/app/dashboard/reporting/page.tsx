@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HeadcountChart from "./components/headcount-chart";
 import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
-import DepartmentDistributionChart from "./components/department-distribution-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department } from '@/lib/data';
@@ -238,7 +237,7 @@ export default function ReportingPage() {
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Employee Headcount</CardTitle>
@@ -257,7 +256,7 @@ export default function ReportingPage() {
                                 <TurnoverChart employees={employees} />
                             </CardContent>
                         </Card>
-                         <Card>
+                         <Card className="col-span-1 lg:col-span-2">
                             <CardHeader>
                                 <CardTitle>Department Headcount</CardTitle>
                                 <CardDescription>Employee count by department.</CardDescription>
