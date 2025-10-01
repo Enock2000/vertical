@@ -2,10 +2,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameMonth, isToday } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import type { Employee, LeaveRequest, RosterAssignment } from '@/lib/data';
-import { AssignStatusDialog } from './assign-status-dialog';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isToday } from 'date-fns';
+import type { Employee, LeaveRequest, RosterAssignment, Shift } from '@/lib/data';
+import { AssignStatusDialog } from '../../organization/components/assign-status-dialog';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -15,9 +14,10 @@ interface RosterCalendarProps {
   employees: Employee[];
   leaveRequests: LeaveRequest[];
   rosterAssignments: RosterAssignment[];
+  shifts: Shift[];
 }
 
-export function RosterCalendar({ employees, leaveRequests, rosterAssignments }: RosterCalendarProps) {
+export function RosterCalendar({ employees, leaveRequests, rosterAssignments, shifts }: RosterCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -105,23 +105,32 @@ export function RosterCalendar({ employees, leaveRequests, rosterAssignments }: 
                             <TableCell className="font-medium sticky left-0 bg-background z-10">{employee.name}</TableCell>
                             {days.map(day => {
                                 const dateKey = format(day, 'yyyy-MM-dd');
-                                const event = eventsByDateAndEmployee[`${dateKey}-${employee.id}`];
-                                let variant: "default" | "secondary" | "destructive" | "outline" | null = null;
-                                let text = 'N/A';
-
+                                const event = eventsByDateAndEmployee[`${dateKey}-${employee.id}`] as RosterAssignment | { status: 'On Leave' };
+                                
+                                let content;
                                 if (event) {
-                                    if (event.status === 'On Duty') { variant = 'default'; text = 'Duty'; }
-                                    else if (event.status === 'Off Day') { variant = 'outline'; text = 'Off'; }
-                                    else if (event.status === 'On Leave') { variant = 'destructive'; text = 'Leave'; }
+                                    if (event.status === 'On Duty') {
+                                        content = (
+                                            <div className="p-1 rounded-md text-xs font-semibold text-white" style={{ backgroundColor: event.shiftColor || 'hsl(var(--primary))' }}>
+                                                {event.shiftName || 'Duty'}
+                                            </div>
+                                        );
+                                    } else if (event.status === 'Off Day') {
+                                        content = <div className="text-xs text-muted-foreground">Off</div>;
+                                    } else if (event.status === 'On Leave') {
+                                        content = (
+                                            <div className="p-1 rounded-md text-xs font-semibold bg-destructive text-destructive-foreground">
+                                                Leave
+                                            </div>
+                                        );
+                                    }
+                                } else {
+                                    content = <div className="text-xs text-muted-foreground">-</div>;
                                 }
                                 
                                 return (
-                                    <TableCell key={day.toString()} className="text-center p-2 cursor-pointer hover:bg-muted" onClick={() => handleDayClick(employee, day)}>
-                                        {variant ? (
-                                             <Badge variant={variant}>{text}</Badge>
-                                        ) : (
-                                            <span className="text-muted-foreground">{text}</span>
-                                        )}
+                                    <TableCell key={day.toString()} className="text-center p-1 cursor-pointer hover:bg-muted" onClick={() => handleDayClick(employee, day)}>
+                                        {content}
                                     </TableCell>
                                 )
                             })}
@@ -137,6 +146,7 @@ export function RosterCalendar({ employees, leaveRequests, rosterAssignments }: 
             employee={selectedEmployee}
             date={selectedDate}
             assignment={currentAssignment}
+            shifts={shifts}
         />
     </div>
   );

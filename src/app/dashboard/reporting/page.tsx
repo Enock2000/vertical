@@ -12,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import DepartmentDistributionChart from './components/department-distribution-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -46,6 +47,7 @@ export default function ReportingPage() {
     const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
+    const [shifts, setShifts] = useState<Shift[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
@@ -68,12 +70,13 @@ export default function ReportingPage() {
         const attendanceRef = ref(db, `companies/${companyId}/attendance/${selectedDateString}`);
         const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
         const rosterRef = ref(db, `companies/${companyId}/rosters`);
+        const shiftsRef = ref(db, `companies/${companyId}/shifts`);
         const configRef = ref(db, `companies/${companyId}/payrollConfig`);
         const departmentsRef = ref(db, `companies/${companyId}/departments`);
         
         setLoading(true); // Set loading true on date change
         let loadedCount = 0;
-        const totalToLoad = 7;
+        const totalToLoad = 8;
         
         const checkLoading = () => {
             loadedCount++;
@@ -125,6 +128,7 @@ export default function ReportingPage() {
             setRosterAssignments(assignments);
             checkLoading();
         }, onErrorCallback('roster'));
+         const shiftsUnsubscribe = onValue(shiftsRef, onValueCallback(setShifts), onErrorCallback('shifts'));
         const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), onErrorCallback('config'));
         const departmentsUnsubscribe = onValue(departmentsRef, onValueCallback(setDepartments), onErrorCallback('departments'));
 
@@ -135,6 +139,7 @@ export default function ReportingPage() {
             attendanceUnsubscribe();
             leaveUnsubscribe();
             rosterUnsubscribe();
+            shiftsUnsubscribe();
             configUnsubscribe();
             departmentsUnsubscribe();
         };
@@ -242,7 +247,7 @@ export default function ReportingPage() {
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Employee Headcount</CardTitle>
@@ -261,13 +266,22 @@ export default function ReportingPage() {
                                 <TurnoverChart employees={employees} />
                             </CardContent>
                         </Card>
-                         <Card className="col-span-1 lg:col-span-2">
+                         <Card>
                             <CardHeader>
                                 <CardTitle>Department Headcount</CardTitle>
                                 <CardDescription>Employee count by department.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                <DepartmentHeadcountChart employees={employees} departments={departments} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Department Distribution</CardTitle>
+                                <CardDescription>Employee distribution across departments.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <DepartmentDistributionChart employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
                     </div>
@@ -334,6 +348,7 @@ export default function ReportingPage() {
                                 employees={employees}
                                 leaveRequests={leaveRequests}
                                 rosterAssignments={rosterAssignments}
+                                shifts={shifts}
                             />
                         )}
                     </CardContent>
@@ -402,6 +417,7 @@ export default function ReportingPage() {
                                                  <Badge variant={
                                                      emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' ? 'default' :
                                                      emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
+                                                     emp.dailyStatus === 'Sick' ? 'secondary' :
                                                      'outline'
                                                  }>
                                                     {emp.dailyStatus}

@@ -350,6 +350,15 @@ export type AuditLog = {
     timestamp: string; // ISO 8601
 };
 
+export type Shift = {
+    id: string;
+    companyId: string;
+    name: string;
+    startTime: string; // e.g., "08:00"
+    endTime: string; // e.g., "16:00"
+    color: string; // e.g., "#3b82f6"
+};
+
 export type RosterAssignment = {
     id: string;
     companyId: string;
@@ -357,6 +366,9 @@ export type RosterAssignment = {
     employeeName: string;
     date: string; // YYYY-MM-DD
     status: 'On Duty' | 'Off Day';
+    shiftId?: string;
+    shiftName?: string;
+    shiftColor?: string;
 };
 
 export type Notification = {
