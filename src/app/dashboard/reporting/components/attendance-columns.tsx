@@ -19,6 +19,7 @@ type EnrichedAttendanceRecord = AttendanceRecord & {
 };
 
 const formatDuration = (ms: number) => {
+    if (ms < 0) ms = 0;
     const hours = Math.floor(ms / 3600000);
     const minutes = Math.floor((ms % 3600000) / 60000);
     return `${hours}h ${minutes}m`;
@@ -130,7 +131,7 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
       const variant: "default" | "secondary" | "destructive" | "outline" = 
         status === 'Present' ? 'default' :
         status === 'Absent' ? 'destructive' :
-        status === 'Auto Clock-out' ? 'outline' :
+        status === 'Late' || status === 'Early Out' ? 'outline' :
         'secondary';
       return <Badge variant={variant}>{status || 'Not Clocked In'}</Badge>
     },

@@ -15,8 +15,8 @@ import { z } from 'genkit';
 import { headers } from 'next/headers';
 import { get, ref, set, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
-import type { PayrollConfig, Employee, AttendanceRecord } from '@/lib/data';
-import { format } from 'date-fns';
+import type { PayrollConfig, Employee, AttendanceRecord, RosterAssignment } from '@/lib/data';
+import { format, parseISO } from 'date-fns';
 
 const AttendanceInputSchema = z.object({
   userId: z.string(),
@@ -66,8 +66,8 @@ const attendanceFlow = ai.defineFlow(
       }
       
       const todayString = format(new Date(), 'yyyy-MM-dd');
+      const now = new Date();
       const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${userId}`);
-      const now = new Date().toISOString();
       
       const employeeRef = ref(db, 'employees/' + userId);
       const employeeSnapshot = await get(employeeRef);
@@ -77,6 +77,13 @@ const attendanceFlow = ai.defineFlow(
            return { success: false, message: 'Employee not found.' };
       }
 
+      // Get today's roster assignment to check shift times
+      const rosterRef = ref(db, `companies/${companyId}/rosters/${todayString}/${userId}`);
+      const rosterSnapshot = await get(rosterRef);
+      const rosterAssignment: RosterAssignment | null = rosterSnapshot.val();
+      const shiftStartTime = rosterAssignment?.startTime ? rosterAssignment.startTime.split(':') : null;
+      const shiftEndTime = rosterAssignment?.endTime ? rosterAssignment.endTime.split(':') : null;
+
       if (action === 'clockIn') {
         // 4. Check employee status before clocking in
         if (employee.status !== 'Active') {
@@ -85,17 +92,25 @@ const attendanceFlow = ai.defineFlow(
                 message: `Cannot clock in. Your current status is "${employee.status}". Please contact HR.`
             }
         }
+        
+        let status: AttendanceRecord['status'] = 'Present';
+        if (shiftStartTime) {
+            const shiftStartToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(shiftStartTime[0]), parseInt(shiftStartTime[1]));
+            if (now > shiftStartToday) {
+                status = 'Late';
+            }
+        }
 
         const record: Omit<AttendanceRecord, 'id'> = {
             employeeId: userId,
             employeeName: employee.name,
             date: todayString,
-            checkInTime: now,
+            checkInTime: now.toISOString(),
             checkOutTime: null,
-            status: 'Present',
+            status: status,
         };
         await set(attendanceRef, record);
-        return { success: true, message: 'Clocked in successfully.' };
+        return { success: true, message: `Clocked in successfully. Status: ${status}` };
       } 
       
       if (action === 'clockOut') {
@@ -103,8 +118,21 @@ const attendanceFlow = ai.defineFlow(
         if (!snapshot.exists()) {
             return { success: false, message: 'Cannot clock out. No clock-in record found for today.' };
         }
-        await update(attendanceRef, { checkOutTime: now });
-        return { success: true, message: 'Clocked out successfully.' };
+        
+        let status = snapshot.val().status as AttendanceRecord['status'];
+        if (status !== 'Late') { // Don't override 'Late' status
+            status = 'Present'; // Default to present if not late
+        }
+
+        if (shiftEndTime) {
+            const shiftEndToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(shiftEndTime[0]), parseInt(shiftEndTime[1]));
+            if (now < shiftEndToday) {
+                status = 'Early Out';
+            }
+        }
+
+        await update(attendanceRef, { checkOutTime: now.toISOString(), status: status });
+        return { success: true, message: `Clocked out successfully. Status: ${status}` };
       }
 
       return { success: false, message: 'Invalid action.' };

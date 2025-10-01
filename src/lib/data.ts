@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
@@ -199,7 +198,7 @@ export type AttendanceRecord = {
     date: string; // YYYY-MM-DD
     checkInTime: string; // ISO 8601 string
     checkOutTime: string | null; // ISO 8601 string, null if not checked out
-    status: 'Present' | 'Late' | 'Absent' | 'Auto Clock-out';
+    status: 'Present' | 'Late' | 'Absent' | 'Auto Clock-out' | 'Early Out';
     // Enriched properties, not stored in DB
     departmentName?: string;
     role?: string;
