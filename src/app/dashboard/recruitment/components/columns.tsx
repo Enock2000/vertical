@@ -47,6 +47,9 @@ const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, stat
                 }));
                 updates['onboardingTasks'] = initialTasks;
             }
+             if (status === 'Hired') {
+                updates['hiredAt'] = new Date().toISOString();
+            }
 
             await update(ref(db, `companies/${companyId}/applicants/${applicantId}`), updates);
             toast({

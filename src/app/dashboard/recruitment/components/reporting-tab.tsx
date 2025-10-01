@@ -5,13 +5,15 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Applicant, JobVacancy, Department } from '@/lib/data';
 import { ApplicantStatus } from '@/lib/data';
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Funnel, FunnelChart, LabelList, Tooltip, Legend } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Funnel, FunnelChart, LabelList, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip as ChartTooltipContainer,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { subMonths, format, differenceInDays, getMonth, getYear } from 'date-fns';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 
 interface ReportingTabProps {
   applicants: Applicant[];
@@ -37,6 +39,19 @@ const funnelChartConfig = {
   )
 } satisfies ChartConfig;
 
+const timeToHireChartConfig = {
+    days: {
+        label: "Days",
+        color: "hsl(var(--chart-1))",
+    },
+} satisfies ChartConfig
+
+const costPerHireData = [
+    { category: "Advertising", cost: 1250 },
+    { category: "Agency Fees", cost: 4500 },
+    { category: "Referral Bonuses", cost: 1500 },
+    { category: "Technology", cost: 800 },
+]
 
 export function ReportingTab({ applicants, vacancies, departments }: ReportingTabProps) {
   
@@ -63,36 +78,84 @@ export function ReportingTab({ applicants, vacancies, departments }: ReportingTa
         }
     });
     
-    return statusOrder.map(status => ({
+    return statusOrder.map((status, index) => ({
         value: counts[status],
         name: status,
-        fill: `var(--color-${status})`,
+        fill: `hsl(var(--chart-${index % 5 + 1}))`,
     })).filter(item => item.value > 0);
 
   }, [applicants]);
+  
+   const sourceOfHireData = useMemo(() => {
+    const sourceCounts = applicants.reduce((acc, applicant) => {
+        const source = applicant.source || 'Unknown';
+        acc[source] = (acc[source] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(sourceCounts).map(([name, value], index) => ({
+        name,
+        value,
+        fill: `hsl(var(--chart-${index % 5 + 1}))`
+    }));
+  }, [applicants]);
+
+  const timeToHireData = useMemo(() => {
+    const now = new Date();
+    const monthLabels = Array.from({ length: 6 }, (_, i) => subMonths(now, i)).reverse();
+
+    return monthLabels.map(month => {
+        const hiredThisMonth = applicants.filter(app =>
+            app.status === 'Hired' &&
+            app.hiredAt &&
+            getMonth(new Date(app.hiredAt)) === getMonth(month) &&
+            getYear(new Date(app.hiredAt)) === getYear(month)
+        );
+
+        if (hiredThisMonth.length === 0) {
+            return { month: format(month, 'MMM'), days: 0 };
+        }
+
+        const totalDays = hiredThisMonth.reduce((sum, app) => {
+            const appliedDate = new Date(app.appliedAt);
+            const hiredDate = new Date(app.hiredAt!);
+            return sum + differenceInDays(hiredDate, appliedDate);
+        }, 0);
+
+        return { month: format(month, 'MMM'), days: Math.round(totalDays / hiredThisMonth.length) };
+    });
+  }, [applicants]);
+
+
+  const totalCost = costPerHireData.reduce((acc, item) => acc + item.cost, 0);
+  const totalHires = applicants.filter(a => a.status === 'Hired').length;
+  const costPerHire = totalHires > 0 ? totalCost / totalHires : 0;
 
 
   return (
     <div className="space-y-6">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card>
                 <CardHeader>
                     <CardTitle>Open Requisitions by Department</CardTitle>
-                    <CardDescription>Number of open job positions in each department.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <ChartContainer config={requisitionChartConfig} className="min-h-[200px] w-full">
-                        <BarChart accessibilityLayer data={requisitionsByDept}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis
-                            dataKey="name"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
+                        <BarChart accessibilityLayer data={requisitionsByDept} layout="vertical">
+                            <CartesianGrid horizontal={false} />
+                            <YAxis
+                                dataKey="name"
+                                type="category"
+                                tickLine={false}
+                                tickMargin={10}
+                                axisLine={false}
+                                width={80}
                             />
-                            <YAxis allowDecimals={false} />
-                             <ChartTooltipContainer content={<ChartTooltipContent />} />
-                            <Bar dataKey="requisitions" fill="var(--color-requisitions)" radius={4} />
+                            <XAxis dataKey="requisitions" type="number" hide />
+                             <ChartTooltipContainer cursor={false} content={<ChartTooltipContent />} />
+                            <Bar dataKey="requisitions" fill="var(--color-requisitions)" radius={4} layout="vertical">
+                                 <LabelList dataKey="requisitions" position="right" offset={8} className="fill-foreground" />
+                            </Bar>
                         </BarChart>
                     </ChartContainer>
                 </CardContent>
@@ -100,13 +163,11 @@ export function ReportingTab({ applicants, vacancies, departments }: ReportingTa
              <Card>
                 <CardHeader>
                     <CardTitle>Candidate Pipeline</CardTitle>
-                    <CardDescription>Distribution of candidates across all hiring stages.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={funnelChartConfig} className="mx-auto aspect-square min-h-[250px]">
                         <FunnelChart layout="vertical">
-                             <Tooltip />
-                            <Legend />
+                             <Tooltip content={<ChartTooltipContent />} />
                             <Funnel
                                 dataKey="value"
                                 data={candidatePipeline}
@@ -116,6 +177,96 @@ export function ReportingTab({ applicants, vacancies, departments }: ReportingTa
                             </Funnel>
                         </FunnelChart>
                     </ChartContainer>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Source of Hire</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={{}} className="mx-auto aspect-square min-h-[250px]">
+                        <PieChart>
+                            <Tooltip content={<ChartTooltipContent />} />
+                             <Legend />
+                            <Pie
+                                data={sourceOfHireData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                label
+                            >
+                                {sourceOfHireData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                            </Pie>
+                        </PieChart>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+        </div>
+         <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Average Time-to-Hire</CardTitle>
+                    <CardDescription>Average number of days from application to hire.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     <ChartContainer config={timeToHireChartConfig} className="h-[200px] w-full">
+                        <LineChart accessibilityLayer data={timeToHireData}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis
+                                dataKey="month"
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={8}
+                            />
+                            <YAxis
+                                tickFormatter={(value) => `${value} days`}
+                            />
+                            <Tooltip content={<ChartTooltipContent />} />
+                            <Line
+                                dataKey="days"
+                                type="monotone"
+                                stroke="var(--color-days)"
+                                strokeWidth={2}
+                                dot={true}
+                            />
+                        </LineChart>
+                     </ChartContainer>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Cost-per-Hire</CardTitle>
+                     <CardDescription>Breakdown of recruitment costs.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="mb-4">
+                        <p className="text-muted-foreground">Average Cost Per Hire</p>
+                        <p className="text-3xl font-bold">
+                            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(costPerHire)}
+                        </p>
+                    </div>
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Category</TableHead>
+                                <TableHead className="text-right">Cost</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {costPerHireData.map((item) => (
+                                <TableRow key={item.category}>
+                                <TableCell>{item.category}</TableCell>
+                                <TableCell className="text-right">
+                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' }).format(item.cost)}
+                                </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
         </div>
