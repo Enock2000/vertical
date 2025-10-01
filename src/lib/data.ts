@@ -1,5 +1,6 @@
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
+import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
 
 export type SubscriptionPlan = {
     id: string;
@@ -491,4 +492,81 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
         totalDeductions, 
         netPay 
     };
+};
+
+export type DepartmentProductivityScore = {
+    department: string;
+    average: number;
+    scores: {
+        attendance: number;
+        hours: number;
+        performance: number;
+        goals: number;
+    }
 }
+
+export const calculateProductivityScore = (
+    employees: Employee[],
+    departments: Department[],
+    allAttendance: Record<string, Record<string, AttendanceRecord>>,
+    reviews: PerformanceReview[],
+    goals: Goal[],
+    config: PayrollConfig | null
+): DepartmentProductivityScore[] => {
+    if (!config) return [];
+
+    return departments.map(dept => {
+        const deptEmployees = employees.filter(e => e.departmentId === dept.id && e.status === 'Active');
+        if (deptEmployees.length === 0) return null;
+
+        // 1. Attendance Consistency
+        const yearStart = startOfYear(new Date());
+        const yearEnd = endOfYear(new Date());
+        const workDays = eachDayOfInterval({ start: yearStart, end: yearEnd }).filter(d => getDay(d) > 0 && getDay(d) < 6);
+        const totalExpectedDays = deptEmployees.length * workDays.length;
+
+        const totalAbsences = deptEmployees.reduce((acc, emp) => {
+            return acc + workDays.filter(day => {
+                 const dateStr = day.toISOString().split('T')[0];
+                 const record = allAttendance[dateStr]?.[emp.id];
+                 return !record || record.status === 'Absent';
+            }).length;
+        }, 0);
+        
+        const attendanceScore = totalExpectedDays > 0 ? ((totalExpectedDays - totalAbsences) / totalExpectedDays) * 100 : 0;
+
+        // 2. Target Hours Met
+        const deptAttendanceRecords = Object.values(allAttendance).flatMap(daily => Object.values(daily)).filter(r => deptEmployees.some(e => e.id === r.employeeId) && r.checkOutTime);
+        const daysWithHoursMet = deptAttendanceRecords.filter(r => {
+            const hoursWorked = differenceInHours(new Date(r.checkOutTime!), new Date(r.checkInTime));
+            return hoursWorked >= config.dailyTargetHours;
+        }).length;
+        const hoursScore = deptAttendanceRecords.length > 0 ? (daysWithHoursMet / deptAttendanceRecords.length) * 100 : 0;
+
+        // 3. Performance Ratings
+        const deptReviews = reviews.filter(r => deptEmployees.some(e => e.id === r.employeeId));
+        const totalRating = deptReviews.reduce((acc, r) => acc + r.overallRating, 0);
+        const performanceScore = deptReviews.length > 0 ? (totalRating / (deptReviews.length * 5)) * 100 : 0;
+
+        // 4. Goal Completion
+        const deptGoals = goals.filter(g => deptEmployees.some(e => e.id === g.employeeId));
+        const totalProgress = deptGoals.reduce((acc, g) => acc + g.progress, 0);
+        const goalsScore = deptGoals.length > 0 ? totalProgress / deptGoals.length : 0;
+
+        const scores = {
+            attendance: Math.round(attendanceScore),
+            hours: Math.round(hoursScore),
+            performance: Math.round(performanceScore),
+            goals: Math.round(goalsScore),
+        };
+        
+        const average = (scores.attendance + scores.hours + scores.performance + scores.goals) / 4;
+
+        return {
+            department: dept.name,
+            average: Math.round(average),
+            scores,
+        };
+
+    }).filter(Boolean) as DepartmentProductivityScore[];
+};

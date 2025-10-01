@@ -12,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ import PayrollByDepartmentChart from './components/payroll-by-department-chart';
 import AverageSalaryChart from './components/average-salary-chart';
 import PerformanceRatingChart from './components/performance-rating-chart';
 import AverageProductivityChart from './components/average-productivity-chart';
+import { calculateProductivityScore } from '@/lib/data';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -61,6 +62,7 @@ export default function ReportingPage() {
     const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
     const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
     const [performanceReviews, setPerformanceReviews] = useState<PerformanceReview[]>([]);
+    const [goals, setGoals] = useState<any[]>([]); // Add goals state
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -76,21 +78,24 @@ export default function ReportingPage() {
     useEffect(() => {
         if (!companyId) return;
 
-        const employeesRef = ref(db, 'employees');
-        const auditLogsRef = ref(db, `companies/${companyId}/auditLogs`);
-        const attendanceRef = ref(db, `companies/${companyId}/attendance`);
-        const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
-        const rosterRef = ref(db, `companies/${companyId}/rosters`);
-        const shiftsRef = ref(db, `companies/${companyId}/shifts`);
-        const configRef = ref(db, `companies/${companyId}/payrollConfig`);
-        const departmentsRef = ref(db, `companies/${companyId}/departments`);
-        const resignationsRef = ref(db, `companies/${companyId}/resignationRequests`);
-        const payrollRunsRef = ref(db, `companies/${companyId}/payrollRuns`);
-        const reviewsRef = ref(db, `companies/${companyId}/performanceReviews`);
+        const refs = {
+            employees: ref(db, 'employees'),
+            auditLogs: ref(db, `companies/${companyId}/auditLogs`),
+            attendance: ref(db, `companies/${companyId}/attendance`),
+            leave: ref(db, `companies/${companyId}/leaveRequests`),
+            roster: ref(db, `companies/${companyId}/rosters`),
+            shifts: ref(db, `companies/${companyId}/shifts`),
+            config: ref(db, `companies/${companyId}/payrollConfig`),
+            departments: ref(db, `companies/${companyId}/departments`),
+            resignations: ref(db, `companies/${companyId}/resignationRequests`),
+            payrollRuns: ref(db, `companies/${companyId}/payrollRuns`),
+            reviews: ref(db, `companies/${companyId}/performanceReviews`),
+            goals: ref(db, `goals`), // Goals are not under companyId
+        };
         
-        setLoading(true); // Set loading true on date change
+        setLoading(true);
         let loadedCount = 0;
-        const totalToLoad = 11;
+        const totalToLoad = Object.keys(refs).length;
         
         const checkLoading = () => {
             loadedCount++;
@@ -99,12 +104,15 @@ export default function ReportingPage() {
             }
         };
 
-        const onValueCallback = (setter: React.Dispatch<any>, isObject = false) => (snapshot: any) => {
+        const onValueCallback = (setter: React.Dispatch<any>, isObject = false, filterByCompany = false) => (snapshot: any) => {
             const data = snapshot.val();
             if (isObject) {
                  setter(data || {});
             } else {
-                 const list = data ? Object.values(data) : [];
+                 let list = data ? Object.values(data) : [];
+                 if (filterByCompany) {
+                     list = list.filter((item: any) => item.companyId === companyId);
+                 }
                  if (setter === setAuditLogs || setter === setPayrollRuns) {
                     list.sort((a: any, b: any) => new Date(b.timestamp || b.runDate).getTime() - new Date(a.timestamp || a.runDate).getTime());
                  }
@@ -113,58 +121,49 @@ export default function ReportingPage() {
             checkLoading();
         };
         
-         const onErrorCallback = (name: string) => (error: Error) => {
+        const onErrorCallback = (name: string) => (error: Error) => {
             console.error(`Firebase read failed for ${name}:`, error.message);
             checkLoading();
         };
-
-        const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
-            const data = snapshot.val();
-            setEmployees(data ? Object.values<Employee>(data).filter(e => e.companyId === companyId) : []);
-            checkLoading();
-        });
-        const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), onErrorCallback('audit logs'));
-        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setAllAttendance, true), onErrorCallback('attendance'));
-        const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), onErrorCallback('leave'));
-        const rosterUnsubscribe = onValue(rosterRef, (snapshot) => {
-            const data = snapshot.val();
-            const assignments: RosterAssignment[] = [];
-            if (data) {
-                Object.keys(data).forEach(date => {
-                    Object.keys(data[date]).forEach(employeeId => {
-                        assignments.push({
-                            id: `${date}-${employeeId}`,
-                            ...data[date][employeeId],
+        
+        const unsubscribes = [
+            onValue(query(refs.employees, orderByChild('companyId'), equalTo(companyId)), onValueCallback(setEmployees), onErrorCallback('employees')),
+            onValue(refs.auditLogs, onValueCallback(setAuditLogs), onErrorCallback('audit logs')),
+            onValue(refs.attendance, onValueCallback(setAllAttendance, true), onErrorCallback('attendance')),
+            onValue(refs.leave, onValueCallback(setLeaveRequests), onErrorCallback('leave')),
+            onValue(refs.roster, (snapshot) => {
+                const data = snapshot.val();
+                const assignments: RosterAssignment[] = [];
+                if (data) {
+                    Object.keys(data).forEach(date => {
+                        Object.keys(data[date]).forEach(employeeId => {
+                            assignments.push({
+                                id: `${date}-${employeeId}`,
+                                ...data[date][employeeId],
+                            });
                         });
                     });
-                });
-            }
-            setRosterAssignments(assignments);
-            checkLoading();
-        }, onErrorCallback('roster'));
-         const shiftsUnsubscribe = onValue(shiftsRef, onValueCallback(setShifts), onErrorCallback('shifts'));
-        const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), onErrorCallback('config'));
-        const departmentsUnsubscribe = onValue(departmentsRef, onValueCallback(setDepartments), onErrorCallback('departments'));
-        const resignationsUnsubscribe = onValue(resignationsRef, onValueCallback(setResignationRequests), onErrorCallback('resignations'));
-        const payrollRunsUnsubscribe = onValue(payrollRunsRef, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs'));
-        const reviewsUnsubscribe = onValue(reviewsRef, onValueCallback(setPerformanceReviews), onErrorCallback('performance reviews'));
+                }
+                setRosterAssignments(assignments);
+                checkLoading();
+            }, onErrorCallback('roster')),
+            onValue(refs.shifts, onValueCallback(setShifts), onErrorCallback('shifts')),
+            onValue(refs.config, onValueCallback(setPayrollConfig, true), onErrorCallback('config')),
+            onValue(refs.departments, onValueCallback(setDepartments), onErrorCallback('departments')),
+            onValue(refs.resignations, onValueCallback(setResignationRequests), onErrorCallback('resignations')),
+            onValue(refs.payrollRuns, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs')),
+            onValue(refs.reviews, onValueCallback(setPerformanceReviews, false, true), onErrorCallback('reviews')),
+            onValue(refs.goals, onValueCallback(setGoals, false, true), onErrorCallback('goals')),
+        ];
 
-        return () => {
-            employeesUnsubscribe();
-            auditLogsUnsubscribe();
-            attendanceUnsubscribe();
-            leaveUnsubscribe();
-            rosterUnsubscribe();
-            shiftsUnsubscribe();
-            configUnsubscribe();
-            departmentsUnsubscribe();
-            resignationsUnsubscribe();
-            payrollRunsUnsubscribe();
-            reviewsUnsubscribe();
-        };
+        return () => unsubscribes.forEach(unsub => unsub());
     }, [companyId]);
     
     const attendanceRecords = useMemo(() => allAttendance[selectedDateString] || {}, [allAttendance, selectedDateString]);
+
+    const productivityScores = useMemo(() => {
+        return calculateProductivityScore(employees, departments, allAttendance, performanceReviews, goals, payrollConfig);
+    }, [employees, departments, allAttendance, performanceReviews, goals, payrollConfig]);
 
     const dailyStatusReport = useMemo(() => {
     return employees
@@ -375,7 +374,7 @@ export default function ReportingPage() {
                                 <CardDescription>Productivity scores by department.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <AverageProductivityChart />
+                               <AverageProductivityChart scores={productivityScores} />
                             </CardContent>
                         </Card>
                     </div>
