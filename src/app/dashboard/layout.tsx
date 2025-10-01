@@ -60,7 +60,6 @@ const navItems = [
   { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods", permission: "payment-methods" as Permission },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave", permission: "leave" as Permission },
   { href: "/dashboard/attendance", icon: ClipboardCheck, label: "Attendance", permission: "attendance" as Permission },
-  { href: "/dashboard/roster", icon: CalendarCheck, label: "Roster", permission: "roster" as Permission },
   { href: "/dashboard/performance", icon: Trophy, label: "Performance", permission: "performance" as Permission },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting", permission: "reporting" as Permission },
   { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },

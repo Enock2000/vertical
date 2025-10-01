@@ -13,11 +13,12 @@ import TurnoverChart from "./components/turnover-chart";
 import DiversityChart from "./components/diversity-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { RosterCalendar } from '../roster/components/roster-calendar';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -37,6 +38,7 @@ export default function ReportingPage() {
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [todayAttendance, setTodayAttendance] = useState<Record<string, AttendanceRecord>>({});
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [loading, setLoading] = useState(true);
 
     const today = new Date();
@@ -49,9 +51,10 @@ export default function ReportingPage() {
         const auditLogsRef = ref(db, `companies/${companyId}/auditLogs`);
         const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}`);
         const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
+        const rosterRef = ref(db, `companies/${companyId}/rosters`);
         
         let loadedCount = 0;
-        const totalToLoad = 4;
+        const totalToLoad = 5;
         
         const checkLoading = () => {
             loadedCount++;
@@ -82,12 +85,30 @@ export default function ReportingPage() {
         const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), (err) => {console.error(err); checkLoading()});
         const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setTodayAttendance, true), (err) => {console.error(err); checkLoading()});
         const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), (err) => {console.error(err); checkLoading()});
+        const rosterUnsubscribe = onValue(rosterRef, (snapshot) => {
+            const data = snapshot.val();
+            const assignments: RosterAssignment[] = [];
+            if (data) {
+                Object.keys(data).forEach(date => {
+                    Object.keys(data[date]).forEach(employeeId => {
+                        assignments.push({
+                            id: `${date}-${employeeId}`,
+                            ...data[date][employeeId],
+                        });
+                    });
+                });
+            }
+            setRosterAssignments(assignments);
+            checkLoading();
+        }, (err) => {console.error(err); checkLoading()});
+
 
         return () => {
             employeesUnsubscribe();
             auditLogsUnsubscribe();
             attendanceUnsubscribe();
             leaveUnsubscribe();
+            rosterUnsubscribe();
         };
     }, [companyId, todayString]);
     
@@ -121,6 +142,7 @@ export default function ReportingPage() {
             <div className="flex items-center justify-between">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="roster">Roster</TabsTrigger>
                     <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
                     <TabsTrigger value="reports">Reports</TabsTrigger>
                     <TabsTrigger value="audit">Audit Log</TabsTrigger>
@@ -168,6 +190,29 @@ export default function ReportingPage() {
                         </Card>
                     </div>
                 )}
+            </TabsContent>
+            <TabsContent value="roster">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Employee Roster</CardTitle>
+                        <CardDescription>
+                            Manage and view employee schedules, including work days, off days, and approved leave.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <div className="flex items-center justify-center h-64">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                            </div>
+                        ) : (
+                            <RosterCalendar
+                                employees={employees}
+                                leaveRequests={leaveRequests}
+                                rosterAssignments={rosterAssignments}
+                            />
+                        )}
+                    </CardContent>
+                </Card>
             </TabsContent>
             <TabsContent value="daily-status">
                  <Card>
