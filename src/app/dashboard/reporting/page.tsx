@@ -36,6 +36,9 @@ import PerformanceRatingChart from './components/performance-rating-chart';
 import AverageProductivityChart from './components/average-productivity-chart';
 import { calculateProductivityScore } from '@/lib/data';
 import TopPerformersChart from './components/top-performers-chart';
+import AttendanceRateChart from './components/attendance-rate-chart';
+import LeaveTypesChart from './components/leave-types-chart';
+import TopDepartmentsAbsenteeismChart from './components/top-departments-absenteeism-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -385,6 +388,33 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <TopPerformersChart reviews={performanceReviews} />
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Attendance Rate Trend</CardTitle>
+                                <CardDescription>Monthly employee attendance rate.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <AttendanceRateChart allAttendance={allAttendance} employees={employees} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Leave Types Distribution</CardTitle>
+                                <CardDescription>Breakdown of approved leave types.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <LeaveTypesChart leaveRequests={leaveRequests} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Top Departments by Absenteeism</CardTitle>
+                                <CardDescription>Departments with the highest number of absences.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TopDepartmentsAbsenteeismChart allAttendance={allAttendance} departments={departments} />
                             </CardContent>
                         </Card>
                     </div>
