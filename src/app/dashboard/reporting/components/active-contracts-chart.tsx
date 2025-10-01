@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, Cell } from 'recharts';
 import {
   ChartConfig,
   ChartContainer,
@@ -44,10 +45,12 @@ export default function ActiveContractsChart({ employees }: ActiveContractsChart
       {} as Record<string, number>
     );
 
-    return Object.entries(contractCounts).map(([name, count]) => ({
-      name,
-      count,
-      fill: `var(--color-${name})`,
+    return Object.keys(chartConfig)
+        .filter(key => key !== 'count' && contractCounts[key] > 0)
+        .map((name) => ({
+            name,
+            count: contractCounts[name],
+            fill: `var(--color-${name})`,
     }));
   }, [employees]);
 
@@ -75,7 +78,7 @@ export default function ActiveContractsChart({ employees }: ActiveContractsChart
         />
         <Bar dataKey="count" radius={4}>
           {chartData.map((entry) => (
-            <Bar key={entry.name} dataKey="count" fill={entry.fill} />
+            <Cell key={entry.name} fill={entry.fill} />
           ))}
         </Bar>
       </BarChart>

@@ -130,7 +130,7 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
       const status = row.getValue("status") as string;
       const variant: "default" | "secondary" | "destructive" | "outline" = 
         status === 'Present' ? 'default' :
-        status === 'Absent' ? 'destructive' :
+        status === 'Absent' || status === 'N/A' ? 'destructive' :
         status === 'Late' || status === 'Early Out' ? 'outline' :
         'secondary';
       return <Badge variant={variant}>{status || 'Not Clocked In'}</Badge>

@@ -1,8 +1,9 @@
+
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { File, Loader2, Download, Calendar as CalendarIcon, FileText } from "lucide-react";
+import { File, Loader2, Download, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -227,6 +228,7 @@ export default function ReportingPage() {
                     checkOutTime: record?.checkOutTime,
                     status: isToday ? (record?.status || 'Not Clocked In') : (record?.status || 'N/A'),
                     currentTime: isToday ? currentTime : undefined,
+                    date: selectedDateString,
                 };
         });
     }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds, selectedDateString, currentTime]);
@@ -250,7 +252,7 @@ export default function ReportingPage() {
                     </span>
                 </Button>
             </div>
-             <TabsContent value="overview" className="space-y-4">
+             <TabsContent value="overview" className="space-y-4 pt-4">
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin" />
@@ -451,7 +453,7 @@ export default function ReportingPage() {
                                             <TableCell>{emp.role}</TableCell>
                                             <TableCell>
                                                  <Badge variant={
-                                                     emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' ? 'default' :
+                                                     emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' || emp.dailyStatus === 'Late' || emp.dailyStatus === 'Early Out' ? 'default' :
                                                      emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
                                                      emp.dailyStatus === 'Sick' ? 'secondary' :
                                                      'outline'

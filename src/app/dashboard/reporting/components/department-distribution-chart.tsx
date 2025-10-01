@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -22,29 +23,29 @@ export default function DepartmentDistributionChart({ employees, departments }: 
   const chartData = React.useMemo(() => {
     if (departments.length === 0) return [];
 
-    const departmentCounts = departments.map((dept, index) => {
+    return departments.map((dept, index) => {
         const count = employees.filter(emp => emp.departmentId === dept.id).length;
         return {
             name: dept.name,
             value: count,
-            fill: `var(--color-chart-${(index % 5) + 1})`,
+            fill: `hsl(var(--chart-${(index % 5) + 1}))`,
         }
     }).filter(dept => dept.value > 0); // Only show departments with employees
-    
-    return departmentCounts;
 
   }, [employees, departments])
 
   const chartConfig = React.useMemo(() => {
     const config: ChartConfig = {};
-    departments.forEach((dept, index) => {
-        config[dept.name] = {
-            label: dept.name,
-            color: `hsl(var(--chart-${(index % 5) + 1}))`,
-        }
-    });
+    if (chartData.length > 0) {
+        chartData.forEach((dept) => {
+            config[dept.name] = {
+                label: dept.name,
+                color: dept.fill,
+            }
+        });
+    }
     return config;
-  }, [departments]);
+  }, [chartData]);
 
 
   if (employees.length === 0 || departments.length === 0 || chartData.length === 0) {
@@ -58,22 +59,24 @@ export default function DepartmentDistributionChart({ employees, departments }: 
     >
       <PieChart>
         <ChartTooltip
-          content={<ChartTooltipContent nameKey="value" hideLabel />}
+          cursor={false}
+          content={<ChartTooltipContent hideLabel />}
         />
         <Pie
             data={chartData}
             dataKey="value"
             nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={80}
             innerRadius={60}
+            strokeWidth={5}
         >
              {chartData.map((entry) => (
               <Cell key={`cell-${entry.name}`} fill={entry.fill} />
             ))}
         </Pie>
-        <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+         <ChartLegend
+          content={<ChartLegendContent nameKey="name" />}
+          className="-mt-2"
+        />
       </PieChart>
     </ChartContainer>
   )
