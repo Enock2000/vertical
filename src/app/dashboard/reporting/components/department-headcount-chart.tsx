@@ -1,6 +1,6 @@
 "use client"
 
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from "recharts"
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, LabelList } from "recharts"
 import {
   ChartConfig,
   ChartContainer,
@@ -44,7 +44,7 @@ export default function DepartmentHeadcountChart({ employees, departments }: Dep
 
     return (
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-            <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 20 }}>
+            <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ left: 10 }}>
                 <CartesianGrid horizontal={false} />
                 <YAxis
                     dataKey="name"
@@ -55,8 +55,16 @@ export default function DepartmentHeadcountChart({ employees, departments }: Dep
                     width={80}
                     />
                 <XAxis dataKey="employees" type="number" hide />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="employees" fill="var(--color-employees)" radius={4} layout="vertical" />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <Bar dataKey="employees" fill="var(--color-employees)" radius={4} layout="vertical">
+                   <LabelList
+                    dataKey="employees"
+                    position="right"
+                    offset={8}
+                    className="fill-foreground"
+                    fontSize={12}
+                    />
+                </Bar>
             </BarChart>
         </ChartContainer>
     )
