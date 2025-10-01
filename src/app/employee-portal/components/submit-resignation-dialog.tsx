@@ -67,7 +67,7 @@ export function SubmitResignationDialog({ children }: SubmitResignationDialogPro
         companyId: employee.companyId,
         employeeId: employee.id,
         employeeName: employee.name,
-        resignationDate: values.resignationDate.toISOString(),
+        resignationDate: format(values.resignationDate, 'yyyy-MM-dd'),
         reason: values.reason,
       });
 
