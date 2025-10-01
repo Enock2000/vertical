@@ -11,8 +11,8 @@ import HeadcountChart from "./components/headcount-chart";
 import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore } from '@/lib/data';
+import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore, Goal } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ export default function ReportingPage() {
     const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
     const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
     const [performanceReviews, setPerformanceReviews] = useState<PerformanceReview[]>([]);
-    const [goals, setGoals] = useState<any[]>([]); // Add goals state
+    const [goals, setGoals] = useState<Goal[]>([]); // Add goals state
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -153,7 +153,7 @@ export default function ReportingPage() {
             onValue(refs.resignations, onValueCallback(setResignationRequests), onErrorCallback('resignations')),
             onValue(refs.payrollRuns, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs')),
             onValue(refs.reviews, onValueCallback(setPerformanceReviews, false, true), onErrorCallback('reviews')),
-            onValue(refs.goals, onValueCallback(setGoals, false, true), onErrorCallback('goals')),
+            onValue(query(refs.goals, orderByChild('companyId'), equalTo(companyId)), onValueCallback(setGoals), onErrorCallback('goals')),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
