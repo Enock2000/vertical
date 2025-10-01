@@ -45,6 +45,7 @@ import EmployeesTrainedChart from './components/employees-trained-chart';
 import TrainingHoursChart from './components/training-hours-chart';
 import TrainingImpactChart from './components/training-impact-chart';
 import GenderDistributionChart from './components/gender-distribution-chart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const availableReports = [
@@ -80,6 +81,7 @@ export default function ReportingPage() {
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [attendanceView, setAttendanceView] = useState<'day' | 'week' | 'month'>('month');
 
     const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
 
@@ -296,12 +298,24 @@ export default function ReportingPage() {
                             </CardContent>
                         </Card>
                          <Card>
-                            <CardHeader>
-                                <CardTitle>Attendance Performance</CardTitle>
-                                <CardDescription>Overview of daily attendance metrics over time.</CardDescription>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle>Attendance Performance</CardTitle>
+                                    <CardDescription>Overview of daily attendance metrics over time.</CardDescription>
+                                </div>
+                                <Select value={attendanceView} onValueChange={(value) => setAttendanceView(value as any)}>
+                                    <SelectTrigger className="w-[100px]">
+                                        <SelectValue placeholder="View" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="day">Day</SelectItem>
+                                        <SelectItem value="week">Week</SelectItem>
+                                        <SelectItem value="month">Month</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </CardHeader>
                             <CardContent>
-                                <AttendancePerformanceChart allAttendance={allAttendance} payrollConfig={payrollConfig} />
+                                <AttendancePerformanceChart allAttendance={allAttendance} payrollConfig={payrollConfig} view={attendanceView} />
                             </CardContent>
                         </Card>
                         <Card>
