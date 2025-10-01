@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -101,7 +102,6 @@ export function RequestLeaveDialog({
     
     const formData = new FormData(formRef.current);
     formData.append('companyId', companyId);
-    formData.append('employeeId', values.employeeId);
     formData.append('employeeName', selectedEmployee.name);
     formData.append('startDate', values.dateRange.from.toISOString());
     formData.append('endDate', values.dateRange.to.toISOString());
