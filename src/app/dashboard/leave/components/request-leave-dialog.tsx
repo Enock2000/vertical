@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,21 +33,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee, LeaveRequest } from '@/lib/data';
+import type { Employee } from '@/lib/data';
+import { requestLeave } from '@/ai/flows/request-leave-flow';
 import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { db } from '@/lib/firebase';
-import { ref, push, set } from 'firebase/database';
+import { useAuth } from '@/app/auth-provider';
 
 
 const formSchema = z.object({
   employeeId: z.string().min(1, 'Please select an employee.'),
   leaveType: z.enum(['Annual', 'Sick', 'Unpaid', 'Maternity']),
   dateRange: z.object({
-    from: z.date(),
-    to: z.date(),
+    from: z.date({ required_error: "A start date is required."}),
+    to: z.date({ required_error: "An end date is required."}),
   }).refine(data => data.from && data.to, {
     message: "Please select a date range.",
     path: ["from"]
@@ -68,9 +68,12 @@ export function RequestLeaveDialog({
   employees,
   onLeaveRequestAdded,
 }: RequestLeaveDialogProps) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const formRef = useRef<HTMLFormElement>(null);
+
 
   const form = useForm<RequestLeaveFormValues>({
     resolver: zodResolver(formSchema),
@@ -82,6 +85,7 @@ export function RequestLeaveDialog({
   });
 
   async function onSubmit(values: RequestLeaveFormValues) {
+    if (!formRef.current || !companyId) return;
     setIsLoading(true);
     
     const selectedEmployee = employees.find(e => e.id === values.employeeId);
@@ -94,32 +98,36 @@ export function RequestLeaveDialog({
         setIsLoading(false);
         return;
     }
+    
+    const formData = new FormData(formRef.current);
+    formData.append('companyId', companyId);
+    formData.append('employeeId', values.employeeId);
+    formData.append('employeeName', selectedEmployee.name);
+    formData.append('startDate', values.dateRange.from.toISOString());
+    formData.append('endDate', values.dateRange.to.toISOString());
+    // The other fields are already in formData from their 'name' attribute
 
     try {
-      const leaveRequestsRef = ref(db, 'leaveRequests');
-      const newRequestRef = push(leaveRequestsRef);
+      const result = await requestLeave(formData);
       
-      const requestData: LeaveRequest = {
-          id: newRequestRef.key!,
-          employeeId: values.employeeId,
-          employeeName: selectedEmployee.name,
-          leaveType: values.leaveType,
-          startDate: values.dateRange.from.toISOString(),
-          endDate: values.dateRange.to.toISOString(),
-          reason: values.reason,
-          status: 'Pending',
-      };
+      if (result.success) {
+        onLeaveRequestAdded();
+        setIsLoading(false);
+        setOpen(false);
+        form.reset();
+        toast({
+            title: 'Leave Request Submitted',
+            description: `Request for ${selectedEmployee.name} has been submitted for approval.`,
+        });
+      } else {
+         toast({
+            variant: "destructive",
+            title: "Error",
+            description: result.message,
+        })
+        setIsLoading(false);
+      }
 
-      await set(newRequestRef, requestData);
-
-      onLeaveRequestAdded();
-      setIsLoading(false);
-      setOpen(false);
-      form.reset();
-      toast({
-        title: 'Leave Request Submitted',
-        description: `Request for ${selectedEmployee.name} has been submitted for approval.`,
-      });
     } catch (error) {
        console.error("Error submitting leave request:", error);
         toast({
@@ -143,14 +151,14 @@ export function RequestLeaveDialog({
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="employeeId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Employee</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select an employee" />
@@ -175,7 +183,7 @@ export function RequestLeaveDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Leave Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select leave type" />
