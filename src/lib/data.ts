@@ -78,6 +78,8 @@ export type Employee = {
   contractFileUrl?: string | null;
   terminationDate?: string | null;
   terminationReason?: string | null;
+  resignationDate?: string | null;
+  resignationReason?: string | null;
 };
 
 export type JobVacancy = {
@@ -190,6 +192,17 @@ export type LeaveRequest = {
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   sickNoteUrl?: string;
+};
+
+export type ResignationRequest = {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  employeeName: string;
+  submissionDate: string; // ISO 8601
+  resignationDate: string; // ISO 8601
+  reason: string;
+  status: 'Pending' | 'Approved' | 'Withdrawn';
 };
 
 export type AttendanceRecord = {

@@ -14,9 +14,10 @@ import { reportEmergency } from '@/ai/flows/report-emergency-flow';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays } from "lucide-react";
+import { Loader2, LogIn, LogOut, CalendarPlus, Receipt, ShieldAlert, CalendarDays, LogOutIcon } from "lucide-react";
 import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-dialog';
 import { EmployeePayslipDialog } from './components/employee-payslip-dialog';
+import { SubmitResignationDialog } from './components/submit-resignation-dialog';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -293,6 +294,12 @@ export default function EmployeePortalDashboardPage() {
                                 View Latest Payslip
                             </Button>
                         </EmployeePayslipDialog>}
+                        <SubmitResignationDialog>
+                             <Button variant="outline">
+                                <LogOutIcon className="mr-2 h-4 w-4" />
+                                Submit Resignation
+                            </Button>
+                        </SubmitResignationDialog>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="destructive">
