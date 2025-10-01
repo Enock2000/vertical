@@ -1,4 +1,3 @@
-
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
@@ -13,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +29,7 @@ import DepartmentDistributionChart from './components/department-distribution-ch
 import ActiveContractsChart from './components/active-contracts-chart';
 import EmployeeStatusChart from './components/employee-status-chart';
 import AttendancePerformanceChart from './components/attendance-performance-chart';
+import TotalPayrollChart from './components/total-payroll-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -55,6 +55,7 @@ export default function ReportingPage() {
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
+    const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -79,10 +80,11 @@ export default function ReportingPage() {
         const configRef = ref(db, `companies/${companyId}/payrollConfig`);
         const departmentsRef = ref(db, `companies/${companyId}/departments`);
         const resignationsRef = ref(db, `companies/${companyId}/resignationRequests`);
+        const payrollRunsRef = ref(db, `companies/${companyId}/payrollRuns`);
         
         setLoading(true); // Set loading true on date change
         let loadedCount = 0;
-        const totalToLoad = 9;
+        const totalToLoad = 10;
         
         const checkLoading = () => {
             loadedCount++;
@@ -97,8 +99,8 @@ export default function ReportingPage() {
                  setter(data || {});
             } else {
                  const list = data ? Object.values(data) : [];
-                 if (setter === setAuditLogs) {
-                    list.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                 if (setter === setAuditLogs || setter === setPayrollRuns) {
+                    list.sort((a: any, b: any) => new Date(b.timestamp || b.runDate).getTime() - new Date(a.timestamp || a.runDate).getTime());
                  }
                 setter(list);
             }
@@ -138,6 +140,7 @@ export default function ReportingPage() {
         const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), onErrorCallback('config'));
         const departmentsUnsubscribe = onValue(departmentsRef, onValueCallback(setDepartments), onErrorCallback('departments'));
         const resignationsUnsubscribe = onValue(resignationsRef, onValueCallback(setResignationRequests), onErrorCallback('resignations'));
+        const payrollRunsUnsubscribe = onValue(payrollRunsRef, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs'));
 
 
         return () => {
@@ -150,6 +153,7 @@ export default function ReportingPage() {
             configUnsubscribe();
             departmentsUnsubscribe();
             resignationsUnsubscribe();
+            payrollRunsUnsubscribe();
         };
     }, [companyId]);
     
@@ -320,6 +324,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <EmployeeStatusChart employees={employees} leaveRequests={leaveRequests} resignationRequests={resignationRequests} />
+                            </CardContent>
+                        </Card>
+                        <Card className="lg:col-span-2">
+                             <CardHeader>
+                                <CardTitle>Total Payroll Cost</CardTitle>
+                                <CardDescription>Monthly payroll cost trend.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <TotalPayrollChart payrollRuns={payrollRuns} />
                             </CardContent>
                         </Card>
                     </div>
