@@ -12,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +32,7 @@ import AttendancePerformanceChart from './components/attendance-performance-char
 import TotalPayrollChart from './components/total-payroll-chart';
 import PayrollByDepartmentChart from './components/payroll-by-department-chart';
 import AverageSalaryChart from './components/average-salary-chart';
+import PerformanceRatingChart from './components/performance-rating-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -58,6 +59,7 @@ export default function ReportingPage() {
     const [departments, setDepartments] = useState<Department[]>([]);
     const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
     const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
+    const [performanceReviews, setPerformanceReviews] = useState<PerformanceReview[]>([]);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -83,10 +85,11 @@ export default function ReportingPage() {
         const departmentsRef = ref(db, `companies/${companyId}/departments`);
         const resignationsRef = ref(db, `companies/${companyId}/resignationRequests`);
         const payrollRunsRef = ref(db, `companies/${companyId}/payrollRuns`);
+        const reviewsRef = ref(db, `companies/${companyId}/performanceReviews`);
         
         setLoading(true); // Set loading true on date change
         let loadedCount = 0;
-        const totalToLoad = 10;
+        const totalToLoad = 11;
         
         const checkLoading = () => {
             loadedCount++;
@@ -143,7 +146,7 @@ export default function ReportingPage() {
         const departmentsUnsubscribe = onValue(departmentsRef, onValueCallback(setDepartments), onErrorCallback('departments'));
         const resignationsUnsubscribe = onValue(resignationsRef, onValueCallback(setResignationRequests), onErrorCallback('resignations'));
         const payrollRunsUnsubscribe = onValue(payrollRunsRef, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs'));
-
+        const reviewsUnsubscribe = onValue(reviewsRef, onValueCallback(setPerformanceReviews), onErrorCallback('performance reviews'));
 
         return () => {
             employeesUnsubscribe();
@@ -156,6 +159,7 @@ export default function ReportingPage() {
             departmentsUnsubscribe();
             resignationsUnsubscribe();
             payrollRunsUnsubscribe();
+            reviewsUnsubscribe();
         };
     }, [companyId]);
     
@@ -353,6 +357,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <AverageSalaryChart employees={employees} departments={departments} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Performance Rating Distribution</CardTitle>
+                                <CardDescription>Distribution of employee performance ratings.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <PerformanceRatingChart reviews={performanceReviews} />
                             </CardContent>
                         </Card>
                     </div>
