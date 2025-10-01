@@ -44,6 +44,7 @@ import ContributionBreakdownChart from './components/contribution-breakdown-char
 import EmployeesTrainedChart from './components/employees-trained-chart';
 import TrainingHoursChart from './components/training-hours-chart';
 import TrainingImpactChart from './components/training-impact-chart';
+import GenderDistributionChart from './components/gender-distribution-chart';
 
 
 const availableReports = [
@@ -328,6 +329,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <DepartmentDistributionChart employees={employees} departments={departments} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Gender Distribution</CardTitle>
+                                <CardDescription>Breakdown of workforce by gender.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <GenderDistributionChart employees={employees} />
                             </CardContent>
                         </Card>
                         <Card>
