@@ -21,7 +21,12 @@ const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
     { name: 'Payroll History', description: 'A detailed history of all payroll runs.' },
     { name: 'Attendance Summary', description: 'A summary of employee attendance for a selected period.' },
+    { name: 'Daily Attendance Status', description: 'Daily breakdown of employees who are Present, Absent, or On Leave.' },
+    { name: 'Leave Report', description: 'Details on employees on leave and sick notes submitted.' },
     { name: 'Leave Balances', description: 'Current leave balances for all employees.' },
+    { name: 'Department Report', description: 'A list of all departments and the employees within them.' },
+    { name: 'Roles Report', description: 'A list of all roles and their assigned permissions.' },
+    { name: 'Emergency Alerts', description: 'A log of all triggered emergency alerts.' },
 ];
 
 export default function ReportingPage() {
