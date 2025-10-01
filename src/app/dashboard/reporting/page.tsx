@@ -39,6 +39,8 @@ import TopPerformersChart from './components/top-performers-chart';
 import AttendanceRateChart from './components/attendance-rate-chart';
 import LeaveTypesChart from './components/leave-types-chart';
 import TopDepartmentsAbsenteeismChart from './components/top-departments-absenteeism-chart';
+import MonthlyContributionsChart from './components/monthly-contributions-chart';
+import ContributionBreakdownChart from './components/contribution-breakdown-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -94,7 +96,7 @@ export default function ReportingPage() {
             resignations: ref(db, `companies/${companyId}/resignationRequests`),
             payrollRuns: ref(db, `companies/${companyId}/payrollRuns`),
             reviews: ref(db, `companies/${companyId}/performanceReviews`),
-            goals: ref(db, `goals`), // Goals are not under companyId
+            goals: query(ref(db, `goals`), orderByChild('companyId'), equalTo(companyId)),
         };
         
         setLoading(true);
@@ -156,8 +158,8 @@ export default function ReportingPage() {
             onValue(refs.departments, onValueCallback(setDepartments), onErrorCallback('departments')),
             onValue(refs.resignations, onValueCallback(setResignationRequests), onErrorCallback('resignations')),
             onValue(refs.payrollRuns, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs')),
-            onValue(refs.reviews, onValueCallback(setPerformanceReviews, false, true), onErrorCallback('reviews')),
-            onValue(query(refs.goals, orderByChild('companyId'), equalTo(companyId)), onValueCallback(setGoals), onErrorCallback('goals')),
+            onValue(query(ref(db, `companies/${companyId}/performanceReviews`)), createOnValueCallback(setPerformanceReviews), onErrorCallback('reviews')),
+            onValue(refs.goals, onValueCallback(setGoals), onErrorCallback('goals')),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
@@ -415,6 +417,24 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                 <TopDepartmentsAbsenteeismChart allAttendance={allAttendance} departments={departments} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Monthly Statutory Contributions</CardTitle>
+                                <CardDescription>Trend of NAPSA, NHIMA, and PAYE contributions.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <MonthlyContributionsChart payrollRuns={payrollRuns} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Contribution Breakdown</CardTitle>
+                                <CardDescription>Total share of each statutory contribution.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ContributionBreakdownChart payrollRuns={payrollRuns} />
                             </CardContent>
                         </Card>
                     </div>
