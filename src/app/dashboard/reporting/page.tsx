@@ -4,7 +4,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { File, Loader2, Download } from "lucide-react";
+import { File, Loader2, Download, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,6 +24,9 @@ import { DataTable } from './components/attendance-data-table';
 import { columns } from './components/attendance-columns';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { useToast } from '@/hooks/use-toast';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -48,20 +51,21 @@ export default function ReportingPage() {
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-    const today = new Date();
-    const todayString = format(today, 'yyyy-MM-dd');
+    const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
 
     useEffect(() => {
         if (!companyId) return;
 
         const employeesRef = ref(db, 'employees');
         const auditLogsRef = ref(db, `companies/${companyId}/auditLogs`);
-        const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}`);
+        const attendanceRef = ref(db, `companies/${companyId}/attendance/${selectedDateString}`);
         const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
         const rosterRef = ref(db, `companies/${companyId}/rosters`);
         const configRef = ref(db, `companies/${companyId}/payrollConfig`);
         
+        setLoading(true); // Set loading true on date change
         let loadedCount = 0;
         const totalToLoad = 6;
         
@@ -121,7 +125,7 @@ export default function ReportingPage() {
             rosterUnsubscribe();
             configUnsubscribe();
         };
-    }, [companyId, todayString]);
+    }, [companyId, selectedDateString]);
     
     const dailyStatusReport = useMemo(() => {
         return employees
@@ -131,7 +135,7 @@ export default function ReportingPage() {
                 const onLeave = leaveRequests.find(req => 
                     req.employeeId === emp.id && 
                     req.status === 'Approved' &&
-                    isWithinInterval(today, { start: new Date(req.startDate), end: new Date(req.endDate) })
+                    isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
                 );
 
                 let status: string;
@@ -148,7 +152,7 @@ export default function ReportingPage() {
                     dailyStatus: status,
                 };
             });
-    }, [employees, attendanceRecords, leaveRequests, today]);
+    }, [employees, attendanceRecords, leaveRequests, selectedDate]);
     
     const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
         if (!companyId) return;
@@ -169,6 +173,7 @@ export default function ReportingPage() {
     }, [companyId, toast]);
     
     const enrichedAttendanceRecords = useMemo(() => {
+        const isToday = format(new Date(), 'yyyy-MM-dd') === selectedDateString;
         return employees
             .filter(e => e.status === 'Active')
             .map(employee => {
@@ -186,9 +191,12 @@ export default function ReportingPage() {
                     onClockIn: () => handleClockAction(employee.id, 'clockIn'),
                     onClockOut: () => handleClockAction(employee.id, 'clockOut'),
                     isSubmitting: submittingIds.includes(employee.id),
+                    checkInTime: record?.checkInTime, // Ensure these are passed
+                    checkOutTime: record?.checkOutTime,
+                    status: isToday ? (record?.status || 'Not Clocked In') : (record?.status || 'N/A'),
                 };
         });
-    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds]);
+    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds, selectedDateString]);
 
 
     return (
@@ -204,7 +212,7 @@ export default function ReportingPage() {
                 </TabsList>
                  <Button size="sm" variant="outline" className="h-8 gap-1">
                     <File className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                         Export
                     </span>
                 </Button>
@@ -251,10 +259,34 @@ export default function ReportingPage() {
                     <CardHeader>
                         <CardTitle>Daily Attendance</CardTitle>
                         <CardDescription>
-                            Daily attendance records for {format(new Date(), 'MMMM d, yyyy')}. Admins can manually clock employees in or out.
+                            Daily attendance records for {format(selectedDate, 'MMMM d, yyyy')}. Admins can manually clock employees in or out on the current day.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
+                        <div className="flex justify-end mb-4">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-[280px] justify-start text-left font-normal",
+                                    !selectedDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => date && setSelectedDate(date)}
+                                    initialFocus
+                                />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                         {loading ? (
                             <div className="flex items-center justify-center h-24">
                                 <Loader2 className="h-8 w-8 animate-spin" />
@@ -290,9 +322,33 @@ export default function ReportingPage() {
             </TabsContent>
             <TabsContent value="daily-status">
                  <Card>
-                    <CardHeader>
-                        <CardTitle>Daily Attendance Status</CardTitle>
-                        <CardDescription>Breakdown of employees who are Present, Absent, or On Leave for {format(today, 'MMMM d, yyyy')}.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Daily Attendance Status</CardTitle>
+                            <CardDescription>Breakdown of employees who are Present, Absent, or On Leave for {format(selectedDate, 'MMMM d, yyyy')}.</CardDescription>
+                        </div>
+                         <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-[280px] justify-start text-left font-normal",
+                                !selectedDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) => date && setSelectedDate(date)}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
                     </CardHeader>
                     <CardContent>
                         <Table>

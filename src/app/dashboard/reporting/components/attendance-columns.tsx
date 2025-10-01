@@ -23,6 +23,10 @@ const formatDuration = (ms: number) => {
     return `${hours}h ${minutes}m`;
 }
 
+const isToday = (dateString: string) => {
+    return format(new Date(), 'yyyy-MM-dd') === dateString;
+}
+
 export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
   {
     accessorKey: "employeeName",
@@ -134,6 +138,11 @@ export const columns: ColumnDef<EnrichedAttendanceRecord>[] = [
     header: () => <div className="text-right">Actions</div>,
     cell: ({ row }) => {
       const record = row.original;
+      const isRecordForToday = isToday(record.date);
+      if (!isRecordForToday) {
+          return <div className="text-right text-xs text-muted-foreground"></div>
+      }
+
       const hasClockedIn = !!record.checkInTime;
       const hasClockedOut = !!record.checkOutTime;
 
