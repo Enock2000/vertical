@@ -9,11 +9,12 @@ import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { PayrollConfig, Bank } from '@/lib/data';
+import type { PayrollConfig, Bank, SubscriptionPlan } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PayrollSettingsTab } from './components/payroll-settings-tab';
 import { BanksTab } from './components/banks-tab';
 import { useAuth } from '@/app/auth-provider';
+import { SubscriptionTab } from './components/subscription-tab';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -36,6 +37,7 @@ export default function SettingsPage() {
   const { companyId } = useAuth();
   const [loading, setLoading] = useState(true);
   const [banks, setBanks] = useState<Bank[]>([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const { toast } = useToast();
 
   const form = useForm<SettingsFormValues>({
@@ -60,12 +62,14 @@ export default function SettingsPage() {
     
     const configRef = ref(db, `companies/${companyId}/payrollConfig`);
     const banksRef = ref(db, `companies/${companyId}/banks`);
+    const plansRef = ref(db, 'subscriptionPlans');
 
     let configLoaded = false;
     let banksLoaded = false;
+    let plansLoaded = false;
 
     const checkLoading = () => {
-        if (configLoaded && banksLoaded) {
+        if (configLoaded && banksLoaded && plansLoaded) {
             setLoading(false);
         }
     }
@@ -89,10 +93,18 @@ export default function SettingsPage() {
         banksLoaded = true;
         checkLoading();
     });
+    
+    const plansUnsubscribe = onValue(plansRef, (snapshot) => {
+        const data = snapshot.val();
+        setSubscriptionPlans(data ? Object.values(data) : []);
+        plansLoaded = true;
+        checkLoading();
+    });
 
     return () => {
         configUnsubscribe();
         banksUnsubscribe();
+        plansUnsubscribe();
     };
   }, [companyId, form]);
 
@@ -110,12 +122,16 @@ export default function SettingsPage() {
         <TabsList className="mb-4">
             <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
             <TabsTrigger value="banks">Bank Management</TabsTrigger>
+            <TabsTrigger value="subscription">Subscription</TabsTrigger>
         </TabsList>
         <TabsContent value="payroll">
             <PayrollSettingsTab form={form} />
         </TabsContent>
         <TabsContent value="banks">
             <BanksTab banks={banks} />
+        </TabsContent>
+         <TabsContent value="subscription">
+            <SubscriptionTab plans={subscriptionPlans} />
         </TabsContent>
     </Tabs>
   );
