@@ -3,6 +3,21 @@
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 
+export type SubscriptionPlan = {
+    id: string;
+    name: string;
+    price: number; // Monthly price
+    jobPostings: number; // Number of job postings allowed
+    features: string[];
+};
+
+export type CompanySubscription = {
+    planId: string;
+    status: 'active' | 'inactive' | 'trial' | 'past_due';
+    jobPostingsRemaining: number;
+    nextBillingDate: string; // ISO 8601
+};
+
 export type Company = {
     id: string;
     name: string;
@@ -13,6 +28,7 @@ export type Company = {
     adminEmail: string;
     createdAt: string; // ISO 8601
     status: 'Pending' | 'Active' | 'Rejected' | 'Suspended';
+    subscription: CompanySubscription;
 };
 
 export type ThemeSettings = {

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -21,6 +22,7 @@ import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { add } from 'date-fns';
 
 export default function SignUpPage() {
   const [companyName, setCompanyName] = useState('');
@@ -57,6 +59,12 @@ export default function SignUpPage() {
         adminEmail: email,
         createdAt: new Date().toISOString(),
         status: 'Pending',
+        subscription: {
+            planId: 'free',
+            status: 'trial',
+            jobPostingsRemaining: 3,
+            nextBillingDate: add(new Date(), { days: 14 }).toISOString(),
+        }
       };
       await set(companyRef, newCompany);
 

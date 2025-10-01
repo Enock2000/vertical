@@ -1,4 +1,5 @@
 
+
 // src/app/dashboard/recruitment/components/add-job-dialog.tsx
 'use client';
 
@@ -7,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref, push, set } from 'firebase/database';
+import { ref, push, set, update, runTransaction } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -53,7 +54,8 @@ export function AddJobDialog({
   departments,
   onJobAdded,
 }: AddJobDialogProps) {
-  const { companyId } = useAuth();
+  const { company } = useAuth();
+  const companyId = company?.id;
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -68,9 +70,26 @@ export function AddJobDialog({
   });
 
   async function onSubmit(values: AddJobFormValues) {
-    if (!companyId) return;
+    if (!companyId || !company?.subscription) return;
+
+    if (company.subscription.jobPostingsRemaining <= 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Posting Limit Reached',
+            description: 'You have reached your job posting limit. Please upgrade your plan to post more jobs.',
+        });
+        return;
+    }
+
     setIsLoading(true);
     try {
+      const companyRef = ref(db, `companies/${companyId}`);
+      
+      // Decrement job postings remaining
+      await runTransaction(ref(db, `companies/${companyId}/subscription/jobPostingsRemaining`), (currentValue) => {
+          return (currentValue || 0) - 1;
+      });
+
       const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
       const newJobRef = push(jobsRef);
       const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
@@ -112,7 +131,7 @@ export function AddJobDialog({
         <DialogHeader>
           <DialogTitle>Post New Job Vacancy</DialogTitle>
           <DialogDescription>
-            Enter the details for the new position you want to fill.
+            You have {company?.subscription?.jobPostingsRemaining || 0} job postings remaining.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
