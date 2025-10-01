@@ -2,7 +2,7 @@
 // src/app/employee-portal/components/employee-leave-request-dialog.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -32,17 +32,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee, LeaveRequest } from '@/lib/data';
-import { createNotification, getAdminUserIds } from '@/lib/data';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import type { Employee } from '@/lib/data';
+import { requestLeave } from '@/ai/flows/request-leave-flow';
+import { Loader2, CalendarIcon, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase';
-import { ref, push, set } from 'firebase/database';
-
 
 const formSchema = z.object({
   leaveType: z.enum(['Annual', 'Sick', 'Unpaid', 'Maternity']),
@@ -54,6 +52,15 @@ const formSchema = z.object({
     path: ["from"]
   }),
   reason: z.string().min(10, 'Reason must be at least 10 characters.'),
+  sickNote: z.any().optional(),
+}).refine(data => {
+    if (data.leaveType === 'Sick' && !data.sickNote) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A sick note is required for sick leave.",
+    path: ["sickNote"],
 });
 
 type RequestLeaveFormValues = z.infer<typeof formSchema>;
@@ -69,6 +76,9 @@ export function EmployeeLeaveRequestDialog({
 }: EmployeeLeaveRequestDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
 
   const form = useForm<RequestLeaveFormValues>({
@@ -79,44 +89,40 @@ export function EmployeeLeaveRequestDialog({
     },
   });
 
+  const leaveType = form.watch('leaveType');
+
   async function onSubmit(values: RequestLeaveFormValues) {
+    if (!formRef.current) return;
     setIsLoading(true);
     
+    const formData = new FormData(formRef.current);
+    formData.append('employeeId', employee.id);
+    formData.append('employeeName', employee.name);
+    formData.append('companyId', employee.companyId);
+    formData.append('startDate', values.dateRange.from.toISOString());
+    formData.append('endDate', values.dateRange.to.toISOString());
+
     try {
-      const leaveRequestsRef = ref(db, `companies/${employee.companyId}/leaveRequests`);
-      const newRequestRef = push(leaveRequestsRef);
+      const result = await requestLeave(formData);
       
-      const requestData: Omit<LeaveRequest, 'id'> = {
-          companyId: employee.companyId,
-          employeeId: employee.id,
-          employeeName: employee.name,
-          leaveType: values.leaveType,
-          startDate: values.dateRange.from.toISOString(),
-          endDate: values.dateRange.to.toISOString(),
-          reason: values.reason,
-          status: 'Pending',
-      };
-
-      await set(newRequestRef, { ...requestData, id: newRequestRef.key });
-
-      // Notify admins
-      const adminIds = await getAdminUserIds(employee.companyId);
-      for (const adminId of adminIds) {
-        await createNotification(employee.companyId, {
-          userId: adminId,
-          title: 'New Leave Request',
-          message: `${employee.name} has requested ${values.leaveType} leave.`,
-          link: '/dashboard/leave',
+      if (result.success) {
+        setIsLoading(false);
+        setOpen(false);
+        form.reset();
+        setFileName('');
+        toast({
+          title: 'Leave Request Submitted',
+          description: `Your request has been submitted for approval.`,
         });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: result.message,
+        });
+        setIsLoading(false);
       }
 
-      setIsLoading(false);
-      setOpen(false);
-      form.reset();
-      toast({
-        title: 'Leave Request Submitted',
-        description: `Your request has been submitted for approval.`,
-      });
     } catch (error) {
        console.error("Error submitting leave request:", error);
         toast({
@@ -139,7 +145,7 @@ export function EmployeeLeaveRequestDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="leaveType"
@@ -228,6 +234,38 @@ export function EmployeeLeaveRequestDialog({
                 </FormItem>
               )}
             />
+
+            {leaveType === 'Sick' && (
+                <FormField
+                    control={form.control}
+                    name="sickNote"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Sick Note</FormLabel>
+                            <FormControl>
+                                <>
+                                 <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {fileName || 'Upload your sick note'}
+                                 </Button>
+                                <Input 
+                                    ref={fileInputRef} 
+                                    type="file" 
+                                    className="hidden" 
+                                    {...form.register("sickNote")}
+                                    onChange={(e) => {
+                                        field.onChange(e.target.files ? e.target.files[0] : null);
+                                        setFileName(e.target.files?.[0]?.name || '');
+                                    }}
+                                />
+                                </>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                 />
+            )}
+
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? (

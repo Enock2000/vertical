@@ -183,6 +183,7 @@ export type LeaveRequest = {
   endDate: string;
   reason: string;
   status: 'Pending' | 'Approved' | 'Rejected';
+  sickNoteUrl?: string;
 };
 
 export type AttendanceRecord = {

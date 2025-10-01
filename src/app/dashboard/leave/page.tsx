@@ -48,7 +48,7 @@ export default function LeavePage() {
         const requestList = Object.keys(data).map(key => ({
           ...data[key],
           id: key,
-        }));
+        })).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
         setLeaveRequests(requestList);
       } else {
         setLeaveRequests([]);

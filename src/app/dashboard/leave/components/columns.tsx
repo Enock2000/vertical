@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, CheckCircle2, XCircle, MoreHorizontal, Hourglass } from "lucide-react"
+import { ArrowUpDown, CheckCircle2, XCircle, MoreHorizontal, Hourglass, FileText } from "lucide-react"
 import { format } from "date-fns"
 
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LeaveRequest } from "@/lib/data"
+import Link from "next/link"
 
 const StatusIcon = ({ status }: { status: LeaveRequest['status'] }) => {
     switch (status) {
@@ -95,6 +96,14 @@ export const columns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                {request.sickNoteUrl && (
+                  <DropdownMenuItem asChild>
+                      <Link href={request.sickNoteUrl} target="_blank" rel="noopener noreferrer">
+                         <FileText className="mr-2 h-4 w-4" />
+                         View Sick Note
+                      </Link>
+                  </DropdownMenuItem>
+                )}
                 {request.status === 'Pending' && (
                     <>
                         <DropdownMenuItem onClick={() => handleStatusUpdate(request.id, 'Approved')}>
