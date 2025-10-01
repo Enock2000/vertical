@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { File, Loader2, Download, Calendar as CalendarIcon } from "lucide-react";
+import { File, Loader2, Download, Calendar as CalendarIcon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,6 +26,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import DepartmentDistributionChart from './components/department-distribution-chart';
+import ActiveContractsChart from './components/active-contracts-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -146,35 +147,35 @@ export default function ReportingPage() {
     }, [companyId, selectedDateString]);
     
     const dailyStatusReport = useMemo(() => {
-        return employees
-            .filter(emp => emp.status !== 'Inactive')
-            .map(emp => {
-                const attendanceRecord = attendanceRecords[emp.id];
-                const onLeave = leaveRequests.find(req => 
-                    req.employeeId === emp.id && 
-                    req.status === 'Approved' &&
-                    isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
-                );
+    return employees
+        .filter(emp => emp.status === 'Active' || emp.status === 'Suspended' || emp.status === 'Sick')
+        .map(emp => {
+            const attendanceRecord = attendanceRecords[emp.id];
+            const onLeave = leaveRequests.find(req => 
+                req.employeeId === emp.id && 
+                req.status === 'Approved' &&
+                isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
+            );
 
-                let status: string;
-                
-                if (emp.status === 'Suspended') {
-                    status = 'Suspended';
-                } else if (emp.status === 'Sick') {
-                    status = 'Sick';
-                } else if (onLeave) {
-                    status = 'On Leave';
-                } else if (attendanceRecord) {
-                    status = attendanceRecord.status;
-                } else {
-                    status = 'Absent';
-                }
+            let status: string;
+            
+            if (emp.status === 'Suspended') {
+                status = 'Suspended';
+            } else if (emp.status === 'Sick') {
+                status = 'Sick';
+            } else if (onLeave) {
+                status = 'On Leave';
+            } else if (attendanceRecord) {
+                status = attendanceRecord.status;
+            } else {
+                status = 'Absent';
+            }
 
-                return {
-                    ...emp,
-                    dailyStatus: status,
-                };
-            });
+            return {
+                ...emp,
+                dailyStatus: status,
+            };
+        });
     }, [employees, attendanceRecords, leaveRequests, selectedDate]);
     
     const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
@@ -247,7 +248,7 @@ export default function ReportingPage() {
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Employee Headcount</CardTitle>
@@ -282,6 +283,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <DepartmentDistributionChart employees={employees} departments={departments} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Active Contracts</CardTitle>
+                                <CardDescription>Breakdown of active employee contracts.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <ActiveContractsChart employees={employees} />
                             </CardContent>
                         </Card>
                     </div>
