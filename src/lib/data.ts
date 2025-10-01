@@ -72,6 +72,11 @@ export type Employee = {
   jobTitle?: string; // Original job title before promotion
   adminRoleId?: string; // ID of the assigned admin Role
   themeSettings?: ThemeSettings;
+  // Contract Details
+  contractType?: 'Permanent' | 'Fixed-Term' | 'Internship';
+  contractStartDate?: string; // ISO 8601
+  contractEndDate?: string | null; // ISO 8601
+  contractFileUrl?: string | null;
 };
 
 export type JobVacancy = {

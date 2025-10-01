@@ -68,6 +68,10 @@ const formSchema = z.object({
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   branchCode: z.string().optional(),
+  // Contract Details
+  contractType: z.enum(['Permanent', 'Fixed-Term', 'Internship']).optional(),
+  contractStartDate: z.string().optional(),
+  contractEndDate: z.string().optional(),
 }).refine(data => {
     if (data.workerType === 'Hourly' && (data.hourlyRate === undefined || data.hoursWorked === undefined)) {
         return false;
@@ -132,6 +136,9 @@ export function AddEmployeeDialog({
       identificationNumber: '',
       gender: 'Male',
       dateOfBirth: '',
+      contractType: 'Permanent',
+      contractStartDate: '',
+      contractEndDate: '',
     },
   });
 
@@ -171,6 +178,7 @@ export function AddEmployeeDialog({
           hoursWorked: values.hoursWorked || 0,
           joinDate: new Date().toISOString(),
           dateOfBirth: values.dateOfBirth,
+          contractStartDate: values.contractStartDate || new Date().toISOString(),
       };
 
       // Save employee data to Realtime Database
@@ -436,7 +444,63 @@ export function AddEmployeeDialog({
                         )}
                     />
                 </div>
-                
+
+                <Separator />
+                <h3 className="text-lg font-semibold">Contract Details</h3>
+                 <FormField
+                    control={form.control}
+                    name="contractType"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Contract Type</FormLabel>
+                        <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        >
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select contract type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Permanent">Permanent</SelectItem>
+                            <SelectItem value="Fixed-Term">Fixed-Term</SelectItem>
+                            <SelectItem value="Internship">Internship</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                 <div className="grid grid-cols-2 gap-4">
+                     <FormField
+                        control={form.control}
+                        name="contractStartDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contract Start Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="contractEndDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contract End Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+
                 <Separator />
                 <h3 className="text-lg font-semibold">Compensation Details</h3>
                 
