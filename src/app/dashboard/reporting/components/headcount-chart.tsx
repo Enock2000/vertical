@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/chart"
 import type { Employee } from "@/lib/data"
 import { useMemo } from "react"
-import { format, subMonths, getMonth, getYear, startOfMonth } from "date-fns"
+import { format, subMonths, getMonth, getYear, startOfMonth, endOfMonth } from "date-fns"
 
 
 const chartConfig = {
@@ -29,7 +29,7 @@ export default function HeadcountChart({ employees }: HeadcountChartProps) {
         // Generate labels for the last 12 months
         const monthLabels = Array.from({ length: 12 }, (_, i) => {
             const date = subMonths(now, i);
-            return { month: format(date, "MMM"), dateObj: startOfMonth(date) };
+            return { month: format(date, "MMM"), dateObj: endOfMonth(date) }; // Use end of month for comparison
         }).reverse();
 
         // Calculate headcount for each month
@@ -37,9 +37,14 @@ export default function HeadcountChart({ employees }: HeadcountChartProps) {
             const headcount = employees.filter(employee => {
                 if (!employee.joinDate) return false;
                 const joinDate = new Date(employee.joinDate);
-                // In a real app, you would also check for a separationDate here.
-                // For now, we'll count any employee who joined before the end of that month.
-                return joinDate <= dateObj;
+                
+                // Employee must have joined before the end of the month
+                const joinedInTime = joinDate <= dateObj;
+
+                // Employee must not have been terminated before the start of the month
+                const notTerminatedYet = !employee.terminationDate || new Date(employee.terminationDate) > dateObj;
+
+                return joinedInTime && notTerminatedYet;
             }).length;
 
             return { month, employees: headcount };
