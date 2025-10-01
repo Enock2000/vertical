@@ -76,6 +76,8 @@ export type Employee = {
   contractStartDate?: string; // ISO 8601
   contractEndDate?: string | null; // ISO 8601
   contractFileUrl?: string | null;
+  terminationDate?: string | null;
+  terminationReason?: string | null;
 };
 
 export type JobVacancy = {
