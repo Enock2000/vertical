@@ -1,4 +1,3 @@
-
 // src/app/employee-portal/components/employee-leave-request-dialog.tsx
 'use client';
 
@@ -45,8 +44,8 @@ import { cn } from '@/lib/utils';
 const formSchema = z.object({
   leaveType: z.enum(['Annual', 'Sick', 'Unpaid', 'Maternity']),
   dateRange: z.object({
-    from: z.date(),
-    to: z.date(),
+    from: z.date({ required_error: "A start date is required."}),
+    to: z.date({ required_error: "An end date is required."}),
   }).refine(data => data.from && data.to, {
     message: "Please select a date range.",
     path: ["from"]
