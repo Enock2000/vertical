@@ -31,7 +31,7 @@ export default function RosterPage() {
                 checkLoading();
             }
 
-            const rosterQuery = query(ref(db, `companies/${companyId}/rosters`), orderByChild('employeeId'), equalTo(user.uid));
+            const rosterQuery = query(ref(db, `companies/${companyId}/rosters`));
             const rosterUnsubscribe = onValue(rosterQuery, (snapshot) => {
                 const allData = snapshot.val();
                 const userAssignments: RosterAssignment[] = [];

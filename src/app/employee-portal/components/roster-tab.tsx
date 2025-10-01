@@ -21,10 +21,14 @@ export function RosterTab({ rosterAssignments, leaveRequests }: RosterTabProps) 
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const eventsByDate = useMemo(() => {
-    const events: { [key: string]: { status: RosterAssignment['status'] | 'On Leave' } } = {};
+    const events: { [key: string]: { status: RosterAssignment['status'] | 'On Leave', shiftName?: string, shiftColor?: string } } = {};
 
     rosterAssignments.forEach(assignment => {
-      events[assignment.date] = { status: assignment.status };
+      events[assignment.date] = { 
+          status: assignment.status, 
+          shiftName: assignment.shiftName,
+          shiftColor: assignment.shiftColor
+      };
     });
 
     leaveRequests.forEach(leave => {
@@ -88,22 +92,29 @@ export function RosterTab({ rosterAssignments, leaveRequests }: RosterTabProps) 
                          {days.map(day => {
                             const dateKey = format(day, 'yyyy-MM-dd');
                             const event = eventsByDate[dateKey];
-                            let variant: "default" | "secondary" | "destructive" | "outline" | null = null;
-                            let text = 'N/A';
+                            let content;
 
                             if (event) {
-                                if (event.status === 'On Duty') { variant = 'default'; text = 'Duty'; }
-                                else if (event.status === 'Off Day') { variant = 'outline'; text = 'Off'; }
-                                else if (event.status === 'On Leave') { variant = 'destructive'; text = 'Leave'; }
+                                if (event.status === 'On Duty' && event.shiftName) {
+                                    content = (
+                                        <div className="p-1 rounded-md text-xs font-semibold text-white truncate" style={{ backgroundColor: event.shiftColor || 'hsl(var(--primary))' }}>
+                                            {event.shiftName}
+                                        </div>
+                                    );
+                                } else if (event.status === 'Off Day') {
+                                    content = <Badge variant="outline">Off</Badge>;
+                                } else if (event.status === 'On Leave') {
+                                    content = <Badge variant="destructive">Leave</Badge>;
+                                } else {
+                                     content = <span className="text-muted-foreground text-xs">-</span>;
+                                }
+                            } else {
+                                content = <span className="text-muted-foreground text-xs">-</span>;
                             }
                             
                             return (
                                 <TableCell key={day.toString()} className="text-center p-2">
-                                    {variant ? (
-                                            <Badge variant={variant}>{text}</Badge>
-                                    ) : (
-                                        <span className="text-muted-foreground text-xs">{text}</span>
-                                    )}
+                                    {content}
                                 </TableCell>
                             )
                         })}
@@ -112,7 +123,7 @@ export function RosterTab({ rosterAssignments, leaveRequests }: RosterTabProps) 
             </Table>
         </div>
          <div className="flex justify-center gap-4 mt-4 text-sm">
-            <div className="flex items-center gap-2"><Badge variant="default">On Duty</Badge></div>
+            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-sm bg-primary"/>On Duty</div>
             <div className="flex items-center gap-2"><Badge variant="outline">Off Day</Badge></div>
             <div className="flex items-center gap-2"><Badge variant="destructive">On Leave</Badge></div>
         </div>
