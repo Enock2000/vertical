@@ -1,8 +1,9 @@
 
+
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { File, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,12 +14,16 @@ import TurnoverChart from "./components/turnover-chart";
 import DiversityChart from "./components/diversity-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RosterCalendar } from '../roster/components/roster-calendar';
+import { DataTable } from './components/attendance-data-table';
+import { columns } from './components/attendance-columns';
+import { recordAttendance } from '@/ai/flows/attendance-flow';
+import { useToast } from '@/hooks/use-toast';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -34,12 +39,15 @@ const availableReports = [
 
 export default function ReportingPage() {
     const { companyId } = useAuth();
+    const { toast } = useToast();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-    const [todayAttendance, setTodayAttendance] = useState<Record<string, AttendanceRecord>>({});
+    const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
+    const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [loading, setLoading] = useState(true);
+    const [submittingIds, setSubmittingIds] = useState<string[]>([]);
 
     const today = new Date();
     const todayString = format(today, 'yyyy-MM-dd');
@@ -52,9 +60,10 @@ export default function ReportingPage() {
         const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}`);
         const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
         const rosterRef = ref(db, `companies/${companyId}/rosters`);
+        const configRef = ref(db, `companies/${companyId}/payrollConfig`);
         
         let loadedCount = 0;
-        const totalToLoad = 5;
+        const totalToLoad = 6;
         
         const checkLoading = () => {
             loadedCount++;
@@ -83,7 +92,7 @@ export default function ReportingPage() {
             checkLoading();
         });
         const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), (err) => {console.error(err); checkLoading()});
-        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setTodayAttendance, true), (err) => {console.error(err); checkLoading()});
+        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setAttendanceRecords, true), (err) => {console.error(err); checkLoading()});
         const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), (err) => {console.error(err); checkLoading()});
         const rosterUnsubscribe = onValue(rosterRef, (snapshot) => {
             const data = snapshot.val();
@@ -101,6 +110,7 @@ export default function ReportingPage() {
             setRosterAssignments(assignments);
             checkLoading();
         }, (err) => {console.error(err); checkLoading()});
+        const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), (err) => {console.error(err); checkLoading()});
 
 
         return () => {
@@ -109,39 +119,84 @@ export default function ReportingPage() {
             attendanceUnsubscribe();
             leaveUnsubscribe();
             rosterUnsubscribe();
+            configUnsubscribe();
         };
     }, [companyId, todayString]);
     
     const dailyStatusReport = useMemo(() => {
-        return employees.map(emp => {
-            const attendanceRecord = todayAttendance[emp.id];
-            const onLeave = leaveRequests.find(req => 
-                req.employeeId === emp.id && 
-                req.status === 'Approved' &&
-                isWithinInterval(today, { start: new Date(req.startDate), end: new Date(req.endDate) })
-            );
+        return employees
+            .filter(emp => emp.status === 'Active')
+            .map(emp => {
+                const attendanceRecord = attendanceRecords[emp.id];
+                const onLeave = leaveRequests.find(req => 
+                    req.employeeId === emp.id && 
+                    req.status === 'Approved' &&
+                    isWithinInterval(today, { start: new Date(req.startDate), end: new Date(req.endDate) })
+                );
 
-            let status: string;
-            if (onLeave) {
-                status = 'On Leave';
-            } else if (attendanceRecord) {
-                status = attendanceRecord.status;
+                let status: string;
+                if (onLeave) {
+                    status = 'On Leave';
+                } else if (attendanceRecord) {
+                    status = attendanceRecord.status;
+                } else {
+                    status = 'Absent';
+                }
+
+                return {
+                    ...emp,
+                    dailyStatus: status,
+                };
+            });
+    }, [employees, attendanceRecords, leaveRequests, today]);
+    
+    const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
+        if (!companyId) return;
+        setSubmittingIds(prev => [...prev, employeeId]);
+        try {
+            const result = await recordAttendance({ userId: employeeId, action, companyId });
+            if (result.success) {
+                toast({ title: `Successfully ${action === 'clockIn' ? 'Clocked In' : 'Clocked Out'}` });
             } else {
-                status = 'Absent';
+                toast({ variant: "destructive", title: "Action Failed", description: result.message });
             }
-
-            return {
-                ...emp,
-                dailyStatus: status,
-            };
+        } catch (error: any) {
+            console.error(`${action} error:`, error);
+            toast({ variant: "destructive", title: "Error", description: `An unexpected error occurred during ${action}.` });
+        } finally {
+            setSubmittingIds(prev => prev.filter(id => id !== employeeId));
+        }
+    }, [companyId, toast]);
+    
+    const enrichedAttendanceRecords = useMemo(() => {
+        return employees
+            .filter(e => e.status === 'Active')
+            .map(employee => {
+                const record = attendanceRecords[employee.id];
+                return {
+                    ...record,
+                    id: employee.id, // Use employee ID as the key for the row
+                    employeeId: employee.id,
+                    employeeName: employee.name,
+                    role: employee.role,
+                    departmentName: employee.departmentName,
+                    avatar: employee.avatar,
+                    email: employee.email,
+                    dailyTargetHours: payrollConfig?.dailyTargetHours,
+                    onClockIn: () => handleClockAction(employee.id, 'clockIn'),
+                    onClockOut: () => handleClockAction(employee.id, 'clockOut'),
+                    isSubmitting: submittingIds.includes(employee.id),
+                };
         });
-    }, [employees, todayAttendance, leaveRequests, today]);
+    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds]);
+
 
     return (
         <Tabs defaultValue="overview">
             <div className="flex items-center justify-between">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
                     <TabsTrigger value="roster">Roster</TabsTrigger>
                     <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
                     <TabsTrigger value="reports">Reports</TabsTrigger>
@@ -190,6 +245,25 @@ export default function ReportingPage() {
                         </Card>
                     </div>
                 )}
+            </TabsContent>
+             <TabsContent value="attendance">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Daily Attendance</CardTitle>
+                        <CardDescription>
+                            Daily attendance records for {format(new Date(), 'MMMM d, yyyy')}. Admins can manually clock employees in or out.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {loading ? (
+                            <div className="flex items-center justify-center h-24">
+                                <Loader2 className="h-8 w-8 animate-spin" />
+                            </div>
+                        ) : (
+                            <DataTable columns={columns} data={enrichedAttendanceRecords} />
+                        )}
+                    </CardContent>
+                </Card>
             </TabsContent>
             <TabsContent value="roster">
                  <Card>
