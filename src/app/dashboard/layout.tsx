@@ -20,6 +20,8 @@ import {
     Trophy,
     Loader2,
     Clock,
+    Landmark,
+    AlertTriangle,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
