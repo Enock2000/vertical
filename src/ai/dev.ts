@@ -11,3 +11,4 @@ import '@/ai/flows/handle-application-flow.ts';
 import '@/ai/flows/report-emergency-flow.ts';
 import '@/ai/flows/submit-training-flow.ts';
 import '@/ai/flows/request-leave-flow.ts';
+import '@/ai/flows/generate-contract-flow.ts';

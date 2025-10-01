@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, FileSignature } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import { ref, update } from 'firebase/database';
 import { differenceInYears } from "date-fns"
 import { PromoteEmployeeDialog } from "./promote-employee-dialog"
 import { DemoteAdminDialog } from "./demote-admin-dialog"
+import { GenerateContractDialog } from "./generate-contract-dialog"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
@@ -194,8 +195,14 @@ export const columns = (departments: Department[], banks: Bank[], roles: Role[],
                     </DropdownMenuItem>
                 )}
 
-
                 <DropdownMenuSeparator />
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <GenerateContractDialog employee={employee}>
+                    <div className="w-full text-left flex items-center">
+                        <FileSignature className="mr-2 h-4 w-4" /> Generate Contract
+                    </div>
+                  </GenerateContractDialog>
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <EditEmployeeDialog employee={employee} departments={departments} banks={banks} onEmployeeUpdated={onAction}>
                     <div className="w-full text-left">Edit Profile</div>
