@@ -368,6 +368,8 @@ export type RosterAssignment = {
     status: 'On Duty' | 'Off Day';
     shiftId?: string;
     shiftName?: string;
+    startTime?: string;
+    endTime?: string;
     shiftColor?: string;
 };
 

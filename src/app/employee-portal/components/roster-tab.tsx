@@ -21,13 +21,15 @@ export function RosterTab({ rosterAssignments, leaveRequests }: RosterTabProps) 
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const eventsByDate = useMemo(() => {
-    const events: { [key: string]: { status: RosterAssignment['status'] | 'On Leave', shiftName?: string, shiftColor?: string } } = {};
+    const events: { [key: string]: { status: RosterAssignment['status'] | 'On Leave', shiftName?: string, shiftColor?: string, startTime?: string, endTime?: string } } = {};
 
     rosterAssignments.forEach(assignment => {
       events[assignment.date] = { 
           status: assignment.status, 
           shiftName: assignment.shiftName,
-          shiftColor: assignment.shiftColor
+          shiftColor: assignment.shiftColor,
+          startTime: assignment.startTime,
+          endTime: assignment.endTime,
       };
     });
 
@@ -95,10 +97,10 @@ export function RosterTab({ rosterAssignments, leaveRequests }: RosterTabProps) 
                             let content;
 
                             if (event) {
-                                if (event.status === 'On Duty' && event.shiftName) {
+                                if (event.status === 'On Duty' && event.startTime && event.endTime) {
                                     content = (
                                         <div className="p-1 rounded-md text-xs font-semibold text-white truncate" style={{ backgroundColor: event.shiftColor || 'hsl(var(--primary))' }}>
-                                            {event.shiftName}
+                                            {event.startTime} - {event.endTime}
                                         </div>
                                     );
                                 } else if (event.status === 'Off Day') {

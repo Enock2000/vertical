@@ -85,6 +85,8 @@ export function AssignStatusDialog({ open, onOpenChange, employee, date, assignm
             shiftId: selectedShift.id,
             shiftName: selectedShift.name,
             shiftColor: selectedShift.color,
+            startTime: selectedShift.startTime,
+            endTime: selectedShift.endTime,
         };
         toastMessage = `${employee.name} has been assigned to "${selectedShift.name}" on ${format(date, 'PPP')}.`;
     }
