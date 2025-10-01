@@ -142,7 +142,7 @@ export default function ReportingPage() {
     
     const dailyStatusReport = useMemo(() => {
         return employees
-            .filter(emp => emp.status === 'Active')
+            .filter(emp => emp.status !== 'Inactive')
             .map(emp => {
                 const attendanceRecord = attendanceRecords[emp.id];
                 const onLeave = leaveRequests.find(req => 
@@ -152,7 +152,12 @@ export default function ReportingPage() {
                 );
 
                 let status: string;
-                if (onLeave) {
+                
+                if (emp.status === 'Suspended') {
+                    status = 'Suspended';
+                } else if (emp.status === 'Sick') {
+                    status = 'Sick';
+                } else if (onLeave) {
                     status = 'On Leave';
                 } else if (attendanceRecord) {
                     status = attendanceRecord.status;
@@ -396,7 +401,7 @@ export default function ReportingPage() {
                                             <TableCell>
                                                  <Badge variant={
                                                      emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' ? 'default' :
-                                                     emp.dailyStatus === 'Absent' ? 'destructive' :
+                                                     emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
                                                      'outline'
                                                  }>
                                                     {emp.dailyStatus}
