@@ -1,5 +1,3 @@
-
-
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
@@ -12,9 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import HeadcountChart from "./components/headcount-chart";
 import TurnoverChart from "./components/turnover-chart";
 import DiversityChart from "./components/diversity-chart";
+import DepartmentDistributionChart from "./components/department-distribution-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +48,7 @@ export default function ReportingPage() {
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
+    const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -70,10 +70,11 @@ export default function ReportingPage() {
         const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
         const rosterRef = ref(db, `companies/${companyId}/rosters`);
         const configRef = ref(db, `companies/${companyId}/payrollConfig`);
+        const departmentsRef = ref(db, `companies/${companyId}/departments`);
         
         setLoading(true); // Set loading true on date change
         let loadedCount = 0;
-        const totalToLoad = 6;
+        const totalToLoad = 7;
         
         const checkLoading = () => {
             loadedCount++;
@@ -95,15 +96,20 @@ export default function ReportingPage() {
             }
             checkLoading();
         };
+        
+         const onErrorCallback = (name: string) => (error: Error) => {
+            console.error(`Firebase read failed for ${name}:`, error.message);
+            checkLoading();
+        };
 
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             setEmployees(data ? Object.values<Employee>(data).filter(e => e.companyId === companyId) : []);
             checkLoading();
         });
-        const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), (err) => {console.error(err); checkLoading()});
-        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setAttendanceRecords, true), (err) => {console.error(err); checkLoading()});
-        const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), (err) => {console.error(err); checkLoading()});
+        const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), onErrorCallback('audit logs'));
+        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setAttendanceRecords, true), onErrorCallback('attendance'));
+        const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), onErrorCallback('leave'));
         const rosterUnsubscribe = onValue(rosterRef, (snapshot) => {
             const data = snapshot.val();
             const assignments: RosterAssignment[] = [];
@@ -119,8 +125,9 @@ export default function ReportingPage() {
             }
             setRosterAssignments(assignments);
             checkLoading();
-        }, (err) => {console.error(err); checkLoading()});
-        const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), (err) => {console.error(err); checkLoading()});
+        }, onErrorCallback('roster'));
+        const configUnsubscribe = onValue(configRef, onValueCallback(setPayrollConfig, true), onErrorCallback('config'));
+        const departmentsUnsubscribe = onValue(departmentsRef, onValueCallback(setDepartments), onErrorCallback('departments'));
 
 
         return () => {
@@ -130,6 +137,7 @@ export default function ReportingPage() {
             leaveUnsubscribe();
             rosterUnsubscribe();
             configUnsubscribe();
+            departmentsUnsubscribe();
         };
     }, [companyId, selectedDateString]);
     
@@ -230,7 +238,7 @@ export default function ReportingPage() {
                         <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Employee Headcount</CardTitle>
@@ -256,6 +264,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <DiversityChart employees={employees} />
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Department Distribution</CardTitle>
+                                <CardDescription>Employee count by department.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <DepartmentDistributionChart employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
                     </div>
