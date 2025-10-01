@@ -12,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore, Goal } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore, Goal, Enrollment } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,10 @@ import LeaveTypesChart from './components/leave-types-chart';
 import TopDepartmentsAbsenteeismChart from './components/top-departments-absenteeism-chart';
 import MonthlyContributionsChart from './components/monthly-contributions-chart';
 import ContributionBreakdownChart from './components/contribution-breakdown-chart';
+import EmployeesTrainedChart from './components/employees-trained-chart';
+import TrainingHoursChart from './components/training-hours-chart';
+import TrainingImpactChart from './components/training-impact-chart';
+
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -68,7 +72,8 @@ export default function ReportingPage() {
     const [resignationRequests, setResignationRequests] = useState<ResignationRequest[]>([]);
     const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
     const [performanceReviews, setPerformanceReviews] = useState<PerformanceReview[]>([]);
-    const [goals, setGoals] = useState<Goal[]>([]); // Add goals state
+    const [goals, setGoals] = useState<Goal[]>([]);
+    const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -97,6 +102,7 @@ export default function ReportingPage() {
             payrollRuns: ref(db, `companies/${companyId}/payrollRuns`),
             reviews: ref(db, `companies/${companyId}/performanceReviews`),
             goals: query(ref(db, `goals`), orderByChild('companyId'), equalTo(companyId)),
+            enrollments: ref(db, `companies/${companyId}/enrollments`),
         };
         
         setLoading(true);
@@ -160,6 +166,7 @@ export default function ReportingPage() {
             onValue(refs.payrollRuns, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs')),
             onValue(query(ref(db, `companies/${companyId}/performanceReviews`)), onValueCallback(setPerformanceReviews), onErrorCallback('reviews')),
             onValue(refs.goals, onValueCallback(setGoals), onErrorCallback('goals')),
+            onValue(refs.enrollments, onValueCallback(setEnrollments), onErrorCallback('enrollments')),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
@@ -435,6 +442,33 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                 <ContributionBreakdownChart payrollRuns={payrollRuns} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Employees Trained per Department</CardTitle>
+                                <CardDescription>Number of employees who completed training.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <EmployeesTrainedChart enrollments={enrollments} employees={employees} departments={departments} />
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Training Hours by Category</CardTitle>
+                                <CardDescription>Total training hours per skill category.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TrainingHoursChart />
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Training vs. Performance Impact</CardTitle>
+                                <CardDescription>Correlation between training and performance.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TrainingImpactChart />
                             </CardContent>
                         </Card>
                     </div>
