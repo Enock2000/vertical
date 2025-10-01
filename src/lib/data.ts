@@ -320,6 +320,8 @@ export type TrainingCourse = {
   companyId: string;
   title: string;
   description: string;
+  category: string;
+  duration: number; // in hours
   questions: Question[];
 };
 

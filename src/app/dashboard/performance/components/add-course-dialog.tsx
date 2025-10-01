@@ -46,6 +46,8 @@ const questionSchema = z.object({
 const formSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
+  category: z.string().min(2, 'Category must be at least 2 characters.'),
+  duration: z.coerce.number().min(0.5, 'Duration must be at least 0.5 hours.'),
   questions: z.array(questionSchema).min(1, 'You must add at least one question.'),
 });
 
@@ -66,6 +68,8 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
     defaultValues: {
       title: '',
       description: '',
+      category: '',
+      duration: 1,
       questions: [],
     },
   });
@@ -154,6 +158,35 @@ export function AddCourseDialog({ children }: AddCourseDialogProps) {
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Leadership, Technical" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duration (hours)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="0.5" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
             <Separator />
 
