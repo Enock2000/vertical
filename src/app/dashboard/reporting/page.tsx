@@ -31,6 +31,7 @@ import EmployeeStatusChart from './components/employee-status-chart';
 import AttendancePerformanceChart from './components/attendance-performance-chart';
 import TotalPayrollChart from './components/total-payroll-chart';
 import PayrollByDepartmentChart from './components/payroll-by-department-chart';
+import AverageSalaryChart from './components/average-salary-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -343,6 +344,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <PayrollByDepartmentChart employees={employees} departments={departments} payrollConfig={payrollConfig} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Average Salary by Department</CardTitle>
+                                <CardDescription>Average salary for active employees per department.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                               <AverageSalaryChart employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
                     </div>
