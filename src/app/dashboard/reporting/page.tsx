@@ -2,7 +2,7 @@
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { File, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,9 +13,11 @@ import TurnoverChart from "./components/turnover-chart";
 import DiversityChart from "./components/diversity-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { Employee, AuditLog } from '@/lib/data';
-import { format } from 'date-fns';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest } from '@/lib/data';
+import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -33,67 +35,93 @@ export default function ReportingPage() {
     const { companyId } = useAuth();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+    const [todayAttendance, setTodayAttendance] = useState<Record<string, AttendanceRecord>>({});
+    const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const today = new Date();
+    const todayString = format(today, 'yyyy-MM-dd');
 
     useEffect(() => {
         if (!companyId) return;
 
         const employeesRef = ref(db, 'employees');
         const auditLogsRef = ref(db, `companies/${companyId}/auditLogs`);
+        const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}`);
+        const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
         
-        let employeesLoaded = false;
-        let auditLogsLoaded = false;
+        let loadedCount = 0;
+        const totalToLoad = 4;
         
         const checkLoading = () => {
-            if (employeesLoaded && auditLogsLoaded) {
+            loadedCount++;
+            if (loadedCount === totalToLoad) {
                 setLoading(false);
             }
         };
 
+        const onValueCallback = (setter: React.Dispatch<any>, isObject = false) => (snapshot: any) => {
+            const data = snapshot.val();
+            if (isObject) {
+                 setter(data || {});
+            } else {
+                 const list = data ? Object.values(data) : [];
+                 if (setter === setAuditLogs) {
+                    list.sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+                 }
+                setter(list);
+            }
+            checkLoading();
+        };
+
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
-            if (data) {
-                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
-                setEmployees(employeeList);
-            } else {
-                setEmployees([]);
-            }
-            employeesLoaded = true;
-            checkLoading();
-        }, (error) => {
-            console.error("Firebase read failed (employees): " + error.name);
-            employeesLoaded = true;
+            setEmployees(data ? Object.values<Employee>(data).filter(e => e.companyId === companyId) : []);
             checkLoading();
         });
-
-        const auditLogsUnsubscribe = onValue(auditLogsRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const logs: AuditLog[] = Object.values(data);
-                logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-                setAuditLogs(logs);
-            } else {
-                setAuditLogs([]);
-            }
-            auditLogsLoaded = true;
-            checkLoading();
-        }, (error) => {
-            console.error("Firebase read failed (auditLogs): " + error.name);
-            auditLogsLoaded = true;
-            checkLoading();
-        });
+        const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), (err) => {console.error(err); checkLoading()});
+        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setTodayAttendance, true), (err) => {console.error(err); checkLoading()});
+        const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), (err) => {console.error(err); checkLoading()});
 
         return () => {
             employeesUnsubscribe();
             auditLogsUnsubscribe();
+            attendanceUnsubscribe();
+            leaveUnsubscribe();
         };
-    }, [companyId]);
+    }, [companyId, todayString]);
+    
+    const dailyStatusReport = useMemo(() => {
+        return employees.map(emp => {
+            const attendanceRecord = todayAttendance[emp.id];
+            const onLeave = leaveRequests.find(req => 
+                req.employeeId === emp.id && 
+                req.status === 'Approved' &&
+                isWithinInterval(today, { start: new Date(req.startDate), end: new Date(req.endDate) })
+            );
+
+            let status: string;
+            if (onLeave) {
+                status = 'On Leave';
+            } else if (attendanceRecord) {
+                status = attendanceRecord.status;
+            } else {
+                status = 'Absent';
+            }
+
+            return {
+                ...emp,
+                dailyStatus: status,
+            };
+        });
+    }, [employees, todayAttendance, leaveRequests, today]);
 
     return (
         <Tabs defaultValue="overview">
             <div className="flex items-center justify-between">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
                     <TabsTrigger value="reports">Reports</TabsTrigger>
                     <TabsTrigger value="audit">Audit Log</TabsTrigger>
                 </TabsList>
@@ -140,6 +168,64 @@ export default function ReportingPage() {
                         </Card>
                     </div>
                 )}
+            </TabsContent>
+            <TabsContent value="daily-status">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Daily Attendance Status</CardTitle>
+                        <CardDescription>Breakdown of employees who are Present, Absent, or On Leave for {format(today, 'MMMM d, yyyy')}.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Employee</TableHead>
+                                    <TableHead>Department</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : dailyStatusReport.length > 0 ? (
+                                    dailyStatusReport.map((emp) => (
+                                        <TableRow key={emp.id}>
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={emp.avatar} alt={emp.name} />
+                                                    <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                {emp.name}
+                                            </TableCell>
+                                            <TableCell>{emp.departmentName}</TableCell>
+                                            <TableCell>{emp.role}</TableCell>
+                                            <TableCell>
+                                                 <Badge variant={
+                                                     emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' ? 'default' :
+                                                     emp.dailyStatus === 'Absent' ? 'destructive' :
+                                                     'outline'
+                                                 }>
+                                                    {emp.dailyStatus}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            No employees to report on.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
             </TabsContent>
             <TabsContent value="reports">
                 <Card>
