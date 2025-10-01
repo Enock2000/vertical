@@ -158,7 +158,7 @@ export default function ReportingPage() {
             onValue(refs.departments, onValueCallback(setDepartments), onErrorCallback('departments')),
             onValue(refs.resignations, onValueCallback(setResignationRequests), onErrorCallback('resignations')),
             onValue(refs.payrollRuns, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs')),
-            onValue(query(ref(db, `companies/${companyId}/performanceReviews`)), createOnValueCallback(setPerformanceReviews), onErrorCallback('reviews')),
+            onValue(query(ref(db, `companies/${companyId}/performanceReviews`)), onValueCallback(setPerformanceReviews), onErrorCallback('reviews')),
             onValue(refs.goals, onValueCallback(setGoals), onErrorCallback('goals')),
         ];
 
