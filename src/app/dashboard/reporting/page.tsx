@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import DepartmentDistributionChart from './components/department-distribution-chart';
 import ActiveContractsChart from './components/active-contracts-chart';
 import EmployeeStatusChart from './components/employee-status-chart';
+import AttendancePerformanceChart from './components/attendance-performance-chart';
 
 const availableReports = [
     { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
@@ -46,7 +47,7 @@ export default function ReportingPage() {
     const { toast } = useToast();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-    const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
+    const [allAttendance, setAllAttendance] = useState<Record<string, Record<string, AttendanceRecord>>>({});
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [rosterAssignments, setRosterAssignments] = useState<RosterAssignment[]>([]);
     const [shifts, setShifts] = useState<Shift[]>([]);
@@ -70,7 +71,7 @@ export default function ReportingPage() {
 
         const employeesRef = ref(db, 'employees');
         const auditLogsRef = ref(db, `companies/${companyId}/auditLogs`);
-        const attendanceRef = ref(db, `companies/${companyId}/attendance/${selectedDateString}`);
+        const attendanceRef = ref(db, `companies/${companyId}/attendance`);
         const leaveRef = ref(db, `companies/${companyId}/leaveRequests`);
         const rosterRef = ref(db, `companies/${companyId}/rosters`);
         const shiftsRef = ref(db, `companies/${companyId}/shifts`);
@@ -114,7 +115,7 @@ export default function ReportingPage() {
             checkLoading();
         });
         const auditLogsUnsubscribe = onValue(auditLogsRef, onValueCallback(setAuditLogs), onErrorCallback('audit logs'));
-        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setAttendanceRecords, true), onErrorCallback('attendance'));
+        const attendanceUnsubscribe = onValue(attendanceRef, onValueCallback(setAllAttendance, true), onErrorCallback('attendance'));
         const leaveUnsubscribe = onValue(leaveRef, onValueCallback(setLeaveRequests), onErrorCallback('leave'));
         const rosterUnsubscribe = onValue(rosterRef, (snapshot) => {
             const data = snapshot.val();
@@ -149,8 +150,10 @@ export default function ReportingPage() {
             departmentsUnsubscribe();
             resignationsUnsubscribe();
         };
-    }, [companyId, selectedDateString]);
+    }, [companyId]);
     
+    const attendanceRecords = useMemo(() => allAttendance[selectedDateString] || {}, [allAttendance, selectedDateString]);
+
     const dailyStatusReport = useMemo(() => {
     return employees
         .filter(emp => emp.status === 'Active' || emp.status === 'Suspended' || emp.status === 'Sick')
@@ -261,6 +264,15 @@ export default function ReportingPage() {
                             </CardHeader>
                             <CardContent>
                                <HeadcountChart employees={employees} />
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Attendance Performance</CardTitle>
+                                <CardDescription>Overview of daily attendance metrics over time.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <AttendancePerformanceChart allAttendance={allAttendance} payrollConfig={payrollConfig} />
                             </CardContent>
                         </Card>
                         <Card>
