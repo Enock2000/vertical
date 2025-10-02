@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import type { Employee, PayrollDetails } from '@/lib/data';
 import { Printer, Loader2, Download } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
 
 interface EmployeePayslipDialogProps {
   employee: Employee;
@@ -34,6 +35,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 export function EmployeePayslipDialog({ employee, payrollDetails, companyName, children }: EmployeePayslipDialogProps) {
   const payslipRef = useRef<HTMLDivElement>(null);
+  const payslipDate = format(new Date(), 'MMMM yyyy');
 
   const handlePrint = () => {
     window.print();
@@ -47,7 +49,7 @@ export function EmployeePayslipDialog({ employee, payrollDetails, companyName, c
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Payslip_${employee.name.replace(' ', '_')}_${new Date().toLocaleString('default', { month: 'long' })}.pdf`);
+            pdf.save(`Payslip_${employee.name.replace(' ', '_')}_${payslipDate}.pdf`);
         });
     }
   };
@@ -59,12 +61,16 @@ export function EmployeePayslipDialog({ employee, payrollDetails, companyName, c
         <DialogHeader>
           <DialogTitle>Payslip</DialogTitle>
           <DialogDescription>
-            Your payslip for {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+            Your payslip for {payslipDate}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
         {payrollDetails ? (
           <div ref={payslipRef} className="space-y-4 p-4 bg-background">
+              <div className="text-center mb-4">
+                  <h2 className="text-xl font-bold">{companyName}</h2>
+                  <p className="text-sm font-medium">Payslip for {payslipDate}</p>
+              </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                    <div>
                       <h3 className="font-semibold">Employee Details</h3>
