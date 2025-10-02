@@ -76,7 +76,7 @@ const requestLeaveFlow = ai.defineFlow(
         }
 
         // 2. Create leave request record in Realtime Database
-        const leaveRequestsRef = ref(db, `companies/${requestData.companyId}/leaveRequests`);
+        const leaveRequestsRef = dbRef(db, `companies/${requestData.companyId}/leaveRequests`);
         const newRequestRef = push(leaveRequestsRef);
         
         const newLeaveRequest: Omit<LeaveRequest, 'id'> = {
@@ -90,7 +90,7 @@ const requestLeaveFlow = ai.defineFlow(
         // 3. Notify admins
         const adminIds = await getAdminUserIds(requestData.companyId);
         for (const adminId of adminIds) {
-            await createNotification(companyId, {
+            await createNotification(requestData.companyId, {
                 userId: adminId,
                 title: 'New Leave Request',
                 message: `${requestData.employeeName} has requested ${requestData.leaveType} leave.`,
@@ -106,3 +106,4 @@ const requestLeaveFlow = ai.defineFlow(
     }
   }
 );
+
