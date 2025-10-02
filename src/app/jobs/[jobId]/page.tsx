@@ -195,7 +195,7 @@ export default function JobApplicationPage() {
                     <Button variant="ghost" asChild>
                         <Link href="/careers">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Careers
+                            Back to Jobs Centre
                         </Link>
                     </Button>
                 </div>

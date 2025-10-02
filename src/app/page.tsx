@@ -61,7 +61,7 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             <Link href="#features">Features</Link>
-            <Link href="/careers">Careers</Link>
+            <Link href="/careers">Jobs Centre</Link>
             <Link href="#testimonials">Testimonials</Link>
             <Link href="#pricing">Pricing</Link>
           </nav>
@@ -227,7 +227,7 @@ export default function HomePage() {
                 <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.</p>
                  <nav className="flex items-center space-x-6 text-sm font-medium">
                     <Link href="/documentation">Documentation</Link>
-                    <Link href="/careers">Careers</Link>
+                    <Link href="/careers">Jobs Centre</Link>
                     <Link href="#">Terms of Service</Link>
                     <Link href="#">Privacy Policy</Link>
                 </nav>
