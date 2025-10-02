@@ -23,6 +23,7 @@ import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { add } from 'date-fns';
+import { TermsAgreementForm } from './components/terms-agreement';
 
 export default function SignUpPage() {
   const [companyName, setCompanyName] = useState('');
@@ -33,6 +34,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -75,6 +77,10 @@ export default function SignUpPage() {
             status: 'trial',
             jobPostingsRemaining: 3,
             nextBillingDate: add(new Date(), { days: 14 }).toISOString(),
+        },
+        termsAgreement: {
+            version: '1.0',
+            acceptedAt: new Date().toISOString(),
         }
       };
       await set(companyRef, newCompany);
@@ -173,7 +179,8 @@ export default function SignUpPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+             <TermsAgreementForm onAgreementChange={setTermsAgreed} />
+            <Button type="submit" className="w-full" disabled={isLoading || !termsAgreed}>
               {isLoading ? <Loader2 className="animate-spin" /> : 'Create account'}
             </Button>
           </form>

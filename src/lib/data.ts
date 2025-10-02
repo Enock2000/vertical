@@ -17,6 +17,11 @@ export type CompanySubscription = {
     nextBillingDate: string; // ISO 8601
 };
 
+export type TermsAgreement = {
+    version: string;
+    acceptedAt: string; // ISO 8601
+};
+
 export type Company = {
     id: string;
     name: string;
@@ -28,6 +33,7 @@ export type Company = {
     createdAt: string; // ISO 8601
     status: 'Pending' | 'Active' | 'Rejected' | 'Suspended';
     subscription: CompanySubscription;
+    termsAgreement: TermsAgreement;
 };
 
 export type ThemeSettings = {
