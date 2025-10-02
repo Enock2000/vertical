@@ -5,8 +5,8 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
-import type { JobVacancy } from '@/lib/data';
+import { ref, onValue, get } from 'firebase/database';
+import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ function JobApplicationForm() {
     const companyId = searchParams.get('companyId');
 
     const [vacancy, setVacancy] = useState<JobVacancy | null>(null);
+    const [company, setCompany] = useState<Company | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [fileName, setFileName] = useState('');
@@ -35,15 +36,41 @@ function JobApplicationForm() {
     useEffect(() => {
         if (jobId && companyId) {
             const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
-            const unsubscribe = onValue(jobRef, (snapshot) => {
+            const companyRef = ref(db, `companies/${companyId}`);
+            
+            let jobLoaded = false;
+            let companyLoaded = false;
+
+            const checkLoading = () => {
+                if (jobLoaded && companyLoaded) {
+                    setLoading(false);
+                }
+            };
+
+            const jobUnsubscribe = onValue(jobRef, (snapshot) => {
                 setVacancy(snapshot.val());
-                setLoading(false);
+                jobLoaded = true;
+                checkLoading();
             }, (error) => {
-                console.error("Firebase read failed:", error);
-                setLoading(false);
+                console.error("Firebase read failed (job):", error);
+                jobLoaded = true;
+                checkLoading();
             });
 
-            return () => unsubscribe();
+            const companyUnsubscribe = onValue(companyRef, (snapshot) => {
+                setCompany(snapshot.val());
+                companyLoaded = true;
+                checkLoading();
+            }, (error) => {
+                console.error("Firebase read failed (company):", error);
+                companyLoaded = true;
+                checkLoading();
+            });
+
+            return () => {
+                jobUnsubscribe();
+                companyUnsubscribe();
+            };
         } else {
             setLoading(false);
         }
@@ -95,7 +122,7 @@ function JobApplicationForm() {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     }
 
-    if (!vacancy || !companyId) {
+    if (!vacancy || !companyId || !company) {
         return <div className="flex h-screen items-center justify-center">Job vacancy not found.</div>;
     }
 
@@ -107,7 +134,7 @@ function JobApplicationForm() {
                         <CardTitle className="text-3xl">{vacancy.title}</CardTitle>
                         <CardDescription className="flex items-center gap-2 pt-2">
                             <Building2 className="h-4 w-4" />
-                            {vacancy.departmentName}
+                            {company.name} &middot; {vacancy.departmentName}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
