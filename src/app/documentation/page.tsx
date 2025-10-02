@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Logo from '@/components/logo';
-import { ArrowLeft, BarChart, Briefcase, CalendarCheck, ClipboardCheck, FileText, Landmark, Network, ShieldCheck, Settings, Trophy, Users } from 'lucide-react';
+import { ArrowLeft, BarChart, Briefcase, CalendarCheck, ClipboardCheck, FileText, Landmark, Megaphone, Network, ShieldCheck, Settings, Trophy, Users } from 'lucide-react';
 import React from 'react';
 
 const features = [
@@ -21,7 +21,7 @@ const features = [
     { 
         icon: <FileText />, 
         title: "Payroll Processing", 
-        description: "Run payroll for all active employees with a single click. The system automatically calculates gross pay, statutory deductions (NAPSA, NHIMA), income tax (PAYE), and net pay. It also generates an ACH-compatible CSV file for bank transfers and maintains a full history of all payroll runs." 
+        description: "Run payroll for all active employees with a single click. The system automatically calculates gross pay, statutory deductions (NAPSA, NHIMA), income tax (PAYE), and net pay. It also generates an ACH-compatible CSV file for bank transfers and maintains a full history of all payroll runs with downloadable PDF payslips." 
     },
     { 
         icon: <Landmark />, 
@@ -30,23 +30,28 @@ const features = [
     },
     { 
         icon: <CalendarCheck />, 
-        title: "Leave Management", 
-        description: "Employees can request leave through their portal, and admins can approve or reject requests. Admins can also submit leave requests on behalf of employees." 
+        title: "Leave & Resignation Management", 
+        description: "Employees can request leave and submit resignations through their portal. Admins can view a full history, approve or reject requests, and track leave balances." 
     },
     { 
         icon: <ClipboardCheck />, 
         title: "Attendance & Roster", 
-        description: "Employees can clock in and out using a time clock, with an option for admins to restrict clock-ins to a specific IP address. The system tracks daily attendance and allows admins to manage employee rosters and schedules." 
+        description: "Employees can clock in/out via their portal. The system intelligently checks the daily roster to mark employees as 'Absent' only if they are scheduled to work, otherwise showing 'Off Day' or 'On Leave'. Admins can manage shifts and view detailed attendance records."
     },
     { 
         icon: <Trophy />, 
         title: "Performance Management", 
         description: "Set and track individual employee goals, initiate performance reviews, and collect 360-degree feedback. Manage a training catalog with quiz-based courses and track employee certifications." 
     },
+    {
+        icon: <Megaphone />,
+        title: "Announcements",
+        description: "Create and publish company-wide or department-specific announcements. Keep your team informed with a centralized communication hub accessible via the employee portal."
+    },
     { 
         icon: <BarChart />, 
         title: "Reporting & Analytics", 
-        description: "Visualize key HR data with charts for employee headcount over time, turnover rates (new hires vs. separations), and workforce diversity." 
+        description: "Visualize key HR data with charts for employee headcount over time, turnover rates (new hires vs. separations), payroll costs, attendance trends, and workforce diversity." 
     },
     { 
         icon: <Network />, 
@@ -61,7 +66,7 @@ const features = [
     { 
         icon: <Settings />, 
         title: "Settings", 
-        description: "Configure payroll parameters like tax rates, contribution percentages, overtime multipliers, and manage the list of banks available for payroll processing." 
+        description: "Configure payroll parameters like tax rates, contribution percentages, overtime multipliers, and manage the list of banks available for payroll processing. Customize subscription plans and manage job posting availability." 
     }
 ];
 
