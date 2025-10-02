@@ -50,7 +50,7 @@ export async function requestLeave(
         return { success: false, message: 'Invalid form data.' };
     }
     
-    if (validatedFields.data.leaveType === 'Sick' && !sickNoteFile) {
+    if (validatedFields.data.leaveType === 'Sick' && !sickNoteFile?.name) {
         return { success: false, message: 'A sick note is required for sick leave.' };
     }
 
@@ -66,25 +66,22 @@ const requestLeaveFlow = ai.defineFlow(
   },
   async ({ sickNoteFile, ...requestData }) => {
     try {
-        let sickNoteUrl: string | undefined = undefined;
+        const newLeaveRequest: Omit<LeaveRequest, 'id'> = {
+            ...requestData,
+            status: 'Pending',
+        };
 
-        // 1. If sick leave, upload the sick note
-        if (requestData.leaveType === 'Sick' && sickNoteFile) {
+        // 1. If sick leave, upload the sick note and add the URL
+        if (requestData.leaveType === 'Sick' && sickNoteFile && sickNoteFile.name) {
             const fileRef = storageRef(storage, `sick-notes/${requestData.companyId}/${requestData.employeeId}/${Date.now()}-${sickNoteFile.name}`);
             const snapshot = await uploadBytes(fileRef, sickNoteFile);
-            sickNoteUrl = await getDownloadURL(snapshot.ref);
+            newLeaveRequest.sickNoteUrl = await getDownloadURL(snapshot.ref);
         }
 
         // 2. Create leave request record in Realtime Database
         const leaveRequestsRef = dbRef(db, `companies/${requestData.companyId}/leaveRequests`);
         const newRequestRef = push(leaveRequestsRef);
         
-        const newLeaveRequest: Omit<LeaveRequest, 'id'> = {
-            ...requestData,
-            status: 'Pending',
-            sickNoteUrl: sickNoteUrl,
-        };
-
         await set(newRequestRef, { ...newLeaveRequest, id: newRequestRef.key });
         
         // 3. Notify admins
@@ -106,4 +103,3 @@ const requestLeaveFlow = ai.defineFlow(
     }
   }
 );
-
