@@ -2,6 +2,9 @@
 // src/app/employee-portal/components/employee-payslip-dialog.tsx
 'use client';
 
+import { useRef } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import type { Employee, PayrollDetails } from '@/lib/data';
-import { Printer, Loader2 } from 'lucide-react';
+import { Printer, Loader2, Download } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EmployeePayslipDialogProps {
@@ -30,8 +33,23 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 });
 
 export function EmployeePayslipDialog({ employee, payrollDetails, companyName, children }: EmployeePayslipDialogProps) {
+  const payslipRef = useRef<HTMLDivElement>(null);
+
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownload = () => {
+    if (payslipRef.current) {
+        html2canvas(payslipRef.current, { scale: 2 }).then((canvas) => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`Payslip_${employee.name.replace(' ', '_')}_${new Date().toLocaleString('default', { month: 'long' })}.pdf`);
+        });
+    }
   };
 
   return (
@@ -46,7 +64,7 @@ export function EmployeePayslipDialog({ employee, payrollDetails, companyName, c
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
         {payrollDetails ? (
-          <div className="space-y-4">
+          <div ref={payslipRef} className="space-y-4 p-4 bg-background">
               <div className="grid grid-cols-2 gap-4 text-sm">
                    <div>
                       <h3 className="font-semibold">Employee Details</h3>
@@ -142,10 +160,14 @@ export function EmployeePayslipDialog({ employee, payrollDetails, companyName, c
           </div>
         )}
         </ScrollArea>
-        <DialogFooter className="sm:justify-start">
+        <DialogFooter className="sm:justify-start gap-2">
             <Button type="button" onClick={handlePrint} disabled={!payrollDetails}>
                 <Printer className="mr-2 h-4 w-4" />
                 Print
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleDownload} disabled={!payrollDetails}>
+                <Download className="mr-2 h-4 w-4" />
+                Download
             </Button>
         </DialogFooter>
       </DialogContent>
