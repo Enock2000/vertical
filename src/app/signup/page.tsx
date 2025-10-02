@@ -41,6 +41,17 @@ export default function SignUpPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    const phoneRegex = /^\+\d{1,15}$/;
+    if (!phoneRegex.test(contactNumber)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: "Please enter a valid phone number in international format (e.g., +260977123456).",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -156,7 +167,7 @@ export default function SignUpPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact-number">Your Contact Number</Label>
-              <Input id="contact-number" type="tel" placeholder="+1 234 567 890" required value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
+              <Input id="contact-number" type="tel" placeholder="+260977123456" required value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
