@@ -1,4 +1,5 @@
 
+// src/app/employee-portal/attendance/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,14 +17,14 @@ export default function AttendancePage() {
 
     useEffect(() => {
         if (user && companyId) {
-            const allAttendanceQuery = query(ref(db, `companies/${companyId}/attendance`), orderByChild('employeeId'), equalTo(user.uid));
-            const unsubscribe = onValue(allAttendanceQuery, (snapshot) => {
-                const allData = snapshot.val();
+            const allAttendanceRef = ref(db, `companies/${companyId}/attendance`);
+            const unsubscribe = onValue(allAttendanceRef, (snapshot) => {
+                const allDataByDate = snapshot.val();
                 const userRecords: AttendanceRecord[] = [];
-                if (allData) {
-                    Object.keys(allData).forEach(date => {
-                        const recordsForDate = allData[date];
-                        if (recordsForDate[user.uid]) {
+                if (allDataByDate) {
+                    Object.keys(allDataByDate).forEach(date => {
+                        const recordsForDate = allDataByDate[date];
+                        if (recordsForDate && recordsForDate[user.uid]) {
                              userRecords.push({ ...recordsForDate[user.uid], id: `${date}-${user.uid}`, date });
                         }
                     });
