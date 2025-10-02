@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Applicant, JobVacancy, Department } from '@/lib/data';
+import type { Applicant, JobVacancy, Department, Company } from '@/lib/data';
 import { ApplicantStatus } from '@/lib/data';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Funnel, FunnelChart, LabelList, Tooltip, Legend, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/chart";
 import { subMonths, format, differenceInDays, getMonth, getYear } from 'date-fns';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
+import { useAuth } from '@/app/auth-provider';
 
 interface ReportingTabProps {
   applicants: Applicant[];
@@ -46,15 +47,14 @@ const timeToHireChartConfig = {
     },
 } satisfies ChartConfig
 
-const costPerHireData = [
-    { category: "Advertising", cost: 1250 },
-    { category: "Agency Fees", cost: 4500 },
-    { category: "Referral Bonuses", cost: 1500 },
-    { category: "Technology", cost: 800 },
-]
-
 export function ReportingTab({ applicants, vacancies, departments }: ReportingTabProps) {
+  const { company } = useAuth();
   
+  const costPerHireData = useMemo(() => {
+    const subscriptionCost = company?.subscription.planId === 'pro' ? 200 : (company?.subscription.planId === 'enterprise' ? 500 : 50);
+    return [{ category: "Subscription Plan", cost: subscriptionCost }];
+  }, [company]);
+
   const requisitionsByDept = useMemo(() => {
     const counts: { [key: string]: number } = {};
     departments.forEach(dept => {
