@@ -1,3 +1,4 @@
+
 // src/app/employee-portal/page.tsx
 'use client';
 
@@ -282,7 +283,7 @@ export default function EmployeePortalDashboardPage() {
                                 Request Leave
                             </Button>
                         </EmployeeLeaveRequestDialog>}
-                        {employee && <EmployeePayslipDialog employee={employee} payrollDetails={payrollDetails} companyName={company?.name || ''}>
+                        {employee && <EmployeePayslipDialog employee={employee} payrollDetails={payrollDetails} companyName={company?.name || ''} payslipDate={new Date()}>
                             <Button variant="secondary">
                                 <Receipt className="mr-2 h-4 w-4" />
                                 View Latest Payslip

@@ -27,6 +27,7 @@ import { runPayroll } from '@/ai/flows/run-payroll-flow';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/app/auth-provider';
+import { ViewPayrollRunDialog } from './components/view-payroll-run-dialog';
 
 export default function PayrollPage() {
     const { companyId, employee: adminEmployee, company } = useAuth();
@@ -162,7 +163,7 @@ export default function PayrollPage() {
                 const payrollDetails = getPayrollDetails(row.original);
                  return (
                      <div className="text-right">
-                        <PayslipDialog employee={row.original} payrollDetails={payrollDetails} companyName={company?.name || ''}>
+                        <PayslipDialog employee={row.original} payrollDetails={payrollDetails} companyName={company?.name || ''} payslipDate={new Date()}>
                             <Button variant="ghost" size="sm">
                                 <Receipt className="mr-2 h-4 w-4" />
                                 Payslip
@@ -253,11 +254,7 @@ export default function PayrollPage() {
                                         <TableCell>{run.employeeCount}</TableCell>
                                         <TableCell>{currencyFormatter.format(run.totalAmount)}</TableCell>
                                         <TableCell className="text-right">
-                                            {/* In a real app, this would download the file from a secure storage */}
-                                            <Button variant="outline" size="sm" disabled>
-                                                <Download className="mr-2 h-3.5 w-3.5"/>
-                                                ACH File
-                                            </Button>
+                                            <ViewPayrollRunDialog payrollRun={run} allEmployees={employees} companyName={company?.name || ''} />
                                         </TableCell>
                                     </TableRow>
                                 ))}

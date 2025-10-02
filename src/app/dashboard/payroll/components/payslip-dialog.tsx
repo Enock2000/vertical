@@ -24,6 +24,7 @@ interface PayslipDialogProps {
   employee: Employee;
   payrollDetails: PayrollDetails | null;
   companyName: string;
+  payslipDate: Date;
   children: React.ReactNode;
 }
 
@@ -32,9 +33,9 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'ZMW',
 });
 
-export function PayslipDialog({ employee, payrollDetails, companyName, children }: PayslipDialogProps) {
+export function PayslipDialog({ employee, payrollDetails, companyName, payslipDate, children }: PayslipDialogProps) {
   const payslipRef = useRef<HTMLDivElement>(null);
-  const payslipDate = format(new Date(), 'MMMM yyyy');
+  const formattedPayslipDate = format(payslipDate, 'MMMM yyyy');
 
   const handlePrint = () => {
     window.print();
@@ -48,7 +49,7 @@ export function PayslipDialog({ employee, payrollDetails, companyName, children 
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Payslip_${employee.name.replace(' ', '_')}_${payslipDate}.pdf`);
+            pdf.save(`Payslip_${employee.name.replace(' ', '_')}_${format(payslipDate, 'yyyy-MM')}.pdf`);
         });
     }
   };
@@ -61,7 +62,7 @@ export function PayslipDialog({ employee, payrollDetails, companyName, children 
         <DialogHeader>
           <DialogTitle>Payslip</DialogTitle>
           <DialogDescription>
-            Payslip for {employee.name} - {payslipDate}
+            Payslip for {employee.name} - {formattedPayslipDate}
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh] pr-4">
@@ -69,7 +70,7 @@ export function PayslipDialog({ employee, payrollDetails, companyName, children 
           <div ref={payslipRef} className="space-y-4 p-4 bg-background">
               <div className="text-center mb-4">
                   <h2 className="text-xl font-bold">{companyName}</h2>
-                  <p className="text-sm font-medium">Payslip for {payslipDate}</p>
+                  <p className="text-sm font-medium">Payslip for {formattedPayslipDate}</p>
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>

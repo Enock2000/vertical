@@ -12,6 +12,7 @@ import {
     PanelLeft,
     Megaphone,
     CalendarPlus,
+    FileText,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider";
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/employee-portal", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/employee-portal/attendance", icon: ClipboardCheck, label: "Attendance" },
   { href: "/employee-portal/leave", icon: CalendarPlus, label: "Leave" },
+  { href: "/employee-portal/payslips", icon: FileText, label: "Payslips" },
   { href: "/employee-portal/roster", icon: CalendarCheck, label: "My Roster" },
   { href: "/employee-portal/performance", icon: Trophy, label: "Performance" },
   { href: "/employee-portal/trainings", icon: BookOpen, label: "Trainings" },
