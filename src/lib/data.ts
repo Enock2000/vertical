@@ -97,6 +97,7 @@ export type JobVacancy = {
   description: string;
   status: 'Open' | 'Closed' | 'Archived';
   createdAt: string; // ISO 8601 date string
+  closingDate: string; // ISO 8601 date string
 };
 
 export const ApplicantStatus = {

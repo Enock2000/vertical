@@ -11,12 +11,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Building2, Upload } from 'lucide-react';
+import { Loader2, ArrowLeft, Building2, Upload, CalendarClock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { handleApplication } from '@/ai/flows/handle-application-flow';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
 
 function JobApplicationForm() {
     const params = useParams();
@@ -126,16 +127,26 @@ function JobApplicationForm() {
         return <div className="flex h-screen items-center justify-center">Job vacancy not found.</div>;
     }
 
+    const isClosed = new Date() > new Date(vacancy.closingDate);
+
     return (
          <div className="container grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-3xl">{vacancy.title}</CardTitle>
-                        <CardDescription className="flex items-center gap-2 pt-2">
-                            <Building2 className="h-4 w-4" />
-                            {company.name} &middot; {vacancy.departmentName}
-                        </CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-3xl">{vacancy.title}</CardTitle>
+                                <CardDescription className="flex items-center gap-2 pt-2">
+                                    <Building2 className="h-4 w-4" />
+                                    {company.name} &middot; {vacancy.departmentName}
+                                </CardDescription>
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                               <CalendarClock className="h-4 w-4"/>
+                                Closes: {format(new Date(vacancy.closingDate), "MMM d, yyyy")}
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="prose dark:prose-invert max-w-none">
@@ -148,7 +159,11 @@ function JobApplicationForm() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Apply Now</CardTitle>
-                        <CardDescription>Fill out the form below to apply.</CardDescription>
+                        {isClosed ? (
+                            <CardDescription className="text-destructive">Applications for this position are now closed.</CardDescription>
+                        ) : (
+                            <CardDescription>Fill out the form below to apply.</CardDescription>
+                        )}
                     </CardHeader>
                     <CardContent>
                         <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -157,19 +172,19 @@ function JobApplicationForm() {
                             <input type="hidden" name="vacancyTitle" value={vacancy.title} />
                             <div className="space-y-2">
                                 <Label htmlFor="name">Full Name</Label>
-                                <Input id="name" name="name" required disabled={isSubmitting} />
+                                <Input id="name" name="name" required disabled={isSubmitting || isClosed} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" required disabled={isSubmitting} />
+                                <Input id="email" name="email" type="email" required disabled={isSubmitting || isClosed} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" name="phone" type="tel" required disabled={isSubmitting} />
+                                <Input id="phone" name="phone" type="tel" required disabled={isSubmitting || isClosed} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="resume">Resume</Label>
-                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting}>
+                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
                                     <Upload className="mr-2 h-4 w-4" />
                                     {fileName || 'Upload your resume'}
                                 </Button>
@@ -181,12 +196,12 @@ function JobApplicationForm() {
                                     className="hidden" 
                                     required 
                                     onChange={handleFileChange}
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || isClosed}
                                 />
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="source">How did you hear about us?</Label>
-                                <Select name="source" required disabled={isSubmitting}>
+                                <Select name="source" required disabled={isSubmitting || isClosed}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select an option" />
                                     </SelectTrigger>
@@ -200,9 +215,9 @@ function JobApplicationForm() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button type="submit" className="w-full" disabled={isSubmitting}>
+                            <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
                                 {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                                Submit Application
+                                {isClosed ? 'Applications Closed' : 'Submit Application'}
                             </Button>
                         </form>
                     </CardContent>
