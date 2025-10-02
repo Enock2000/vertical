@@ -85,7 +85,7 @@ export const columns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           Applicant
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <ArrowUpDown className="mr-2 h-4 w-4" />
         </Button>
       )
     },

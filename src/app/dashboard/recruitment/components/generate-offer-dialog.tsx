@@ -1,4 +1,3 @@
-
 // src/app/dashboard/recruitment/components/generate-offer-dialog.tsx
 'use client';
 

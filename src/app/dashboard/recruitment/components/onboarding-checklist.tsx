@@ -1,4 +1,3 @@
-
 // src/app/dashboard/recruitment/components/onboarding-checklist.tsx
 'use client';
 
