@@ -78,9 +78,9 @@ export default function CareersPage() {
             <main className="flex-1 py-12">
                 <div className="container">
                     <div className="text-center mb-12">
-                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Join Our Team</h1>
+                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Available Positions</h1>
                         <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-xl">
-                            We're looking for passionate people to join us on our mission. Explore our open roles below.
+                            Explore open roles from great companies. Your next opportunity awaits.
                         </p>
                     </div>
 
@@ -113,7 +113,7 @@ export default function CareersPage() {
                                 <CardContent className="py-12 text-center">
                                     <h3 className="text-lg font-semibold">No Open Positions</h3>
                                     <p className="text-muted-foreground">
-                                        We are not actively hiring at the moment. Please check back later!
+                                        There are no jobs available at the moment. Please check back later!
                                     </p>
                                 </CardContent>
                             </Card>
