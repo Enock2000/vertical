@@ -1,11 +1,10 @@
-
 'use client';
 
 import Link from 'next/link';
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
-import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap } from 'lucide-react';
+import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap, Menu, X } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -16,6 +15,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { placeholderImages } from '@/lib/placeholder-images.json';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 
 const features = [
   {
@@ -50,22 +50,31 @@ const features = [
   },
 ];
 
+const navLinks = [
+    { href: "#features", label: "Features" },
+    { href: "/careers", label: "Jobs Centre" },
+    { href: "#testimonials", label: "Testimonials" },
+    { href: "#pricing", label: "Pricing" },
+];
+
 export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <div className="mr-4 flex items-center">
+        <div className="container flex h-14 items-center justify-between">
+          <div className="flex items-center">
             <Logo />
           </div>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
-            <Link href="#features">Features</Link>
-            <Link href="/careers">Jobs Centre</Link>
-            <Link href="#testimonials">Testimonials</Link>
-            <Link href="#pricing">Pricing</Link>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+            {navLinks.map(link => (
+                 <Link key={link.href} href={link.href}>{link.label}</Link>
+            ))}
           </nav>
-          <div className="flex flex-1 items-center justify-end space-x-4">
+
+          <div className="hidden md:flex items-center justify-end space-x-4">
             <Button variant="ghost" asChild>
                 <Link href="/login">Login</Link>
             </Button>
@@ -73,6 +82,43 @@ export default function HomePage() {
                 <Link href="/signup">Get Started</Link>
             </Button>
           </div>
+          
+           {/* Mobile Navigation */}
+           <div className="md:hidden">
+                <Sheet>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <Menu />
+                            <span className="sr-only">Open menu</span>
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right">
+                         <nav className="flex flex-col gap-6 text-lg font-medium mt-8">
+                            <Logo />
+                            <SheetClose asChild>
+                                <Link href="#features">Features</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Link href="/careers">Jobs Centre</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Link href="#testimonials">Testimonials</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Link href="#pricing">Pricing</Link>
+                            </SheetClose>
+                            <SheetClose asChild>
+                                <Link href="/login">Login</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Button asChild>
+                                    <Link href="/signup">Get Started</Link>
+                                </Button>
+                            </SheetClose>
+                        </nav>
+                    </SheetContent>
+                </Sheet>
+           </div>
         </div>
       </header>
 
