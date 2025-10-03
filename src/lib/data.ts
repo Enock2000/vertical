@@ -250,7 +250,8 @@ export type Permission =
     | 'organization'
     | 'compliance'
     | 'settings'
-    | 'announcements';
+    | 'announcements'
+    | 'finance';
 
 
 export const permissionsList: { id: Permission, label: string }[] = [
@@ -268,6 +269,7 @@ export const permissionsList: { id: Permission, label: string }[] = [
     { id: 'compliance', label: 'Access Compliance Advisor' },
     { id: 'settings', label: 'Manage Settings' },
     { id: 'announcements', label: 'Manage Announcements' },
+    { id: 'finance', label: 'Manage Finance' },
 ];
 
 export type Role = {
@@ -423,6 +425,55 @@ export type Announcement = {
   createdAt: string; // ISO 8601
   audience: 'all' | string[]; // 'all' or an array of department IDs
 };
+
+// FINANCE MODULE TYPES
+export type Product = {
+    id: string;
+    companyId: string;
+    name: string;
+    price: number;
+    quantityInStock: number;
+};
+
+export type Customer = {
+    id: string;
+    companyId: string;
+    name: string;
+    email: string;
+    address: string;
+};
+
+export type LineItem = {
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    total: number;
+};
+
+export type Invoice = {
+    id: string;
+    companyId: string;
+    invoiceNumber: string;
+    customer: Omit<Customer, 'id' | 'companyId'>;
+    lineItems: LineItem[];
+    totalAmount: number;
+    status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+    issueDate: string; // ISO 8601
+    dueDate: string; // ISO 8601
+};
+
+export type Transaction = {
+    id: string;
+    companyId: string;
+    type: 'Income' | 'Expense';
+    amount: number;
+    category: 'Sales' | 'Office Supplies' | 'Utilities' | 'Salaries' | 'Other';
+    date: string; // ISO 8601
+    description: string;
+    invoiceId?: string;
+};
+
 
 // Helper function to create a notification
 export const createNotification = async (companyId: string, notification: Omit<Notification, 'id' | 'companyId' | 'isRead' | 'timestamp'>) => {
