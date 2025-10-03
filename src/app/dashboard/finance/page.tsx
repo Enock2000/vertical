@@ -1,13 +1,17 @@
 // src/app/dashboard/finance/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/app/auth-provider';
 import type { Product, Customer, Invoice, Transaction } from '@/lib/data';
+import { InvoicesTab } from './components/invoices-tab';
+import { InventoryTab } from './components/inventory-tab';
+import { TransactionsTab } from './components/transactions-tab';
+import { OverviewTab } from './components/overview-tab';
 
 export default function FinancePage() {
     const { companyId } = useAuth();
@@ -36,10 +40,13 @@ export default function FinancePage() {
                 setLoading(false);
             }
         };
-
-        const createOnValueCallback = (setter: React.Dispatch<any>) => (snapshot: any) => {
+        
+        const createOnValueCallback = (setter: React.Dispatch<any>, sortFn?: (a: any, b: any) => number) => (snapshot: any) => {
             const data = snapshot.val();
             const list = data ? Object.keys(data).map(key => ({ ...data[key], id: key })) : [];
+            if (sortFn) {
+                list.sort(sortFn);
+            }
             setter(list);
             checkLoading();
         };
@@ -50,10 +57,10 @@ export default function FinancePage() {
         };
 
         const unsubscribes = [
-            onValue(refs.products, createOnValueCallback(setProducts), onErrorCallback('products')),
-            onValue(refs.customers, createOnValueCallback(setCustomers), onErrorCallback('customers')),
-            onValue(refs.invoices, createOnValueCallback(setInvoices), onErrorCallback('invoices')),
-            onValue(refs.transactions, createOnValueCallback(setTransactions), onErrorCallback('transactions')),
+            onValue(refs.products, createOnValueCallback(setProducts, (a, b) => a.name.localeCompare(b.name)), onErrorCallback('products')),
+            onValue(refs.customers, createOnValueCallback(setCustomers, (a, b) => a.name.localeCompare(b.name)), onErrorCallback('customers')),
+            onValue(refs.invoices, createOnValueCallback(setInvoices, (a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()), onErrorCallback('invoices')),
+            onValue(refs.transactions, createOnValueCallback(setTransactions, (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), onErrorCallback('transactions')),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
@@ -77,16 +84,16 @@ export default function FinancePage() {
                 <TabsTrigger value="transactions">Transactions</TabsTrigger>
             </TabsList>
             <TabsContent value="overview">
-                {/* Overview content will go here */}
+                <OverviewTab invoices={invoices} transactions={transactions} />
             </TabsContent>
             <TabsContent value="invoices">
-                {/* Invoices content will go here */}
+                <InvoicesTab invoices={invoices} customers={customers} products={products} />
             </TabsContent>
              <TabsContent value="inventory">
-                {/* Inventory content will go here */}
+                <InventoryTab products={products} />
             </TabsContent>
              <TabsContent value="transactions">
-                {/* Transactions content will go here */}
+                <TransactionsTab transactions={transactions} />
             </TabsContent>
         </Tabs>
     );
