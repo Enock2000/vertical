@@ -193,28 +193,32 @@ export default function DashboardLayout({
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="sm:max-w-xs">
-              <nav className="grid gap-6 text-lg font-medium">
-                <Link
+            <SheetContent side="left" className="sm:max-w-xs flex flex-col p-0">
+               <div className="p-6">
+                 <Link
                   href="/dashboard"
                   className="group flex h-10 shrink-0 items-center justify-start gap-2 rounded-full text-lg font-semibold"
                 >
                   <Logo companyName={company.name} />
                 </Link>
-                {visibleNavItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-4 px-2.5",
-                      pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
+               </div>
+               <ScrollArea className="flex-grow">
+                  <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
+                    {visibleNavItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex items-center gap-4 px-2.5",
+                          pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        <item.icon className="h-5 w-5" />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+               </ScrollArea>
             </SheetContent>
           </Sheet>
            <Breadcrumb className="hidden md:flex">
