@@ -12,6 +12,7 @@ import { InvoicesTab } from './components/invoices-tab';
 import { InventoryTab } from './components/inventory-tab';
 import { TransactionsTab } from './components/transactions-tab';
 import { OverviewTab } from './components/overview-tab';
+import { CustomersTab } from './components/customers-tab';
 
 export default function FinancePage() {
     const { companyId } = useAuth();
@@ -85,6 +86,7 @@ export default function FinancePage() {
             <TabsList className="mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="invoices">Invoices</TabsTrigger>
+                <TabsTrigger value="customers">Customers</TabsTrigger>
                 <TabsTrigger value="inventory">Inventory</TabsTrigger>
                 <TabsTrigger value="transactions">Transactions</TabsTrigger>
             </TabsList>
@@ -92,7 +94,10 @@ export default function FinancePage() {
                 <OverviewTab invoices={invoices} transactions={transactions} />
             </TabsContent>
             <TabsContent value="invoices">
-                <InvoicesTab invoices={invoices} customers={customers} products={products} />
+                <InvoicesTab invoices={invoices} customers={customers} products={products} onAction={handleAction} />
+            </TabsContent>
+            <TabsContent value="customers">
+                <CustomersTab customers={customers} onAction={handleAction} />
             </TabsContent>
              <TabsContent value="inventory">
                 <InventoryTab products={products} onAction={handleAction} />

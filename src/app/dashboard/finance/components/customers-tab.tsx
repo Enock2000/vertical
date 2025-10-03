@@ -1,64 +1,36 @@
-// src/app/dashboard/finance/components/invoices-tab.tsx
+// src/app/dashboard/finance/components/customers-tab.tsx
 'use client';
 
 import { useMemo } from 'react';
-import type { Invoice, Customer, Product } from '@/lib/data';
+import type { Customer } from '@/lib/data';
 import { useReactTable, getCoreRowModel, flexRender, ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AddInvoiceDialog } from './add-invoice-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { AddCustomerDialog } from './add-customer-dialog';
+import { EditCustomerDialog } from './edit-customer-dialog';
+import { DeleteCustomerAlert } from './delete-customer-alert';
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'ZMW',
-});
-
-interface InvoicesTabProps {
-  invoices: Invoice[];
-  customers: Customer[];
-  products: Product[];
-  onAction: () => void;
-}
-
-export function InvoicesTab({ invoices, customers, products, onAction }: InvoicesTabProps) {
-  const columns: ColumnDef<Invoice>[] = useMemo(() => [
+export function CustomersTab({ customers, onAction }: { customers: Customer[], onAction: () => void }) {
+  const columns: ColumnDef<Customer>[] = useMemo(() => [
     {
-      accessorKey: 'invoiceNumber',
-      header: 'Invoice #',
+      accessorKey: 'name',
+      header: 'Customer Name',
     },
     {
-      accessorKey: 'customerName',
-      header: 'Customer',
+      accessorKey: 'email',
+      header: 'Email',
     },
     {
-      accessorKey: 'issueDate',
-      header: 'Issue Date',
-      cell: ({ row }) => format(new Date(row.original.issueDate), 'MMM d, yyyy'),
-    },
-    {
-        accessorKey: 'dueDate',
-        header: 'Due Date',
-        cell: ({ row }) => format(new Date(row.original.dueDate), 'MMM d, yyyy'),
-    },
-    {
-        accessorKey: 'totalAmount',
-        header: 'Total',
-        cell: ({ row }) => currencyFormatter.format(row.original.totalAmount),
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ row }) => <Badge variant={row.original.status === 'Paid' ? 'default' : 'outline'}>{row.original.status}</Badge>,
+      accessorKey: 'address',
+      header: 'Address',
     },
     {
         id: 'actions',
         cell: ({ row }) => {
-            const invoice = row.original;
+            const customer = row.original;
             return (
                 <div className="text-right">
                     <DropdownMenu>
@@ -69,18 +41,26 @@ export function InvoicesTab({ invoices, customers, products, onAction }: Invoice
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            {/* Actions like Edit, Mark as Paid, Delete will be added here */}
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <EditCustomerDialog customer={customer} onCustomerUpdated={onAction}>
+                                    <div className="w-full">Edit</div>
+                                </EditCustomerDialog>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600">
+                                <DeleteCustomerAlert customerId={customer.id} customerName={customer.name} onCustomerDeleted={onAction}>
+                                    <div className="w-full">Delete</div>
+                                </DeleteCustomerAlert>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
             )
         }
     }
-  ], []);
+  ], [onAction]);
 
   const table = useReactTable({
-    data: invoices,
+    data: customers,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -89,17 +69,17 @@ export function InvoicesTab({ invoices, customers, products, onAction }: Invoice
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-            <CardTitle>Invoices</CardTitle>
-            <CardDescription>Create and manage your customer invoices.</CardDescription>
+            <CardTitle>Customers</CardTitle>
+            <CardDescription>Manage your customer directory.</CardDescription>
         </div>
-        <AddInvoiceDialog customers={customers} products={products} onInvoiceAdded={onAction}>
+        <AddCustomerDialog onCustomerAdded={onAction}>
              <Button size="sm" className="gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-                    New Invoice
+                    Add Customer
                 </span>
             </Button>
-        </AddInvoiceDialog>
+        </AddCustomerDialog>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -129,7 +109,7 @@ export function InvoicesTab({ invoices, customers, products, onAction }: Invoice
               ) : (
                 <TableRow>
                     <TableCell colSpan={columns.length} className="h-24 text-center">
-                        No invoices found.
+                        No customers found.
                     </TableCell>
                 </TableRow>
               )}
