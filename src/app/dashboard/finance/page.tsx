@@ -21,6 +21,11 @@ export default function FinancePage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const handleAction = useCallback(() => {
+        // This function can be used to trigger re-renders if needed,
+        // but onValue listeners handle live updates automatically.
+    }, []);
+
     useEffect(() => {
         if (!companyId) return;
 
@@ -90,7 +95,7 @@ export default function FinancePage() {
                 <InvoicesTab invoices={invoices} customers={customers} products={products} />
             </TabsContent>
              <TabsContent value="inventory">
-                <InventoryTab products={products} />
+                <InventoryTab products={products} onAction={handleAction} />
             </TabsContent>
              <TabsContent value="transactions">
                 <TransactionsTab transactions={transactions} />
