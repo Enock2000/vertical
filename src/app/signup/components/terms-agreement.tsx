@@ -44,15 +44,7 @@ This Agreement shall be governed by the laws of the Republic of Zambia, without 
 `;
 
 export function TermsAgreementForm({ onAgreementChange }: TermsAgreementFormProps) {
-  const [hasScrolled, setHasScrolled] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
-
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const target = event.currentTarget;
-    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 2) {
-      setHasScrolled(true);
-    }
-  };
 
   const handleCheckboxChange = (checked: boolean) => {
     setIsChecked(checked);
@@ -62,13 +54,12 @@ export function TermsAgreementForm({ onAgreementChange }: TermsAgreementFormProp
   return (
     <div className="space-y-2">
         <Label>Terms of Service</Label>
-        <ScrollArea onScroll={handleScroll} className="h-32 w-full rounded-md border p-3 text-xs text-muted-foreground bg-muted/50">
+        <ScrollArea className="h-32 w-full rounded-md border p-3 text-xs text-muted-foreground bg-muted/50">
             {contractText.split('\n').map((line, i) => <p key={i} className="mb-2">{line}</p>)}
         </ScrollArea>
         <div className="flex items-center space-x-2">
             <Checkbox 
                 id="terms" 
-                disabled={!hasScrolled} 
                 onCheckedChange={handleCheckboxChange}
                 checked={isChecked}
             />
