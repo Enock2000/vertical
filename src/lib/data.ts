@@ -100,6 +100,18 @@ export type JobVacancy = {
   closingDate: string; // ISO 8601 date string
 };
 
+export type GuestJobVacancy = {
+    id: string;
+    companyName: string;
+    companyEmail: string;
+    title: string;
+    departmentName: string;
+    description: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    createdAt: string;
+    closingDate: string;
+}
+
 export const ApplicantStatus = {
   New: 'New',
   Screening: 'Screening',

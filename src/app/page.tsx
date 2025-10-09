@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -59,6 +60,7 @@ const navLinks = [
     { href: "/careers", label: "Jobs Centre" },
     { href: "#testimonials", label: "Testimonials" },
     { href: "#pricing", label: "Pricing" },
+    { href: "/post-a-job", label: "Post a Job" },
 ];
 
 export default function HomePage() {
@@ -123,6 +125,9 @@ export default function HomePage() {
                             </SheetClose>
                              <SheetClose asChild>
                                 <Link href="#pricing">Pricing</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Link href="/post-a-job">Post a Job</Link>
                             </SheetClose>
                             <SheetClose asChild>
                                 <Link href="/login">Login</Link>

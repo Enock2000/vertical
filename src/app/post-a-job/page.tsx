@@ -1,0 +1,217 @@
+// src/app/post-a-job/page.tsx
+'use client';
+
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from "@/components/ui/input";
+import { Textarea } from '@/components/ui/textarea';
+import Link from "next/link";
+import Logo from "@/components/logo";
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { handleGuestJobPosting } from '@/ai/flows/post-guest-job-flow';
+
+const formSchema = z.object({
+  companyName: z.string().min(2, 'Company name is required.'),
+  companyEmail: z.string().email('A valid email is required.'),
+  title: z.string().min(3, 'Job title is required.'),
+  departmentName: z.string().min(2, 'Department is required.'),
+  description: z.string().min(20, 'Please provide a detailed description.'),
+  closingDate: z.date({ required_error: 'A closing date is required.' }),
+});
+
+type GuestJobFormValues = z.infer<typeof formSchema>;
+
+export default function PostAJobPage() {
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  const form = useForm<GuestJobFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      companyName: '',
+      companyEmail: '',
+      title: '',
+      departmentName: '',
+      description: '',
+    },
+  });
+
+  const onSubmit = async (values: GuestJobFormValues) => {
+    setIsLoading(true);
+    try {
+      const result = await handleGuestJobPosting({
+        ...values,
+        closingDate: values.closingDate.toISOString(),
+      });
+      
+      if (result.success) {
+        toast({
+          title: 'Job Submitted for Review',
+          description: "Your job posting has been submitted and is pending approval. Thank you!",
+        });
+        form.reset();
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Submission Failed',
+          description: result.message,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'An Error Occurred',
+        description: error.message || 'Could not submit your job posting. Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col bg-muted/40">
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-14 items-center justify-between">
+                <Logo />
+                <Button variant="ghost" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
+            </div>
+        </header>
+        <main className="flex-1 py-12">
+            <div className="container max-w-2xl">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="text-3xl">Post a Job</CardTitle>
+                        <CardDescription>
+                            Fill out the form below to post a job vacancy. All submissions are subject to review before being published.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <h3 className="text-lg font-semibold">Company Details</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                     <FormField
+                                        control={form.control}
+                                        name="companyName"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Company Name</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Your Company Inc." {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="companyEmail"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Company Email</FormLabel>
+                                                <FormControl>
+                                                    <Input type="email" placeholder="contact@yourcompany.com" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <h3 className="text-lg font-semibold">Job Details</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="title"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Job Title</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Marketing Manager" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                     <FormField
+                                        control={form.control}
+                                        name="departmentName"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Department</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Marketing" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                 <FormField
+                                    control={form.control}
+                                    name="closingDate"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                        <FormLabel>Application Closing Date</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                variant={"outline"}
+                                                className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                                                >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                </Button>
+                                            </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus disabled={(date) => date < new Date()}/>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Job Description</FormLabel>
+                                            <FormControl>
+                                                <Textarea placeholder="Describe the role, responsibilities, and requirements..." rows={8} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <Button type="submit" className="w-full" disabled={isLoading}>
+                                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Submit for Review
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                 </Card>
+            </div>
+        </main>
+    </div>
+  );
+}
