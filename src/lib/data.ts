@@ -426,6 +426,17 @@ export type Announcement = {
   audience: 'all' | string[]; // 'all' or an array of department IDs
 };
 
+export type Testimonial = {
+    id: string;
+    companyId: string;
+    companyName: string;
+    authorName: string;
+    authorTitle: string;
+    testimonialText: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    createdAt: string; // ISO 8601
+};
+
 // FINANCE MODULE TYPES
 export type Product = {
     id: string;
@@ -455,7 +466,7 @@ export type Invoice = {
     id: string;
     companyId: string;
     invoiceNumber: string;
-    customer: Omit<Customer, 'id' | 'companyId'>;
+    customerName: string;
     lineItems: LineItem[];
     totalAmount: number;
     status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';

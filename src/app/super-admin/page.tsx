@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { Loader2, Users, PlusCircle, Briefcase, CreditCard } from 'lucide-react';
+import { Loader2, Users, PlusCircle, Briefcase, CreditCard, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserNav } from '@/components/user-nav';
 import Logo from '@/components/logo';
@@ -130,6 +130,12 @@ export default function SuperAdminPage() {
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
+                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/testimonials')}>
+                                <MessageSquare className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                                    Testimonials
+                                </span>
+                            </Button>
                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/subscriptions')}>
                                 <CreditCard className="h-3.5 w-3.5" />
                                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">

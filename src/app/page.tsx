@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap, Menu, X } from 'lucide-react';
@@ -16,6 +16,10 @@ import {
 } from "@/components/ui/carousel";
 import { placeholderImages } from '@/lib/placeholder-images.json';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { db } from '@/lib/firebase';
+import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
+import type { Testimonial } from '@/lib/data';
+import { Loader2 } from 'lucide-react';
 
 const features = [
   {
@@ -58,6 +62,19 @@ const navLinks = [
 ];
 
 export default function HomePage() {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+
+  useEffect(() => {
+    const testimonialsQuery = query(ref(db, 'testimonials'), orderByChild('status'), equalTo('Approved'));
+    const unsubscribe = onValue(testimonialsQuery, (snapshot) => {
+        const data = snapshot.val();
+        setTestimonials(data ? Object.values(data) : []);
+        setLoadingTestimonials(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
@@ -213,38 +230,30 @@ export default function HomePage() {
                         See how VerticalSync is transforming HR for businesses like yours.
                     </p>
                 </div>
-                 <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                    <div className="rounded-lg border bg-card p-6 shadow-sm">
-                        <p className="text-muted-foreground">"The automation has saved us countless hours. Payroll is now a one-click process instead of a week-long headache."</p>
-                        <div className="mt-4 flex items-center gap-4">
-                            <Image src="https://picsum.photos/seed/person1/40/40" alt="Avatar" width={40} height={40} className="rounded-full" data-ai-hint="person face" />
-                            <div>
-                                <p className="font-semibold">Jane Doe</p>
-                                <p className="text-sm text-muted-foreground">CEO, Innovate Inc.</p>
-                            </div>
-                        </div>
+                {loadingTestimonials ? (
+                    <div className="flex items-center justify-center h-48">
+                        <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
-                     <div className="rounded-lg border bg-card p-6 shadow-sm">
-                        <p className="text-muted-foreground">"Compliance used to be our biggest worry. VerticalSync's AI advisor gives us peace of mind and keeps us up-to-date."</p>
-                        <div className="mt-4 flex items-center gap-4">
-                             <Image src="https://picsum.photos/seed/person2/40/40" alt="Avatar" width={40} height={40} className="rounded-full" data-ai-hint="person face" />
-                            <div>
-                                <p className="font-semibold">John Smith</p>
-                                <p className="text-sm text-muted-foreground">HR Manager, Tech Solutions</p>
+                ) : testimonials.length > 0 ? (
+                    <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        {testimonials.map((testimonial) => (
+                            <div key={testimonial.id} className="rounded-lg border bg-card p-6 shadow-sm">
+                                <p className="text-muted-foreground">"{testimonial.testimonialText}"</p>
+                                <div className="mt-4 flex items-center gap-4">
+                                     <Image src={`https://avatar.vercel.sh/${testimonial.authorName}.png`} alt="Avatar" width={40} height={40} className="rounded-full" />
+                                    <div>
+                                        <p className="font-semibold">{testimonial.authorName}</p>
+                                        <p className="text-sm text-muted-foreground">{testimonial.authorTitle}, {testimonial.companyName}</p>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                     <div className="rounded-lg border bg-card p-6 shadow-sm">
-                        <p className="text-muted-foreground">"Our employee onboarding is smoother than ever. The new hires love the self-service portal."</p>
-                        <div className="mt-4 flex items-center gap-4">
-                            <Image src="https://picsum.photos/seed/person3/40/40" alt="Avatar" width={40} height={40} className="rounded-full" data-ai-hint="person face" />
-                            <div>
-                                <p className="font-semibold">Emily White</p>
-                                <p className="text-sm text-muted-foreground">Operations Head, Creative Co.</p>
-                            </div>
-                        </div>
+                ) : (
+                    <div className="mt-12 text-center text-muted-foreground">
+                        <p>No testimonials yet. Be the first!</p>
                     </div>
-                </div>
+                )}
             </div>
         </section>
 

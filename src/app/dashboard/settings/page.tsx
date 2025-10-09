@@ -15,6 +15,7 @@ import { PayrollSettingsTab } from './components/payroll-settings-tab';
 import { BanksTab } from './components/banks-tab';
 import { useAuth } from '@/app/auth-provider';
 import { SubscriptionTab } from './components/subscription-tab';
+import { TestimonialsTab } from './components/testimonials-tab';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -123,6 +124,7 @@ export default function SettingsPage() {
             <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
             <TabsTrigger value="banks">Bank Management</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
+            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
         </TabsList>
         <TabsContent value="payroll">
             <PayrollSettingsTab form={form} />
@@ -132,6 +134,9 @@ export default function SettingsPage() {
         </TabsContent>
          <TabsContent value="subscription">
             <SubscriptionTab plans={subscriptionPlans} />
+        </TabsContent>
+         <TabsContent value="testimonials">
+            <TestimonialsTab />
         </TabsContent>
     </Tabs>
   );
