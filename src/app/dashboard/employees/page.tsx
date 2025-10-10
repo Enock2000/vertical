@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
-import type { Employee, Department, Bank, Role } from '@/lib/data';
+import type { Employee, Department, Bank, Role, Branch } from '@/lib/data';
 import { AddEmployeeDialog } from './components/add-employee-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
@@ -24,6 +23,7 @@ export default function EmployeesPage() {
   const { companyId } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,16 +33,16 @@ export default function EmployeesPage() {
 
     const employeesRef = ref(db, 'employees');
     const departmentsRef = ref(db, `companies/${companyId}/departments`);
+    const branchesRef = ref(db, `companies/${companyId}/branches`);
     const banksRef = ref(db, `companies/${companyId}/banks`);
     const rolesRef = ref(db, `companies/${companyId}/roles`);
     
-    let employeesLoaded = false;
-    let deptsLoaded = false;
-    let banksLoaded = false;
-    let rolesLoaded = false;
+    let loadedCount = 0;
+    const totalToLoad = 5;
 
     const checkLoading = () => {
-        if (employeesLoaded && deptsLoaded && banksLoaded && rolesLoaded) {
+        loadedCount++;
+        if (loadedCount === totalToLoad) {
             setLoading(false);
         }
     };
@@ -55,11 +55,9 @@ export default function EmployeesPage() {
       } else {
         setEmployees([]);
       }
-      employeesLoaded = true;
       checkLoading();
     }, (error) => {
         console.error("Firebase read failed (employees): " + error.name);
-        employeesLoaded = true;
         checkLoading();
     });
     
@@ -74,11 +72,15 @@ export default function EmployeesPage() {
         } else {
             setDepartments([]);
         }
-        deptsLoaded = true;
         checkLoading();
     }, (error) => {
         console.error("Firebase read failed (departments): " + error.name);
-        deptsLoaded = true;
+        checkLoading();
+    });
+
+     const branchesUnsubscribe = onValue(branchesRef, (snapshot) => {
+        const data = snapshot.val();
+        setBranches(data ? Object.values(data) : []);
         checkLoading();
     });
 
@@ -86,7 +88,7 @@ export default function EmployeesPage() {
       const data = snapshot.val();
       const list: Bank[] = data ? Object.values(data) : [];
       setBanks(list);
-      banksLoaded = true; checkLoading();
+      checkLoading();
     });
 
     const rolesUnsubscribe = onValue(rolesRef, (snapshot) => {
@@ -96,13 +98,13 @@ export default function EmployeesPage() {
         } else {
             setRoles([]);
         }
-        rolesLoaded = true;
         checkLoading();
     });
 
     return () => {
         employeesUnsubscribe();
         departmentsUnsubscribe();
+        branchesUnsubscribe();
         banksUnsubscribe();
         rolesUnsubscribe();
     };
@@ -112,7 +114,7 @@ export default function EmployeesPage() {
     // The onValue listener will automatically update the state
   };
 
-  const tableColumns = columns(departments, banks, roles, handleAction);
+  const tableColumns = columns(departments, branches, banks, roles, handleAction);
 
 
   return (
@@ -124,7 +126,7 @@ export default function EmployeesPage() {
             Manage your employees and their details.
           </CardDescription>
         </div>
-        <AddEmployeeDialog departments={departments} banks={banks} onEmployeeAdded={handleAction}>
+        <AddEmployeeDialog departments={departments} branches={branches} banks={banks} onEmployeeAdded={handleAction}>
           <Button size="sm" className="gap-1">
             <PlusCircle className="h-3.5 w-3.5" />
             <span className="sr-only sm:not-sr-only sm:whitespace-rap">

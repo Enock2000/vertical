@@ -15,7 +15,7 @@ import { z } from 'genkit';
 import { headers } from 'next/headers';
 import { get, ref, set, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
-import type { PayrollConfig, Employee, AttendanceRecord, RosterAssignment } from '@/lib/data';
+import type { Employee, AttendanceRecord, RosterAssignment, Branch } from '@/lib/data';
 import { format, parseISO } from 'date-fns';
 
 const AttendanceInputSchema = z.object({
@@ -50,24 +50,6 @@ const attendanceFlow = ai.defineFlow(
       // 1. Get request IP address from headers
       const headersList = headers();
       const ip = (headersList.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0].trim();
-
-      // 2. Get allowed IP from settings
-      const configRef = ref(db, `companies/${companyId}/payrollConfig`);
-      const configSnapshot = await get(configRef);
-      const config: PayrollConfig | null = configSnapshot.val();
-      const allowedIp = config?.allowedIpAddress;
-
-      // 3. Validate IP if it's configured
-      if (allowedIp && ip !== allowedIp) {
-        return {
-          success: false,
-          message: `Access denied. You can only clock in/out from the allowed IP address. Your IP: ${ip}`,
-        };
-      }
-      
-      const todayString = format(new Date(), 'yyyy-MM-dd');
-      const now = new Date();
-      const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${userId}`);
       
       const employeeRef = ref(db, 'employees/' + userId);
       const employeeSnapshot = await get(employeeRef);
@@ -76,6 +58,25 @@ const attendanceFlow = ai.defineFlow(
       if (!employee || employee.companyId !== companyId) {
            return { success: false, message: 'Employee not found.' };
       }
+
+      // 2. Get allowed IP from the employee's assigned branch
+      if (employee.branchId) {
+          const branchRef = ref(db, `companies/${companyId}/branches/${employee.branchId}`);
+          const branchSnapshot = await get(branchRef);
+          const branch: Branch | null = branchSnapshot.val();
+          const allowedIp = branch?.ipAddress;
+
+          if (allowedIp && ip !== allowedIp) {
+            return {
+              success: false,
+              message: `Access denied. You can only clock in/out from your assigned branch IP address. Your IP: ${ip}`,
+            };
+          }
+      }
+      
+      const todayString = format(new Date(), 'yyyy-MM-dd');
+      const now = new Date();
+      const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${userId}`);
 
       // Get today's roster assignment to check shift times
       const rosterRef = ref(db, `companies/${companyId}/rosters/${todayString}/${userId}`);

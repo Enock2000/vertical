@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee, Department, Bank } from '@/lib/data';
+import type { Employee, Department, Bank, Branch } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -52,6 +52,7 @@ const formSchema = z.object({
   identificationNumber: z.string().optional(),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
   departmentId: z.string().min(1, 'Please select a department.'),
+  branchId: z.string().optional(),
   status: z.enum(['Active', 'Inactive', 'Suspended', 'On Leave', 'Sick']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
   annualLeaveBalance: z.coerce.number().min(0, 'Leave balance cannot be negative.'),
@@ -87,6 +88,7 @@ type AddEmployeeFormValues = z.infer<typeof formSchema>;
 interface AddEmployeeDialogProps {
   children: React.ReactNode;
   departments: Department[];
+  branches: Branch[];
   banks: Bank[];
   onEmployeeAdded: () => void;
 }
@@ -101,6 +103,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 export function AddEmployeeDialog({
   children,
   departments,
+  branches,
   banks,
   onEmployeeAdded,
 }: AddEmployeeDialogProps) {
@@ -117,6 +120,7 @@ export function AddEmployeeDialog({
       password: '',
       role: '',
       departmentId: '',
+      branchId: '',
       status: 'Active',
       location: '',
       annualLeaveBalance: 21,
@@ -167,11 +171,13 @@ export function AddEmployeeDialog({
 
       const { password, ...employeeData } = values;
       const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
+      const branchName = branches.find(b => b.id === values.branchId)?.name || '';
       
       const newEmployee: Omit<Employee, 'id'> = {
           ...employeeData,
           companyId: companyId,
           departmentName,
+          branchName,
           avatar: `https://avatar.vercel.sh/${values.email}.png`,
           salary: values.salary || 0,
           hourlyRate: values.hourlyRate || 0,
@@ -389,7 +395,44 @@ export function AddEmployeeDialog({
                         )}
                     />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                 <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="branchId"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Branch</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a branch" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {branches.map(branch => (
+                                    <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Location</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Lusaka, Zambia" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
                         name="status"
@@ -415,19 +458,6 @@ export function AddEmployeeDialog({
                             </Select>
                             <FormMessage />
                         </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="location"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Location</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Lusaka, Zambia" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
                         )}
                     />
                      <FormField

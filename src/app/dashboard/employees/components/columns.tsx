@@ -19,7 +19,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu"
-import type { Employee, Department, Bank, Role } from "@/lib/data"
+import type { Employee, Department, Bank, Role, Branch } from "@/lib/data"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { EditEmployeeDialog } from "./edit-employee-dialog"
 import { DeleteEmployeeAlert } from "./delete-employee-alert"
@@ -40,7 +40,7 @@ const handleStatusChange = async (employeeId: string, status: Employee['status']
     }
 };
 
-export const columns = (departments: Department[], banks: Bank[], roles: Role[], onAction: () => void): ColumnDef<Employee>[] => [
+export const columns = (departments: Department[], branches: Branch[], banks: Bank[], roles: Role[], onAction: () => void): ColumnDef<Employee>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -98,19 +98,13 @@ export const columns = (departments: Department[], banks: Bank[], roles: Role[],
     header: "Role",
   },
   {
-    accessorKey: "age",
-    header: "Age",
-    cell: ({ row }) => {
-        const { dateOfBirth } = row.original;
-        if (!dateOfBirth) {
-            return <span className="text-muted-foreground">-</span>;
-        }
-        return <span>{differenceInYears(new Date(), new Date(dateOfBirth))}</span>;
-    }
-  },
-  {
     accessorKey: "departmentName",
     header: "Department",
+  },
+  {
+    accessorKey: "branchName",
+    header: "Branch",
+    cell: ({ row }) => row.original.branchName || <span className="text-muted-foreground">N/A</span>
   },
   {
     accessorKey: "status",
@@ -124,14 +118,6 @@ export const columns = (departments: Department[], banks: Bank[], roles: Role[],
       
       return <Badge variant={variant}>{status}</Badge>
     },
-  },
-  {
-    accessorKey: "annualLeaveBalance",
-    header: "Leave Balance",
-     cell: ({ row }) => {
-      const balance = row.original.annualLeaveBalance;
-      return <div className="text-center">{balance} days</div>
-    }
   },
   {
     accessorKey: "salary",
@@ -205,7 +191,7 @@ export const columns = (departments: Department[], banks: Bank[], roles: Role[],
                   </GenerateContractDialog>
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <EditEmployeeDialog employee={employee} departments={departments} banks={banks} onEmployeeUpdated={onAction}>
+                  <EditEmployeeDialog employee={employee} departments={departments} branches={branches} banks={banks} onEmployeeUpdated={onAction}>
                     <div className="w-full text-left">Edit Profile</div>
                   </EditEmployeeDialog>
                 </DropdownMenuItem>

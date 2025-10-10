@@ -36,6 +36,14 @@ export type Company = {
     termsAgreement: TermsAgreement;
 };
 
+export type Branch = {
+    id: string;
+    companyId: string;
+    name: string;
+    location: string;
+    ipAddress?: string;
+};
+
 export type ThemeSettings = {
   background: { h: string; s: string; l: string };
   primary: { h: string; s: string; l: string };
@@ -55,6 +63,8 @@ export type Employee = {
   location: string;
   departmentId: string;
   departmentName: string;
+  branchId?: string;
+  branchName?: string;
   workerType: WorkerType;
   salary: number; // For Salaried
   hourlyRate: number; // For Hourly
@@ -168,7 +178,7 @@ export type PayrollConfig = {
   weeklyTargetHours: number;
   monthlyTargetHours: number;
   yearlyTargetHours: number;
-  allowedIpAddress?: string | null;
+  allowedIpAddress?: string | null; // This will now be legacy, branches will handle IPs
 };
 
 export type PayrollDetails = {
