@@ -47,7 +47,7 @@ const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, stat
                 }));
                 updates['onboardingTasks'] = initialTasks;
             }
-             if (status === 'Hired') {
+             if (status === 'Hired' || status === 'Accepted') {
                 updates['hiredAt'] = new Date().toISOString();
             }
 
@@ -139,13 +139,15 @@ export const columns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <ViewDocumentsDialog applicant={applicant}>
-                        <div className="w-full text-left flex items-center">
-                            <FileText className="mr-2 h-4 w-4" /> View Documents
-                        </div>
-                    </ViewDocumentsDialog>
-                </DropdownMenuItem>
+                {applicant.resumeUrl && (
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <ViewDocumentsDialog applicant={applicant}>
+                            <div className="w-full text-left flex items-center">
+                                <FileText className="mr-2 h-4 w-4" /> View Documents
+                            </div>
+                        </ViewDocumentsDialog>
+                    </DropdownMenuItem>
+                )}
                 {applicant.status === 'Offer' && department && (
                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <GenerateOfferDialog applicant={applicant} vacancy={vacancy} department={department}>
@@ -165,6 +167,7 @@ export const columns = (
                             <DropdownMenuSeparator />
                              <StatusUpdateAction applicantId={applicant.id} status="Hired" />
                              <StatusUpdateAction applicantId={applicant.id} status="Rejected" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Accepted" />
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>

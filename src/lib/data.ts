@@ -32,7 +32,7 @@ export type Company = {
     contactNumber: string;
     adminEmail: string;
     createdAt: string; // ISO 8601
-    status: 'Pending' | 'Active' | 'Rejected' | 'Suspended';
+    status: 'Pending' | 'Active' | 'Rejected' | 'Suspended' | 'Guest';
     subscription: CompanySubscription;
     termsAgreement: TermsAgreement;
 };
@@ -79,7 +79,7 @@ export type Employee = {
   email: string;
   phone?: string;
   role: string;
-  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant';
+  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant' | 'GuestAdmin';
   avatar: string;
   location: string;
   departmentId: string;
@@ -130,9 +130,14 @@ export type JobVacancy = {
   departmentId: string;
   departmentName: string;
   description: string;
-  status: 'Open' | 'Closed' | 'Archived';
+  requirements?: string;
+  location?: string;
+  salary?: number;
+  jobType?: 'Full-Time' | 'Part-Time' | 'Contract' | 'Remote';
+  status: 'Open' | 'Closed' | 'Archived' | 'Pending' | 'Approved' | 'Rejected';
   createdAt: string; // ISO 8601 date string
   closingDate: string; // ISO 8601 date string
+  views?: number;
 };
 
 export type GuestJobVacancy = {
@@ -142,9 +147,14 @@ export type GuestJobVacancy = {
     title: string;
     departmentName: string;
     description: string;
+    requirements?: string;
+    location?: string;
+    salary?: number;
+    jobType?: 'Full-Time' | 'Part-Time' | 'Contract' | 'Remote';
     status: 'Pending' | 'Approved' | 'Rejected';
     createdAt: string;
     closingDate: string;
+    views?: number;
 }
 
 export const ApplicantStatus = {
@@ -155,6 +165,7 @@ export const ApplicantStatus = {
   Onboarding: 'Onboarding',
   Hired: 'Hired',
   Rejected: 'Rejected',
+  Accepted: 'Accepted'
 } as const;
 
 export type ApplicantStatus = (typeof ApplicantStatus)[keyof typeof ApplicantStatus];
@@ -184,7 +195,7 @@ export type Applicant = {
   name: string;
   email: string;
   phone: string;
-  resumeUrl: string; // URL to the resume file in storage
+  resumeUrl: string | null; // URL to the resume file in storage
   status: ApplicantStatus;
   appliedAt: string; // ISO 8601 date string
   onboardingTasks?: OnboardingTask[];
