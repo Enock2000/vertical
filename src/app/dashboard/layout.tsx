@@ -101,6 +101,8 @@ export default function DashboardLayout({
         router.push('/login');
       } else if (employee?.role === 'Super Admin') {
         router.push('/super-admin');
+      } else if (employee?.role === 'GuestAdmin') {
+        router.push('/guest-employer');
       } else if (employee?.role !== 'Admin') {
         router.push('/employee-portal');
       }

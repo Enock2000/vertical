@@ -49,7 +49,6 @@ export default function LoginPage() {
       
       const employee: Employee = employeeSnap.val();
       
-      // Super Admins don't have a companyId
       if (employee.role === 'Super Admin') {
           router.push('/super-admin');
           return;
@@ -57,6 +56,11 @@ export default function LoginPage() {
 
        if (employee.role === 'Applicant') {
         router.push('/applicant-portal');
+        return;
+      }
+
+       if (employee.role === 'GuestAdmin') {
+        router.push('/guest-employer');
         return;
       }
       
