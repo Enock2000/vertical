@@ -33,42 +33,45 @@ const ApplicationOutputSchema = z.object({
 });
 
 export async function handleApplication(
-  formData: FormData
+  input: FormData | z.infer<typeof ApplicationInputSchema>
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
+
+    let rawData: z.infer<typeof ApplicationInputSchema>;
+    let resumeFile: File | null = null;
+    let vacancyTitle: string = '';
     const authUser = auth.currentUser;
     const isQuickApply = !!authUser;
 
-    let rawData;
 
-    if (isQuickApply) {
-        const employeeSnap = await get(ref(db, `employees/${authUser.uid}`));
-        const employeeData: Employee | null = employeeSnap.val();
+    if (input instanceof FormData) {
         rawData = {
-            companyId: formData.get('companyId'),
-            jobVacancyId: formData.get('jobVacancyId'),
-            name: employeeData?.name,
-            email: employeeData?.email,
-            phone: employeeData?.phone || '',
-            source: 'Internal Applicant Portal',
+            companyId: input.get('companyId') as string,
+            jobVacancyId: input.get('jobVacancyId') as string,
+            name: input.get('name') as string,
+            email: input.get('email') as string,
+            phone: input.get('phone') as string | undefined,
+            source: input.get('source') as string | undefined,
         };
+        resumeFile = input.get('resume') as File | null;
+        vacancyTitle = input.get('vacancyTitle') as string;
     } else {
-        rawData = {
-            companyId: formData.get('companyId'),
-            jobVacancyId: formData.get('jobVacancyId'),
-            name: formData.get('name'),
-            email: formData.get('email'),
-            phone: formData.get('phone'),
-            source: formData.get('source'),
-        };
+        rawData = input;
     }
-
-    const resumeFile = formData.get('resume') as File | null;
-    const vacancyTitle = formData.get('vacancyTitle') as string;
 
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
     if (!validatedFields.success) {
+        console.error("Application validation failed:", validatedFields.error.flatten().fieldErrors);
         return { success: false, message: 'Invalid form data.' };
     }
+    
+    // In a quick apply scenario, some data isn't in the initial object, so we fetch it.
+    if (isQuickApply && !vacancyTitle) {
+        const jobSnap = await get(ref(db, `companies/${validatedFields.data.companyId}/jobVacancies/${validatedFields.data.jobVacancyId}`));
+        if (jobSnap.exists()) {
+            vacancyTitle = jobSnap.val().title;
+        }
+    }
+
 
     return handleApplicationFlow({ 
         ...validatedFields.data, 

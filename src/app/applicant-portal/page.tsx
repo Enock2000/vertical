@@ -105,18 +105,17 @@ export default function ApplicantPortalPage() {
         if (!employee || !user) return;
         setSubmittingJobId(job.id);
 
-        const formData = new FormData();
-        formData.append('companyId', job.companyId);
-        formData.append('jobVacancyId', job.id);
-        formData.append('vacancyTitle', job.title);
-        // Add required fields for logged in user
-        formData.append('name', employee.name);
-        formData.append('email', employee.email);
-        formData.append('phone', employee.phone || '');
-
+        const applicationData = {
+            companyId: job.companyId,
+            jobVacancyId: job.id,
+            name: employee.name,
+            email: employee.email,
+            phone: employee.phone || '',
+            source: 'Internal Applicant Portal',
+        };
 
         try {
-            const result = await handleApplication(formData);
+            const result = await handleApplication(applicationData);
             if (result.success) {
                 toast({
                     title: "Application Submitted!",
