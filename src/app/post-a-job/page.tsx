@@ -24,6 +24,7 @@ import { handleGuestJobPosting } from '@/ai/flows/post-guest-job-flow';
 const formSchema = z.object({
   companyName: z.string().min(2, 'Company name is required.'),
   companyEmail: z.string().email('A valid email is required.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
   title: z.string().min(3, 'Job title is required.'),
   departmentName: z.string().min(2, 'Department is required.'),
   description: z.string().min(20, 'Please provide a detailed description.'),
@@ -42,6 +43,7 @@ export default function PostAJobPage() {
     defaultValues: {
       companyName: '',
       companyEmail: '',
+      password: '',
       title: '',
       departmentName: '',
       description: '',
@@ -58,10 +60,11 @@ export default function PostAJobPage() {
       
       if (result.success) {
         toast({
-          title: 'Job Submitted for Review',
-          description: "Your job posting has been submitted and is pending approval. Thank you!",
+          title: 'Job Submitted & Account Created',
+          description: "Your job is pending approval. You can now log in to view its status.",
         });
         form.reset();
+        router.push('/guest-employer');
       } else {
         toast({
           variant: 'destructive',
@@ -97,15 +100,15 @@ export default function PostAJobPage() {
             <div className="container max-w-2xl">
                  <Card>
                     <CardHeader>
-                        <CardTitle className="text-3xl">Post a Job</CardTitle>
+                        <CardTitle className="text-3xl">Post a Job & Create a Guest Account</CardTitle>
                         <CardDescription>
-                            Fill out the form below to post a job vacancy. All submissions are subject to review before being published.
+                            Fill out the form below to post a job vacancy. An account will be created for you to track applicants. All submissions are subject to review.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                <h3 className="text-lg font-semibold">Company Details</h3>
+                                <h3 className="text-lg font-semibold">Company & Account Details</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                      <FormField
                                         control={form.control}
@@ -125,7 +128,7 @@ export default function PostAJobPage() {
                                         name="companyEmail"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Company Email</FormLabel>
+                                                <FormLabel>Your Email (for login)</FormLabel>
                                                 <FormControl>
                                                     <Input type="email" placeholder="contact@yourcompany.com" {...field} />
                                                 </FormControl>
@@ -134,6 +137,19 @@ export default function PostAJobPage() {
                                         )}
                                     />
                                 </div>
+                                 <FormField
+                                    control={form.control}
+                                    name="password"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Create Password</FormLabel>
+                                            <FormControl>
+                                                <Input type="password" placeholder="••••••••" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                 <h3 className="text-lg font-semibold">Job Details</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
