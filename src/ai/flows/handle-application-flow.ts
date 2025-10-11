@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { db, storage, auth, actionCodeSettings } from '@/lib/firebase';
-import { ref as dbRef, push, set, query, orderByChild, equalTo, get } from 'firebase/database';
+import { ref, push, set, query, orderByChild, equalTo, get } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 import type { Applicant, Employee } from '@/lib/data';
@@ -114,7 +114,7 @@ const handleApplicationFlow = ai.defineFlow(
 
 
         // 2. Create applicant record in Realtime Database
-        const applicantsRef = dbRef(db, `companies/${companyId}/applicants`);
+        const applicantsRef = ref(db, `companies/${companyId}/applicants`);
         const newApplicantRef = push(applicantsRef);
         
         const newApplicant: Omit<Applicant, 'id'> = {
