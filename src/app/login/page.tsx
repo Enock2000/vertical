@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -52,6 +53,11 @@ export default function LoginPage() {
       if (employee.role === 'Super Admin') {
           router.push('/super-admin');
           return;
+      }
+
+       if (employee.role === 'Applicant') {
+        router.push('/applicant-portal');
+        return;
       }
       
       // Check company status for all other users

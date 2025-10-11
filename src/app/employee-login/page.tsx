@@ -1,12 +1,13 @@
 
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { ref, get } from 'firebase/database';
-import type { Employee, Company } from '@/lib/data';
+import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
+import type { Employee, Company, Applicant } from '@/lib/data';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-export default function EmployeeLoginPage() {
+export default function GeneralLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,43 +34,65 @@ export default function EmployeeLoginPage() {
       const employeeRef = ref(db, 'employees/' + user.uid);
       const employeeSnap = await get(employeeRef);
 
-      if (!employeeSnap.exists()) {
-        await auth.signOut();
-        toast({ variant: "destructive", title: "Login Failed", description: "No employee profile found for this account." });
-        setIsLoading(false);
+      if (employeeSnap.exists()) {
+        const employee: Employee = employeeSnap.val();
+        if (employee.status === 'Suspended' || employee.status === 'Inactive') {
+            await auth.signOut(); 
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: `Your account is currently ${employee.status}. Please contact HR.`,
+            });
+            setIsLoading(false);
+            return;
+        }
+        const companyRef = ref(db, 'companies/' + employee.companyId);
+        const companySnap = await get(companyRef);
+        if(companySnap.exists()) {
+            const company: Company = companySnap.val();
+            if(company.status === 'Suspended') {
+                await auth.signOut();
+                toast({
+                    variant: "destructive",
+                    title: "Access Denied",
+                    description: "Your company's account has been suspended. Please contact your administrator.",
+                });
+                setIsLoading(false);
+                return;
+            }
+        }
+        router.push('/employee-portal');
         return;
       }
-        
-      const employee: Employee = employeeSnap.val();
       
-      if (employee.status === 'Suspended' || employee.status === 'Inactive') {
-        await auth.signOut(); 
-        toast({
-          variant: "destructive",
-          title: "Access Denied",
-          description: `Your account is currently ${employee.status}. Please contact HR.`,
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      const companyRef = ref(db, 'companies/' + employee.companyId);
-      const companySnap = await get(companyRef);
-      if(companySnap.exists()) {
-        const company: Company = companySnap.val();
-        if(company.status === 'Suspended') {
-          await auth.signOut();
-          toast({
-            variant: "destructive",
-            title: "Access Denied",
-            description: "Your company's account has been suspended. Please contact your administrator.",
-          });
-          setIsLoading(false);
-          return;
+      // If not an employee, check if they are an applicant
+      const applicantsQuery = query(ref(db, `companies`), orderByChild('applicants'));
+      const companiesSnapshot = await get(applicantsQuery);
+      
+      let foundApplicant = false;
+      if (companiesSnapshot.exists()) {
+        const companiesData = companiesSnapshot.val();
+        for (const companyId in companiesData) {
+            const applicantsData = companiesData[companyId].applicants;
+            if(applicantsData) {
+                const applicantsForCompany = Object.values<Applicant>(applicantsData);
+                const applicantRecord = applicantsForCompany.find(app => app.userId === `applicant_${Buffer.from(email).toString('base64').replace(/=/g, '')}`);
+                if (applicantRecord) {
+                    foundApplicant = true;
+                    break;
+                }
+            }
         }
       }
+      
+      if (foundApplicant) {
+          router.push('/applicant-portal');
+          return;
+      }
 
-      router.push('/employee-portal');
+      await auth.signOut();
+      toast({ variant: "destructive", title: "Login Failed", description: "No employee or applicant profile found for this account." });
+      setIsLoading(false);
 
     } catch (error: any) {
       console.error("Login error:", error);
@@ -90,9 +113,9 @@ export default function EmployeeLoginPage() {
           <div className="flex justify-center">
             <Logo />
           </div>
-          <CardTitle className="text-2xl font-bold">Employee Portal Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">Portal Login</CardTitle>
           <CardDescription>
-            Enter your email and password to access your portal.
+            Employees and applicants can access their portal here.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -117,9 +140,9 @@ export default function EmployeeLoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Are you an admin?{" "}
+            Are you an HR Admin?{" "}
             <Link href="/login" className="underline">
-              Login here
+              Admin Login
             </Link>
           </div>
         </CardContent>

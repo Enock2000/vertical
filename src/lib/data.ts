@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
@@ -59,7 +60,7 @@ export type Employee = {
   name: string;
   email: string;
   role: string;
-  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval';
+  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant';
   avatar: string;
   location: string;
   departmentId: string;
@@ -154,6 +155,7 @@ export const defaultOnboardingTasks: Omit<OnboardingTask, 'id' | 'completed' | '
 
 export type Applicant = {
   id: string;
+  userId: string;
   companyId: string;
   jobVacancyId: string;
   name: string;
