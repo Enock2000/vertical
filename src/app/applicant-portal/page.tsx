@@ -1,3 +1,4 @@
+
 // src/app/applicant-portal/page.tsx
 'use client';
 
@@ -114,10 +115,7 @@ export default function ApplicantPortalPage() {
         if (employee.phone) {
             formData.append('phone', employee.phone);
         }
-        if (employee.resumeUrl) {
-            // Note: We can't re-upload the file, but the backend flow
-            // is smart enough to find the existing resumeUrl on the employee profile.
-        }
+        // No need to append resume file; backend will find existing URL.
 
         try {
             const result = await handleApplication(formData);
