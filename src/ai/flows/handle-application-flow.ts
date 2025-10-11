@@ -65,13 +65,24 @@ const handleApplicationFlow = ai.defineFlow(
   },
   async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle }) => {
     try {
+        const isGuest = companyId === 'guest';
+        
+        // Use a different path for guest applications if needed, for now we will combine them
+        const applicantsRefPath = isGuest 
+            ? `guestJobVacancies/${jobVacancyId}/applicants` 
+            : `companies/${companyId}/applicants`;
+        
+        const fileRefPath = isGuest
+            ? `resumes/guests/${jobVacancyId}/${Date.now()}-${resumeFile.name}`
+            : `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`;
+
         // 1. Upload resume to Firebase Storage
-        const fileRef = storageRef(storage, `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`);
+        const fileRef = storageRef(storage, fileRefPath);
         const snapshot = await uploadBytes(fileRef, resumeFile);
         const resumeUrl = await getDownloadURL(snapshot.ref);
 
         // 2. Create applicant record in Realtime Database
-        const applicantsRef = dbRef(db, `companies/${companyId}/applicants`);
+        const applicantsRef = dbRef(db, applicantsRefPath);
         const newApplicantRef = push(applicantsRef);
         const newApplicantId = newApplicantRef.key!;
 
@@ -84,23 +95,27 @@ const handleApplicationFlow = ai.defineFlow(
             status: 'New',
             appliedAt: new Date().toISOString(),
             source: source || 'Unknown',
+            companyId: companyId, // Store companyId (or 'guest')
         };
 
         await set(newApplicantRef, {
             ...newApplicant,
             id: newApplicantId,
-            companyId: companyId,
         });
         
-        // 3. Notify admins
-        const adminIds = await getAdminUserIds(companyId);
-        for (const adminId of adminIds) {
-            await createNotification(companyId, {
-                userId: adminId,
-                title: 'New Job Application',
-                message: `${name} has applied for the ${vacancyTitle} position.`,
-                link: `/dashboard/recruitment?vacancy=${jobVacancyId}`,
-            });
+        // 3. Notify admins if not a guest application
+        if (!isGuest) {
+            const adminIds = await getAdminUserIds(companyId);
+            for (const adminId of adminIds) {
+                await createNotification(companyId, {
+                    userId: adminId,
+                    title: 'New Job Application',
+                    message: `${name} has applied for the ${vacancyTitle} position.`,
+                    link: `/dashboard/recruitment?vacancy=${jobVacancyId}`,
+                });
+            }
+        } else {
+            // Logic to notify super admin for guest jobs can be added here
         }
 
         return { success: true, message: 'Application submitted successfully!' };

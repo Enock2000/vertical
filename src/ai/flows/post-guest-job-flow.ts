@@ -47,7 +47,7 @@ const handleGuestJobPostingFlow = ai.defineFlow(
 
         const newGuestJob: Omit<GuestJobVacancy, 'id'> = {
             ...jobData,
-            status: 'Pending',
+            status: 'Pending', // All guest jobs start as pending
             createdAt: new Date().toISOString(),
         };
 

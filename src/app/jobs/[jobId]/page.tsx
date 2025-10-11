@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, onValue, get } from 'firebase/database';
+import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -35,47 +34,69 @@ function JobApplicationForm() {
     const formRef = useRef<HTMLFormElement>(null);
 
     useEffect(() => {
-        if (jobId && companyId) {
-            const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
-            const companyRef = ref(db, `companies/${companyId}`);
-            
-            let jobLoaded = false;
-            let companyLoaded = false;
-
-            const checkLoading = () => {
-                if (jobLoaded && companyLoaded) {
-                    setLoading(false);
-                }
-            };
-
-            const jobUnsubscribe = onValue(jobRef, (snapshot) => {
-                setVacancy(snapshot.val());
-                jobLoaded = true;
-                checkLoading();
-            }, (error) => {
-                console.error("Firebase read failed (job):", error);
-                jobLoaded = true;
-                checkLoading();
-            });
-
-            const companyUnsubscribe = onValue(companyRef, (snapshot) => {
-                setCompany(snapshot.val());
-                companyLoaded = true;
-                checkLoading();
-            }, (error) => {
-                console.error("Firebase read failed (company):", error);
-                companyLoaded = true;
-                checkLoading();
-            });
-
-            return () => {
-                jobUnsubscribe();
-                companyUnsubscribe();
-            };
-        } else {
+        if (!jobId || !companyId) {
             setLoading(false);
+            return;
         }
-    }, [jobId, companyId]);
+
+        const isGuest = companyId === 'guest';
+        
+        const fetchJobData = async () => {
+            try {
+                let jobData: JobVacancy | null = null;
+                let companyData: Company | { name: string } | null = null;
+
+                if (isGuest) {
+                    const guestJobRef = ref(db, `guestJobVacancies/${jobId}`);
+                    const guestJobSnap = await get(guestJobRef);
+                    if (guestJobSnap.exists()) {
+                        const guestJob = guestJobSnap.val();
+                        jobData = {
+                            id: jobId,
+                            companyId: 'guest',
+                            title: guestJob.title,
+                            departmentName: guestJob.departmentName,
+                            description: guestJob.description,
+                            closingDate: guestJob.closingDate,
+                            createdAt: guestJob.createdAt,
+                            status: 'Open',
+                            departmentId: '', // Not applicable
+                        };
+                        companyData = { name: guestJob.companyName };
+                    }
+                } else {
+                    const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
+                    const companyRef = ref(db, `companies/${companyId}`);
+                    
+                    const [jobSnap, companySnap] = await Promise.all([get(jobRef), get(companyRef)]);
+                    
+                    if (jobSnap.exists()) {
+                        jobData = jobSnap.val();
+                    }
+                    if (companySnap.exists()) {
+                        companyData = companySnap.val();
+                    }
+                }
+                
+                setVacancy(jobData);
+                setCompany(companyData as Company);
+
+            } catch (error) {
+                console.error("Firebase read failed:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: 'Could not load job details.',
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchJobData();
+
+    }, [jobId, companyId, toast]);
+
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
