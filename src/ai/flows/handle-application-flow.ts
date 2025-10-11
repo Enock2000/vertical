@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { db, storage, auth, actionCodeSettings } from '@/lib/firebase';
 import { ref, push, set, query, orderByChild, equalTo, get } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
+import { sendSignInLinkToEmail } from 'firebase/auth';
 import type { Applicant, Employee } from '@/lib/data';
 import { createNotification, getAdminUserIds } from '@/lib/data';
 import { headers } from 'next/headers';
@@ -35,14 +35,33 @@ const ApplicationOutputSchema = z.object({
 export async function handleApplication(
   formData: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
-    const rawData = {
-        companyId: formData.get('companyId'),
-        jobVacancyId: formData.get('jobVacancyId'),
-        name: formData.get('name'),
-        email: formData.get('email'),
-        phone: formData.get('phone'),
-        source: formData.get('source'),
-    };
+    const authUser = auth.currentUser;
+    const isQuickApply = !!authUser;
+
+    let rawData;
+
+    if (isQuickApply) {
+        const employeeSnap = await get(ref(db, `employees/${authUser.uid}`));
+        const employeeData: Employee | null = employeeSnap.val();
+        rawData = {
+            companyId: formData.get('companyId'),
+            jobVacancyId: formData.get('jobVacancyId'),
+            name: employeeData?.name,
+            email: employeeData?.email,
+            phone: employeeData?.phone,
+            source: 'Internal Applicant Portal',
+        };
+    } else {
+        rawData = {
+            companyId: formData.get('companyId'),
+            jobVacancyId: formData.get('jobVacancyId'),
+            name: formData.get('name'),
+            email: formData.get('email'),
+            phone: formData.get('phone'),
+            source: formData.get('source'),
+        };
+    }
+
     const resumeFile = formData.get('resume') as File | null;
     const vacancyTitle = formData.get('vacancyTitle') as string;
 
@@ -50,8 +69,6 @@ export async function handleApplication(
     if (!validatedFields.success) {
         return { success: false, message: 'Invalid form data.' };
     }
-
-    const authUser = auth.currentUser;
 
     return handleApplicationFlow({ 
         ...validatedFields.data, 
@@ -76,6 +93,7 @@ const handleApplicationFlow = ai.defineFlow(
     try {
         let userId = loggedInUserId;
         let resumeUrl: string | null = null;
+        let userResumeFile: File | null = resumeFile;
 
         // If user is not logged in, check if they exist or create a new account
         if (!userId) {
@@ -84,12 +102,9 @@ const handleApplicationFlow = ai.defineFlow(
             const userSnapshot = await get(q);
 
             if (userSnapshot.exists()) {
-                // User exists, but isn't logged in. Can't proceed.
                 return { success: false, message: 'An account with this email already exists. Please log in to apply.' };
             }
 
-            // Create a new applicant account - but just in the database for now.
-            // A password will be set via the magic link.
             const newApplicantId = push(employeesRef).key!;
             userId = newApplicantId;
             const newUser: Partial<Employee> = {
@@ -102,13 +117,20 @@ const handleApplicationFlow = ai.defineFlow(
                 avatar: `https://avatar.vercel.sh/${email}.png`,
             };
             await set(ref(db, `employees/${userId}`), newUser);
+        } else {
+             // For logged-in user, check if they have a resume on file
+            const employeeSnap = await get(ref(db, `employees/${userId}`));
+            const employeeData: Employee | null = employeeSnap.val();
+            if (employeeData?.resumeUrl && !userResumeFile) {
+                resumeUrl = employeeData.resumeUrl;
+            }
         }
         
-        // 1. Upload resume to Firebase Storage if it exists
-        if (resumeFile && resumeFile.size > 0) {
-            const fileRefPath = `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`;
+        // 1. Upload resume to Firebase Storage if it exists and a URL isn't already set
+        if (userResumeFile && userResumeFile.size > 0 && !resumeUrl) {
+            const fileRefPath = `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${userResumeFile.name}`;
             const fileRef = storageRef(storage, fileRefPath);
-            const snapshot = await uploadBytes(fileRef, resumeFile);
+            const snapshot = await uploadBytes(fileRef, userResumeFile);
             resumeUrl = await getDownloadURL(snapshot.ref);
         }
 
@@ -138,7 +160,6 @@ const handleApplicationFlow = ai.defineFlow(
         // 3. Send a welcome/login email if they weren't logged in
         if (!loggedInUserId) {
             try {
-                // Generate the URL with query parameters
                 const host = headers().get('host');
                 const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
                 const redirectUrl = `${protocol}://${host}/finish-login?email=${encodeURIComponent(email)}`;
@@ -148,7 +169,6 @@ const handleApplicationFlow = ai.defineFlow(
                 await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
             } catch (error: any) {
                 console.warn("Could not send login email:", error.message);
-                // Don't fail the whole flow if email fails.
             }
         }
         
