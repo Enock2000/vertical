@@ -50,6 +50,8 @@ export default function EmployeePortalLayout({
         router.push('/employee-login');
       } else if (employee?.role === 'Admin' || employee?.role === 'Super Admin') {
         router.push('/dashboard');
+      } else if (employee?.role === 'GuestAdmin') {
+        router.push('/guest-employer');
       }
     }
   }, [user, employee, loading, router]);

@@ -51,6 +51,11 @@ export default function GeneralLoginPage() {
             router.push('/applicant-portal');
             return;
         }
+
+        if (employee.role === 'GuestAdmin') {
+            router.push('/guest-employer');
+            return;
+        }
         
         const companyRef = ref(db, 'companies/' + employee.companyId);
         const companySnap = await get(companyRef);
