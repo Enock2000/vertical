@@ -35,48 +35,19 @@ const ApplicationOutputSchema = z.object({
 export async function handleApplication(
   input: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
+    
+    const loggedInUserId = (await auth.currentUser?.uid) || undefined;
 
-    const authUser = auth.currentUser;
-    const loggedInUserId = authUser?.uid;
-
-    let rawData: z.infer<typeof ApplicationInputSchema>;
-    let resumeFile: File | null = null;
-    let vacancyTitle: string = '';
-
-    if (loggedInUserId) {
-        // This is a quick apply from a logged-in user. `input` is not a FormData here.
-        // We reconstruct the data from the logged-in user's profile.
-        const employeeSnap = await get(ref(db, `employees/${loggedInUserId}`));
-        const employeeData: Employee | null = employeeSnap.val();
-        
-        if (!employeeData) {
-             return { success: false, message: 'Could not find your applicant profile.' };
-        }
-
-        rawData = {
-            companyId: input.get('companyId') as string,
-            jobVacancyId: input.get('jobVacancyId') as string,
-            name: employeeData.name,
-            email: employeeData.email,
-            phone: employeeData.phone || '',
-            source: 'Internal Applicant Portal',
-        };
-        vacancyTitle = input.get('vacancyTitle') as string;
-        // The resume might be on file, we'll check for it in the flow.
-
-    } else {
-        // This is a guest application from the job details page.
-        rawData = {
-            companyId: input.get('companyId') as string,
-            jobVacancyId: input.get('jobVacancyId') as string,
-            name: input.get('name') as string,
-            email: input.get('email') as string,
-            phone: input.get('phone') as string | undefined,
-            source: input.get('source') as string | undefined,
-        };
-        resumeFile = input.get('resume') as File | null;
-        vacancyTitle = input.get('vacancyTitle') as string;
-    }
+    const rawData = {
+        companyId: input.get('companyId') as string,
+        jobVacancyId: input.get('jobVacancyId') as string,
+        name: input.get('name') as string,
+        email: input.get('email') as string,
+        phone: input.get('phone') as string | undefined,
+        source: input.get('source') as string | undefined,
+    };
+    const resumeFile = input.get('resume') as File | null;
+    const vacancyTitle = input.get('vacancyTitle') as string;
 
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
     if (!validatedFields.success) {
@@ -141,6 +112,9 @@ const handleApplicationFlow = ai.defineFlow(
                 joinDate: new Date().toISOString(),
                 avatar: `https://avatar.vercel.sh/${email}.png`,
             };
+            if (phone) {
+              newUser.phone = phone;
+            }
             await set(ref(db, `employees/${userId}`), newUser);
         }
         

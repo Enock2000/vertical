@@ -109,11 +109,14 @@ export default function ApplicantPortalPage() {
         formData.append('companyId', job.companyId);
         formData.append('jobVacancyId', job.id);
         formData.append('vacancyTitle', job.title);
-        // Add employee details for the backend flow
         formData.append('name', employee.name);
         formData.append('email', employee.email);
         if (employee.phone) {
             formData.append('phone', employee.phone);
+        }
+        if (employee.resumeUrl) {
+            // Note: We can't re-upload the file, but the backend flow
+            // is smart enough to find the existing resumeUrl on the employee profile.
         }
 
         try {
