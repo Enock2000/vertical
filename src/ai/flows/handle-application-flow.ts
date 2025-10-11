@@ -108,6 +108,7 @@ const handleApplicationFlow = ai.defineFlow(
                 const existingUsers = userSnapshot.val();
                 const existingUserId = Object.keys(existingUsers)[0];
                 const existingUser: Employee = existingUsers[existingUserId];
+                // Allow re-application if they are already an applicant, but block if they are another employee type
                 if (existingUser.role !== 'Applicant') {
                      return { success: false, message: 'An account with this email already exists with a different role. Please log in to apply.' };
                 }
