@@ -48,7 +48,7 @@ export async function handleApplication(
             jobVacancyId: formData.get('jobVacancyId'),
             name: employeeData?.name,
             email: employeeData?.email,
-            phone: employeeData?.phone,
+            phone: employeeData?.phone || '',
             source: 'Internal Applicant Portal',
         };
     } else {
@@ -121,7 +121,7 @@ const handleApplicationFlow = ai.defineFlow(
              // For logged-in user, check if they have a resume on file
             const employeeSnap = await get(ref(db, `employees/${userId}`));
             const employeeData: Employee | null = employeeSnap.val();
-            if (employeeData?.resumeUrl && !userResumeFile) {
+            if (employeeData?.resumeUrl && (!userResumeFile || userResumeFile.size === 0)) {
                 resumeUrl = employeeData.resumeUrl;
             }
         }

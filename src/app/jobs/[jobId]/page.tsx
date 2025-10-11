@@ -97,34 +97,26 @@ function JobApplicationForm() {
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        
+        if (!isLoggedInApplicant) {
+            toast({
+                title: 'Please Log In',
+                description: 'You must be logged in as an applicant to apply.',
+                action: <Button onClick={() => router.push('/employee-login')}>Login</Button>
+            });
+            return;
+        }
+
         setIsSubmitting(true);
         
         const formData = new FormData(event.currentTarget);
         
         // If user is logged in, use their details
-        if (user && employee && employee.role === 'Applicant') {
+        if (user && employee) {
             formData.set('name', employee.name);
             formData.set('email', employee.email);
             formData.set('phone', employee.phone || '');
         }
-
-        // Check if an applicant with this email already exists but is not logged in.
-        const email = formData.get('email') as string;
-        if (!user && email) {
-            const applicantsRef = ref(db, 'employees');
-            const q = query(applicantsRef, orderByChild('email'), equalTo(email));
-            const snapshot = await get(q);
-            if (snapshot.exists()) {
-                toast({
-                    title: 'Account Exists',
-                    description: 'An account with this email already exists. Please log in to apply.',
-                    action: <Button onClick={() => router.push('/employee-login')}>Login</Button>,
-                });
-                setIsSubmitting(false);
-                return;
-            }
-        }
-
 
         try {
             const result = await handleApplication(formData);
@@ -133,12 +125,7 @@ function JobApplicationForm() {
                     title: 'Application Submitted!',
                     description: result.message,
                 });
-                if(user) {
-                    router.push('/applicant-portal');
-                } else {
-                    formRef.current?.reset();
-                    setFileName('');
-                }
+                router.push('/applicant-portal');
             } else {
                 toast({
                     variant: 'destructive',
@@ -213,69 +200,48 @@ function JobApplicationForm() {
                         {isClosed ? (
                             <CardDescription className="text-destructive">Applications for this position are now closed.</CardDescription>
                         ) : (
-                            <CardDescription>{isLoggedInApplicant ? `Applying as ${employee.name}` : 'Fill out the form below to apply.'}</CardDescription>
+                            <CardDescription>{isLoggedInApplicant ? `Logged in as ${employee.name}` : 'Log in to apply for this position.'}</CardDescription>
                         )}
                     </CardHeader>
                     <CardContent>
-                        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-                            <input type="hidden" name="companyId" value={companyId} />
-                            <input type="hidden" name="jobVacancyId" value={jobId} />
-                            <input type="hidden" name="vacancyTitle" value={vacancy.title} />
-                            
-                            {!isLoggedInApplicant && (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Full Name</Label>
-                                        <Input id="name" name="name" required disabled={isSubmitting || isClosed} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input id="email" name="email" type="email" required disabled={isSubmitting || isClosed} />
-                                    </div>
-                                     <div className="space-y-2">
-                                        <Label htmlFor="phone">Phone Number</Label>
-                                        <Input id="phone" name="phone" type="tel" required disabled={isSubmitting || isClosed} />
-                                    </div>
-                                </>
-                            )}
-                           
-                            <div className="space-y-2">
-                                <Label htmlFor="resume">Resume (Optional)</Label>
-                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {fileName || 'Upload your resume'}
+                       {isLoggedInApplicant ? (
+                            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                                <input type="hidden" name="companyId" value={companyId} />
+                                <input type="hidden" name="jobVacancyId" value={jobId} />
+                                <input type="hidden" name="vacancyTitle" value={vacancy.title} />
+                                
+                                <div className="space-y-2">
+                                    <Label htmlFor="resume">Resume (Optional)</Label>
+                                    <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        {fileName || 'Upload your resume'}
+                                    </Button>
+                                    <Input 
+                                        ref={fileInputRef} 
+                                        id="resume" 
+                                        name="resume" 
+                                        type="file" 
+                                        className="hidden" 
+                                        onChange={handleFileChange}
+                                        disabled={isSubmitting || isClosed}
+                                    />
+                                </div>
+                                <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
+                                    {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
+                                    {isClosed ? 'Applications Closed' : 'Submit Application'}
                                 </Button>
-                                <Input 
-                                    ref={fileInputRef} 
-                                    id="resume" 
-                                    name="resume" 
-                                    type="file" 
-                                    className="hidden" 
-                                    onChange={handleFileChange}
-                                    disabled={isSubmitting || isClosed}
-                                />
+                            </form>
+                       ) : (
+                            <div className="space-y-4">
+                               <p className="text-sm text-muted-foreground">You must have an applicant profile to apply for jobs.</p>
+                                <Button className="w-full" asChild>
+                                    <Link href="/employee-login">Log In to Apply</Link>
+                                </Button>
+                                 <Button variant="outline" className="w-full" asChild>
+                                    <Link href="/applicant-signup">Create Applicant Account</Link>
+                                </Button>
                             </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="source">How did you hear about us?</Label>
-                                <Select name="source" required disabled={isSubmitting || isClosed}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select an option" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Company Website">Company Website</SelectItem>
-                                        <SelectItem value="LinkedIn">LinkedIn</SelectItem>
-                                        <SelectItem value="Referral">Referral</SelectItem>
-                                        <SelectItem value="Job Board">Job Board (e.g., GoZambiaJobs)</SelectItem>
-                                        <SelectItem value="Social Media">Social Media</SelectItem>
-                                        <SelectItem value="Other">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
-                                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                                {isClosed ? 'Applications Closed' : 'Submit Application'}
-                            </Button>
-                        </form>
+                       )}
                     </CardContent>
                 </Card>
             </div>
