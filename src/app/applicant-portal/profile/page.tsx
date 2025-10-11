@@ -39,7 +39,7 @@ const experienceSchema = z.object({
 
 const profileSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required.'),
   location: z.string().optional(),
   education: z.array(educationSchema).optional(),
   workExperience: z.array(experienceSchema).optional(),
