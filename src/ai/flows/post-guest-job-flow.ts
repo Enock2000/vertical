@@ -1,3 +1,4 @@
+
 // src/ai/flows/post-guest-job-flow.ts
 'use server';
 
@@ -22,6 +23,10 @@ const GuestJobInputSchema = z.object({
   title: z.string(),
   departmentName: z.string(),
   description: z.string(),
+  requirements: z.string().optional(),
+  location: z.string().optional(),
+  salary: z.coerce.number().optional(),
+  jobType: z.enum(['Full-Time', 'Part-Time', 'Contract', 'Remote']).optional(),
   closingDate: z.string(),
 });
 
@@ -89,6 +94,7 @@ const handleGuestJobPostingFlow = ai.defineFlow(
             departmentId: 'guest-dept',
             status: 'Pending', // All guest jobs start as pending
             createdAt: new Date().toISOString(),
+            views: 0,
         };
         await set(newJobRef, { ...newGuestJob, id: newJobRef.key });
 

@@ -1,13 +1,14 @@
+
 // src/app/guest-employer/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, onValue, query, orderByChild, equalTo, runTransaction } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import type { JobVacancy, Applicant } from '@/lib/data';
-import { Loader2, Briefcase, ExternalLink, Users } from 'lucide-react';
+import { Loader2, Briefcase, ExternalLink, Users, Eye } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -68,10 +69,11 @@ export default function GuestEmployerDashboard() {
 
     }, [companyId, authLoading]);
 
-    const jobsWithApplicantCounts = useMemo(() => {
+    const jobsWithStats = useMemo(() => {
         return jobs.map(job => ({
             ...job,
-            applicantCount: applicants.filter(app => app.jobVacancyId === job.id).length
+            applicantCount: applicants.filter(app => app.jobVacancyId === job.id).length,
+            views: job.views || 0,
         }));
     }, [jobs, applicants]);
 
@@ -99,18 +101,21 @@ export default function GuestEmployerDashboard() {
                     <CardTitle>My Job Postings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {jobsWithApplicantCounts.length > 0 ? (
+                    {jobsWithStats.length > 0 ? (
                         <div className="space-y-4">
-                            {jobsWithApplicantCounts.map(job => (
+                            {jobsWithStats.map(job => (
                                 <Card key={job.id}>
                                     <CardHeader className="flex flex-row items-center justify-between">
                                         <div>
                                             <CardTitle>{job.title}</CardTitle>
-                                            <CardDescription className="flex items-center gap-2 pt-2">
-                                                 <Badge variant={job.status === 'Open' ? 'default' : 'secondary'}>
+                                            <CardDescription className="flex items-center gap-4 pt-2">
+                                                 <Badge variant={job.status === 'Approved' ? 'default' : 'secondary'}>
                                                     {job.status}
                                                  </Badge>
-                                                 <span className="flex items-center gap-1">
+                                                 <span className="flex items-center gap-1 text-sm">
+                                                    <Eye className="h-4 w-4" /> {job.views} view(s)
+                                                 </span>
+                                                 <span className="flex items-center gap-1 text-sm">
                                                     <Users className="h-4 w-4" /> {job.applicantCount} applicant(s)
                                                  </span>
                                             </CardDescription>
@@ -124,7 +129,7 @@ export default function GuestEmployerDashboard() {
                                              <Button 
                                                 size="sm" 
                                                 onClick={() => router.push(`/guest-employer/jobs/${job.id}`)}
-                                                disabled={job.status !== 'Open'}
+                                                disabled={job.status !== 'Approved'}
                                             >
                                                 View Applicants
                                             </Button>

@@ -4,13 +4,13 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, get, query, orderByChild, equalTo, runTransaction, update } from 'firebase/database';
 import type { JobVacancy, Company, Applicant } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Building2, Upload, CalendarClock } from 'lucide-react';
+import { Loader2, ArrowLeft, Building2, Upload, CalendarClock, MapPin, Briefcase, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { handleApplication } from '@/ai/flows/handle-application-flow';
 import Link from 'next/link';
@@ -18,6 +18,7 @@ import Logo from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
+import { Badge } from '@/components/ui/badge';
 
 function JobApplicationForm() {
     const params = useParams();
@@ -28,7 +29,7 @@ function JobApplicationForm() {
     const companyId = searchParams.get('companyId');
 
     const [vacancy, setVacancy] = useState<JobVacancy | null>(null);
-    const [company, setCompany] = useState<Company | null>(null);
+    const [company, setCompany] = useState<Company | { name: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [fileName, setFileName] = useState('');
@@ -48,37 +49,22 @@ function JobApplicationForm() {
             try {
                 let jobData: JobVacancy | null = null;
                 let companyData: Company | { name: string } | null = null;
-
-                if (isGuest) {
-                    const guestJobRef = ref(db, `guestJobVacancies/${jobId}`);
-                    const guestJobSnap = await get(guestJobRef);
-                    if (guestJobSnap.exists()) {
-                        const guestJob = guestJobSnap.val();
-                        jobData = {
-                            id: jobId,
-                            companyId: 'guest',
-                            title: guestJob.title,
-                            departmentName: guestJob.departmentName,
-                            description: guestJob.description,
-                            closingDate: guestJob.closingDate,
-                            createdAt: guestJob.createdAt,
-                            status: 'Open',
-                            departmentId: '', // Not applicable
-                        };
-                        companyData = { name: guestJob.companyName };
-                    }
-                } else {
-                    const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
-                    const companyRef = ref(db, `companies/${companyId}`);
-                    
-                    const [jobSnap, companySnap] = await Promise.all([get(jobRef), get(companyRef)]);
-                    
-                    if (jobSnap.exists()) {
-                        jobData = jobSnap.val();
-                    }
-                    if (companySnap.exists()) {
-                        companyData = companySnap.val();
-                    }
+                const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
+                
+                // Increment view count
+                runTransaction(ref(db, `companies/${companyId}/jobVacancies/${jobId}/views`), (currentValue) => {
+                    return (currentValue || 0) + 1;
+                });
+                
+                const companyRef = ref(db, `companies/${companyId}`);
+                
+                const [jobSnap, companySnap] = await Promise.all([get(jobRef), get(companyRef)]);
+                
+                if (jobSnap.exists()) {
+                    jobData = jobSnap.val();
+                }
+                if (companySnap.exists()) {
+                    companyData = companySnap.val();
                 }
                 
                 setVacancy(jobData);
@@ -183,6 +169,7 @@ function JobApplicationForm() {
 
     const isClosed = new Date() > new Date(vacancy.closingDate);
     const isLoggedInApplicant = user && employee && employee.role === 'Applicant';
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', minimumFractionDigits: 0 });
 
     return (
          <div className="container grid md:grid-cols-3 gap-8">
@@ -192,12 +179,14 @@ function JobApplicationForm() {
                         <div className="flex justify-between items-start">
                             <div>
                                 <CardTitle className="text-3xl">{vacancy.title}</CardTitle>
-                                <CardDescription className="flex items-center gap-2 pt-2">
-                                    <Building2 className="h-4 w-4" />
-                                    {company.name} &middot; {vacancy.departmentName}
+                                <CardDescription className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2">
+                                    <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {company.name}</span>
+                                    <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {vacancy.location || 'Not specified'}</span>
+                                    <span className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {vacancy.jobType || 'Not specified'}</span>
+                                    {vacancy.salary && <span className="flex items-center gap-2"><DollarSign className="h-4 w-4" /> {currencyFormatter.format(vacancy.salary)}</span>}
                                 </CardDescription>
                             </div>
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <div className="text-sm text-muted-foreground flex items-center gap-2 flex-shrink-0">
                                <CalendarClock className="h-4 w-4"/>
                                 Closes: {format(new Date(vacancy.closingDate), "MMM d, yyyy")}
                             </div>
@@ -205,7 +194,14 @@ function JobApplicationForm() {
                     </CardHeader>
                     <CardContent>
                         <div className="prose dark:prose-invert max-w-none">
+                           <h4 className="font-semibold">Job Description</h4>
                             <p>{vacancy.description}</p>
+                            {vacancy.requirements && (
+                                <>
+                                    <h4 className="font-semibold">Requirements</h4>
+                                    <p>{vacancy.requirements}</p>
+                                </>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

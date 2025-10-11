@@ -1,3 +1,4 @@
+
 // src/app/post-a-job/page.tsx
 'use client';
 
@@ -20,6 +21,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { handleGuestJobPosting } from '@/ai/flows/post-guest-job-flow';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formSchema = z.object({
   companyName: z.string().min(2, 'Company name is required.'),
@@ -28,6 +30,10 @@ const formSchema = z.object({
   title: z.string().min(3, 'Job title is required.'),
   departmentName: z.string().min(2, 'Department is required.'),
   description: z.string().min(20, 'Please provide a detailed description.'),
+  requirements: z.string().optional(),
+  location: z.string().optional(),
+  salary: z.coerce.number().optional(),
+  jobType: z.enum(['Full-Time', 'Part-Time', 'Contract', 'Remote']).optional(),
   closingDate: z.date({ required_error: 'A closing date is required.' }),
 });
 
@@ -47,6 +53,10 @@ export default function PostAJobPage() {
       title: '',
       departmentName: '',
       description: '',
+      requirements: '',
+      location: '',
+      salary: undefined,
+      jobType: undefined,
     },
   });
 
@@ -179,6 +189,53 @@ export default function PostAJobPage() {
                                         )}
                                     />
                                 </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                     <FormField
+                                        control={form.control}
+                                        name="location"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Location (Optional)</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="e.g., Lusaka, Zambia" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                     <FormField
+                                        control={form.control}
+                                        name="jobType"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Job Type (Optional)</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Full-Time">Full-Time</SelectItem>
+                                                        <SelectItem value="Part-Time">Part-Time</SelectItem>
+                                                        <SelectItem value="Contract">Contract</SelectItem>
+                                                        <SelectItem value="Remote">Remote</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                 </div>
+                                  <FormField
+                                    control={form.control}
+                                    name="salary"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Salary (ZMW, Optional)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" placeholder="e.g., 15000" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                                  <FormField
                                     control={form.control}
                                     name="closingDate"
@@ -212,7 +269,20 @@ export default function PostAJobPage() {
                                         <FormItem>
                                             <FormLabel>Job Description</FormLabel>
                                             <FormControl>
-                                                <Textarea placeholder="Describe the role, responsibilities, and requirements..." rows={8} {...field} />
+                                                <Textarea placeholder="Describe the role and responsibilities..." rows={6} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="requirements"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Requirements (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea placeholder="List key skills and qualifications..." rows={4} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
