@@ -23,7 +23,7 @@ const ApplicationInputSchema = z.object({
   jobVacancyId: z.string(),
   name: z.string(),
   email: z.string().email(),
-  phone: z.string(),
+  phone: z.string().optional(),
   source: z.string().optional(),
 });
 
@@ -144,7 +144,7 @@ const handleApplicationFlow = ai.defineFlow(
             jobVacancyId,
             name,
             email,
-            phone,
+            phone: phone || '',
             resumeUrl,
             status: 'New',
             appliedAt: new Date().toISOString(),
