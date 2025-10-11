@@ -105,6 +105,12 @@ const handleApplicationFlow = ai.defineFlow(
             const userSnapshot = await get(q);
 
             if (userSnapshot.exists()) {
+                const existingUsers = userSnapshot.val();
+                const existingUserId = Object.keys(existingUsers)[0];
+                const existingUser: Employee = existingUsers[existingUserId];
+                if (existingUser.role !== 'Applicant') {
+                     return { success: false, message: 'An account with this email already exists with a different role. Please log in to apply.' };
+                }
                 return { success: false, message: 'An account with this email already exists. Please log in to apply.' };
             }
 
