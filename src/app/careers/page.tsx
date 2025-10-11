@@ -1,3 +1,4 @@
+
 // src/app/careers/page.tsx
 'use client';
 
@@ -7,15 +8,20 @@ import { ref, onValue, query, orderByChild, equalTo, get } from 'firebase/databa
 import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowRight, Building2 } from 'lucide-react';
+import { Loader2, ArrowRight, Building2, Search } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
 export default function CareersPage() {
     const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
+    const [departments, setDepartments] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedDept, setSelectedDept] = useState('');
 
     useEffect(() => {
         const fetchVacancies = async () => {
@@ -31,6 +37,7 @@ export default function CareersPage() {
             }
 
             const allVacancies: EnrichedJobVacancy[] = [];
+            const allDepartments = new Set<string>();
             
             for (const companyId in companiesData) {
                 const company = companiesData[companyId];
@@ -44,6 +51,7 @@ export default function CareersPage() {
                             const job = jobsData[jobId];
                             if (job.status === 'Open') {
                                 allVacancies.push({ ...job, id: jobId, companyId, companyName: company.name });
+                                if (job.departmentName) allDepartments.add(job.departmentName);
                             }
                         });
                     }
@@ -69,12 +77,14 @@ export default function CareersPage() {
                             companyName: job.companyName,
                             departmentId: '', // Not applicable for guest jobs
                         });
+                        if (job.departmentName) allDepartments.add(job.departmentName);
                     }
                  });
             }
 
             allVacancies.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setVacancies(allVacancies);
+            setDepartments(Array.from(allDepartments).sort());
             setLoading(false);
         };
 
@@ -84,6 +94,12 @@ export default function CareersPage() {
         });
 
     }, []);
+
+    const filteredVacancies = vacancies.filter(job => 
+        (job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+         job.companyName.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedDept === '' || job.departmentName === selectedDept)
+    );
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">
@@ -117,13 +133,34 @@ export default function CareersPage() {
                             Explore open roles from great companies. Your next opportunity awaits.
                         </p>
                     </div>
+                    
+                    <div className="mx-auto max-w-3xl mb-8 flex gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by title or company..."
+                                className="pl-10"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <Select value={selectedDept} onValueChange={setSelectedDept}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="All Departments" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="">All Departments</SelectItem>
+                                {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
 
                     {loading ? (
                          <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
                     ) : (
                         <div className="mx-auto max-w-3xl space-y-4">
-                           {vacancies.length > 0 ? (
-                                vacancies.map((job) => (
+                           {filteredVacancies.length > 0 ? (
+                                filteredVacancies.map((job) => (
                                     <Card key={job.id}>
                                         <CardHeader className="flex flex-row items-center justify-between">
                                             <div>
@@ -145,9 +182,9 @@ export default function CareersPage() {
                            ) : (
                              <Card>
                                 <CardContent className="py-12 text-center">
-                                    <h3 className="text-lg font-semibold">No Open Positions</h3>
+                                    <h3 className="text-lg font-semibold">No Matching Positions</h3>
                                     <p className="text-muted-foreground">
-                                        There are no jobs available at the moment. Please check back later!
+                                        Your search returned no results. Try adjusting your filters.
                                     </p>
                                 </CardContent>
                             </Card>

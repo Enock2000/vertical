@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
@@ -54,11 +53,31 @@ export type ThemeSettings = {
 
 export type WorkerType = 'Salaried' | 'Hourly' | 'Contractor';
 
+export type EducationEntry = {
+    id: string;
+    institution: string;
+    qualification: string;
+    fieldOfStudy: string;
+    startDate: string;
+    endDate: string;
+};
+
+export type WorkExperienceEntry = {
+    id: string;
+    company: string;
+    position: string;
+    startDate: string;
+    endDate: string;
+    responsibilities: string;
+};
+
+
 export type Employee = {
   id: string;
   companyId: string; // Multi-tenancy key
   name: string;
   email: string;
+  phone?: string;
   role: string;
   status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant';
   avatar: string;
@@ -98,6 +117,10 @@ export type Employee = {
   terminationReason?: string | null;
   resignationDate?: string | null;
   resignationReason?: string | null;
+  // Applicant Profile
+  education?: EducationEntry[];
+  workExperience?: WorkExperienceEntry[];
+  resumeUrl?: string;
 };
 
 export type JobVacancy = {

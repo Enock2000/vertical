@@ -1,3 +1,4 @@
+
 // src/app/applicant-portal/layout.tsx
 'use client';
 
@@ -21,6 +22,7 @@ import { Loader2 } from "lucide-react";
 
 const navItems = [
   { href: "/applicant-portal", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/applicant-portal/profile", icon: User, label: "My Profile" },
   { href: "/careers", icon: Briefcase, label: "All Jobs" },
 ];
 
