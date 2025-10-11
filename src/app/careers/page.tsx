@@ -107,17 +107,13 @@ export default function CareersPage() {
         if (!employee || !user) return;
         setSubmittingJobId(job.id);
 
-        const applicationData = {
-            companyId: job.companyId,
-            jobVacancyId: job.id,
-            name: employee.name,
-            email: employee.email,
-            phone: employee.phone || '',
-            source: 'Careers Page Quick Apply',
-        };
+        const formData = new FormData();
+        formData.append('companyId', job.companyId);
+        formData.append('jobVacancyId', job.id);
+        formData.append('vacancyTitle', job.title);
 
         try {
-            const result = await handleApplication(applicationData);
+            const result = await handleApplication(formData);
             if (result.success) {
                 toast({
                     title: "Application Submitted!",
