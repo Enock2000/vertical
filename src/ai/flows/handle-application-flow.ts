@@ -40,7 +40,6 @@ export async function handleApplication(
     let resumeFile: File | null = null;
     let vacancyTitle: string = '';
     const authUser = auth.currentUser;
-    const isQuickApply = !!authUser;
 
 
     if (input instanceof FormData) {
@@ -56,6 +55,11 @@ export async function handleApplication(
         vacancyTitle = input.get('vacancyTitle') as string;
     } else {
         rawData = input;
+         // In a quick apply scenario, some data isn't in the initial object, so we fetch it.
+        const jobSnap = await get(ref(db, `companies/${rawData.companyId}/jobVacancies/${rawData.jobVacancyId}`));
+        if (jobSnap.exists()) {
+            vacancyTitle = jobSnap.val().title;
+        }
     }
 
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
@@ -63,15 +67,6 @@ export async function handleApplication(
         console.error("Application validation failed:", validatedFields.error.flatten().fieldErrors);
         return { success: false, message: 'Invalid form data.' };
     }
-    
-    // In a quick apply scenario, some data isn't in the initial object, so we fetch it.
-    if (isQuickApply && !vacancyTitle) {
-        const jobSnap = await get(ref(db, `companies/${validatedFields.data.companyId}/jobVacancies/${validatedFields.data.jobVacancyId}`));
-        if (jobSnap.exists()) {
-            vacancyTitle = jobSnap.val().title;
-        }
-    }
-
 
     return handleApplicationFlow({ 
         ...validatedFields.data, 
@@ -98,23 +93,28 @@ const handleApplicationFlow = ai.defineFlow(
         let resumeUrl: string | null = null;
         let userResumeFile: File | null = resumeFile;
 
-        // If user is not logged in, check if they exist or create a new account
-        if (!userId) {
+        // --- User Handling Logic ---
+        if (loggedInUserId) {
+            // User is already logged in (Quick Apply)
+            userId = loggedInUserId;
+             // For logged-in user, check if they have a resume on file
+            const employeeSnap = await get(ref(db, `employees/${userId}`));
+            const employeeData: Employee | null = employeeSnap.val();
+            if (employeeData?.resumeUrl && (!userResumeFile || userResumeFile.size === 0)) {
+                resumeUrl = employeeData.resumeUrl;
+            }
+        } else {
+            // This is a new, guest application
             const employeesRef = ref(db, 'employees');
             const q = query(employeesRef, orderByChild('email'), equalTo(email));
             const userSnapshot = await get(q);
 
             if (userSnapshot.exists()) {
-                const existingUsers = userSnapshot.val();
-                const existingUserId = Object.keys(existingUsers)[0];
-                const existingUser: Employee = existingUsers[existingUserId];
-                // Allow re-application if they are already an applicant, but block if they are another employee type
-                if (existingUser.role !== 'Applicant') {
-                     return { success: false, message: 'An account with this email already exists with a different role. Please log in to apply.' };
-                }
+                // An account exists, but the user is not logged in.
                 return { success: false, message: 'An account with this email already exists. Please log in to apply.' };
             }
 
+            // Create a new applicant account
             const newApplicantId = push(employeesRef).key!;
             userId = newApplicantId;
             const newUser: Partial<Employee> = {
@@ -127,16 +127,9 @@ const handleApplicationFlow = ai.defineFlow(
                 avatar: `https://avatar.vercel.sh/${email}.png`,
             };
             await set(ref(db, `employees/${userId}`), newUser);
-        } else {
-             // For logged-in user, check if they have a resume on file
-            const employeeSnap = await get(ref(db, `employees/${userId}`));
-            const employeeData: Employee | null = employeeSnap.val();
-            if (employeeData?.resumeUrl && (!userResumeFile || userResumeFile.size === 0)) {
-                resumeUrl = employeeData.resumeUrl;
-            }
         }
         
-        // 1. Upload resume to Firebase Storage if it exists and a URL isn't already set
+        // --- Resume Handling ---
         if (userResumeFile && userResumeFile.size > 0 && !resumeUrl) {
             const fileRefPath = `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${userResumeFile.name}`;
             const fileRef = storageRef(storage, fileRefPath);
@@ -144,8 +137,13 @@ const handleApplicationFlow = ai.defineFlow(
             resumeUrl = await getDownloadURL(snapshot.ref);
         }
 
+        // Update resume URL on employee profile if a new one was uploaded
+        if (resumeUrl && userId) {
+            await update(ref(db, `employees/${userId}`), { resumeUrl });
+        }
 
-        // 2. Create applicant record in Realtime Database
+
+        // --- Application Record Creation ---
         const applicantsRef = ref(db, `companies/${companyId}/applicants`);
         const newApplicantRef = push(applicantsRef);
         
@@ -167,8 +165,9 @@ const handleApplicationFlow = ai.defineFlow(
             id: newApplicantRef.key,
         });
 
-        // 3. Send a welcome/login email if they weren't logged in
+        // --- Post-Application Actions ---
         if (!loggedInUserId) {
+            // Send a welcome/login email only to new guest applicants
             try {
                 const host = headers().get('host');
                 const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
@@ -182,7 +181,7 @@ const handleApplicationFlow = ai.defineFlow(
             }
         }
         
-        // 4. Notify admins if not a guest application
+        // Notify admins about the new application (if not a guest job post)
         if (companyId !== 'guest') {
             const adminIds = await getAdminUserIds(companyId);
             for (const adminId of adminIds) {
