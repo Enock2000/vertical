@@ -244,7 +244,7 @@ function JobApplicationForm() {
                             )}
                            
                             <div className="space-y-2">
-                                <Label htmlFor="resume">Resume</Label>
+                                <Label htmlFor="resume">Resume (Optional)</Label>
                                 <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
                                     <Upload className="mr-2 h-4 w-4" />
                                     {fileName || 'Upload your resume'}
@@ -255,7 +255,6 @@ function JobApplicationForm() {
                                     name="resume" 
                                     type="file" 
                                     className="hidden" 
-                                    required 
                                     onChange={handleFileChange}
                                     disabled={isSubmitting || isClosed}
                                 />

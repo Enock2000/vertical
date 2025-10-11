@@ -46,10 +46,6 @@ export async function handleApplication(
     const resumeFile = formData.get('resume') as File | null;
     const vacancyTitle = formData.get('vacancyTitle') as string;
 
-    if (!resumeFile) {
-        return { success: false, message: 'Resume file is required.' };
-    }
-
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
     if (!validatedFields.success) {
         return { success: false, message: 'Invalid form data.' };
@@ -70,7 +66,7 @@ const handleApplicationFlow = ai.defineFlow(
   {
     name: 'handleApplicationFlow',
     inputSchema: ApplicationInputSchema.extend({ 
-        resumeFile: z.any(), 
+        resumeFile: z.any().optional(), 
         vacancyTitle: z.string(),
         loggedInUserId: z.string().optional(),
     }),
@@ -79,6 +75,7 @@ const handleApplicationFlow = ai.defineFlow(
   async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle, loggedInUserId }) => {
     try {
         let userId = loggedInUserId;
+        let resumeUrl: string | null = null;
 
         // If user is not logged in, check if they exist or create a new account
         if (!userId) {
@@ -107,11 +104,14 @@ const handleApplicationFlow = ai.defineFlow(
             await set(ref(db, `employees/${userId}`), newUser);
         }
         
-        // 1. Upload resume to Firebase Storage
-        const fileRefPath = `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`;
-        const fileRef = storageRef(storage, fileRefPath);
-        const snapshot = await uploadBytes(fileRef, resumeFile);
-        const resumeUrl = await getDownloadURL(snapshot.ref);
+        // 1. Upload resume to Firebase Storage if it exists
+        if (resumeFile && resumeFile.size > 0) {
+            const fileRefPath = `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`;
+            const fileRef = storageRef(storage, fileRefPath);
+            const snapshot = await uploadBytes(fileRef, resumeFile);
+            resumeUrl = await getDownloadURL(snapshot.ref);
+        }
+
 
         // 2. Create applicant record in Realtime Database
         const applicantsRef = dbRef(db, `companies/${companyId}/applicants`);
