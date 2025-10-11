@@ -1,4 +1,3 @@
-
 // src/app/careers/page.tsx
 'use client';
 
@@ -227,7 +226,7 @@ export default function CareersPage() {
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </Link>
                                                 </Button>
-                                                {isLoggedInApplicant && (
+                                                {isLoggedInApplicant ? (
                                                     hasApplied(job.id) ? (
                                                         <Button disabled variant="secondary" size="sm">
                                                             <CheckCircle className="mr-2 h-4 w-4"/>
@@ -246,6 +245,10 @@ export default function CareersPage() {
                                                             Quick Apply
                                                         </Button>
                                                     )
+                                                ) : (
+                                                    <Button size="sm" asChild>
+                                                        <Link href="/employee-login">Log In to Apply</Link>
+                                                    </Button>
                                                 )}
                                             </div>
                                         </CardHeader>
@@ -260,6 +263,15 @@ export default function CareersPage() {
                                     </p>
                                 </CardContent>
                             </Card>
+                           )}
+                           {!isLoggedInApplicant && (
+                                <div className="text-center text-sm text-muted-foreground pt-4">
+                                    Don't have an applicant profile?{' '}
+                                    <Link href="/applicant-signup" className="underline text-primary">
+                                        Create one now
+                                    </Link>
+                                    {' '}to start applying.
+                                </div>
                            )}
                         </div>
                     )}
