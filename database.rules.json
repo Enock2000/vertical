@@ -9,7 +9,7 @@
       }
     },
     "employees": {
-      ".indexOn": ["companyId"]
+      ".indexOn": ["companyId", "email"]
     }
   }
 }
