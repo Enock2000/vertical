@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -104,8 +105,7 @@ function JobApplicationForm() {
         if (user && employee && employee.role === 'Applicant') {
             formData.set('name', employee.name);
             formData.set('email', employee.email);
-            // Phone might not be on the base employee model, so we only set it if available
-            if(employee.phone) formData.set('phone', employee.phone);
+            formData.set('phone', employee.phone || '');
         }
 
         // Check if an applicant with this email already exists but is not logged in.
