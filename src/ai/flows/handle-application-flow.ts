@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { db, storage, auth, actionCodeSettings } from '@/lib/firebase';
-import { ref, push, set, query, orderByChild, equalTo, get } from 'firebase/database';
+import { ref, push, set, query, orderByChild, equalTo, get, update } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { sendSignInLinkToEmail } from 'firebase/auth';
 import type { Applicant, Employee } from '@/lib/data';
@@ -33,16 +33,39 @@ const ApplicationOutputSchema = z.object({
 });
 
 export async function handleApplication(
-  input: FormData | z.infer<typeof ApplicationInputSchema>
+  input: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
+
+    const authUser = auth.currentUser;
+    const loggedInUserId = authUser?.uid;
 
     let rawData: z.infer<typeof ApplicationInputSchema>;
     let resumeFile: File | null = null;
     let vacancyTitle: string = '';
-    const authUser = auth.currentUser;
 
+    if (loggedInUserId) {
+        // This is a quick apply from a logged-in user. `input` is not a FormData here.
+        // We reconstruct the data from the logged-in user's profile.
+        const employeeSnap = await get(ref(db, `employees/${loggedInUserId}`));
+        const employeeData: Employee | null = employeeSnap.val();
+        
+        if (!employeeData) {
+             return { success: false, message: 'Could not find your applicant profile.' };
+        }
 
-    if (input instanceof FormData) {
+        rawData = {
+            companyId: input.get('companyId') as string,
+            jobVacancyId: input.get('jobVacancyId') as string,
+            name: employeeData.name,
+            email: employeeData.email,
+            phone: employeeData.phone || '',
+            source: 'Internal Applicant Portal',
+        };
+        vacancyTitle = input.get('vacancyTitle') as string;
+        // The resume might be on file, we'll check for it in the flow.
+
+    } else {
+        // This is a guest application from the job details page.
         rawData = {
             companyId: input.get('companyId') as string,
             jobVacancyId: input.get('jobVacancyId') as string,
@@ -53,13 +76,6 @@ export async function handleApplication(
         };
         resumeFile = input.get('resume') as File | null;
         vacancyTitle = input.get('vacancyTitle') as string;
-    } else {
-        rawData = input;
-         // In a quick apply scenario, some data isn't in the initial object, so we fetch it.
-        const jobSnap = await get(ref(db, `companies/${rawData.companyId}/jobVacancies/${rawData.jobVacancyId}`));
-        if (jobSnap.exists()) {
-            vacancyTitle = jobSnap.val().title;
-        }
     }
 
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
@@ -72,7 +88,7 @@ export async function handleApplication(
         ...validatedFields.data, 
         resumeFile, 
         vacancyTitle,
-        loggedInUserId: authUser?.uid
+        loggedInUserId
     });
 }
 
@@ -94,9 +110,8 @@ const handleApplicationFlow = ai.defineFlow(
         let userResumeFile: File | null = resumeFile;
 
         // --- User Handling Logic ---
-        if (loggedInUserId) {
+        if (userId) {
             // User is already logged in (Quick Apply)
-            userId = loggedInUserId;
              // For logged-in user, check if they have a resume on file
             const employeeSnap = await get(ref(db, `employees/${userId}`));
             const employeeData: Employee | null = employeeSnap.val();
