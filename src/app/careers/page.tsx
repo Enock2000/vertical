@@ -21,7 +21,7 @@ export default function CareersPage() {
     const [departments, setDepartments] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedDept, setSelectedDept] = useState('');
+    const [selectedDept, setSelectedDept] = useState('all');
 
     useEffect(() => {
         const fetchVacancies = async () => {
@@ -41,16 +41,26 @@ export default function CareersPage() {
             
             for (const companyId in companiesData) {
                 const company = companiesData[companyId];
-                if (company.status === 'Active') {
-                    const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
+                if (company.status === 'Active' || company.status === 'Guest') { // Include Guest companies
+                    const jobsRefPath = company.status === 'Guest' 
+                        ? `guestJobVacancies` 
+                        : `companies/${companyId}/jobVacancies`;
+                    const jobsRef = ref(db, jobsRefPath);
+                    
                     const jobsSnapshot = await get(jobsRef);
                     const jobsData = jobsSnapshot.val();
 
                     if (jobsData) {
                         Object.keys(jobsData).forEach(jobId => {
                             const job = jobsData[jobId];
-                            if (job.status === 'Open') {
-                                allVacancies.push({ ...job, id: jobId, companyId, companyName: company.name });
+                            const isGuestJob = company.status === 'Guest';
+                             if ((isGuestJob && job.status === 'Approved') || (!isGuestJob && job.status === 'Open')) {
+                                allVacancies.push({ 
+                                    ...job, 
+                                    id: jobId, 
+                                    companyId: isGuestJob ? 'guest' : companyId,
+                                    companyName: isGuestJob ? job.companyName : company.name 
+                                });
                                 if (job.departmentName) allDepartments.add(job.departmentName);
                             }
                         });
@@ -58,30 +68,6 @@ export default function CareersPage() {
                 }
             }
             
-            const guestJobsRef = ref(db, 'guestJobVacancies');
-            const guestJobsSnapshot = await get(guestJobsRef);
-            const guestJobsData = guestJobsSnapshot.val();
-            if (guestJobsData) {
-                 Object.keys(guestJobsData).forEach(jobId => {
-                    const job = guestJobsData[jobId];
-                    if (job.status === 'Approved') {
-                        allVacancies.push({
-                            id: jobId,
-                            companyId: 'guest', // Special identifier
-                            title: job.title,
-                            departmentName: job.departmentName,
-                            description: job.description,
-                            status: 'Open',
-                            createdAt: job.createdAt,
-                            closingDate: job.closingDate,
-                            companyName: job.companyName,
-                            departmentId: '', // Not applicable for guest jobs
-                        });
-                        if (job.departmentName) allDepartments.add(job.departmentName);
-                    }
-                 });
-            }
-
             allVacancies.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setVacancies(allVacancies);
             setDepartments(Array.from(allDepartments).sort());
@@ -98,7 +84,7 @@ export default function CareersPage() {
     const filteredVacancies = vacancies.filter(job => 
         (job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
          job.companyName.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedDept === '' || job.departmentName === selectedDept)
+        (selectedDept === 'all' || job.departmentName === selectedDept)
     );
 
     return (
@@ -149,7 +135,7 @@ export default function CareersPage() {
                                 <SelectValue placeholder="All Departments" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All Departments</SelectItem>
+                                <SelectItem value="all">All Departments</SelectItem>
                                 {departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
                             </SelectContent>
                         </Select>
