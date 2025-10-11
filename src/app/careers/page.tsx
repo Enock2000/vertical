@@ -50,6 +50,29 @@ export default function CareersPage() {
                     }
                 }
             }
+            
+            const guestJobsRef = ref(db, 'guestJobVacancies');
+            const guestJobsSnapshot = await get(guestJobsRef);
+            const guestJobsData = guestJobsSnapshot.val();
+            if (guestJobsData) {
+                 Object.keys(guestJobsData).forEach(jobId => {
+                    const job = guestJobsData[jobId];
+                    if (job.status === 'Approved') {
+                        allVacancies.push({
+                            id: jobId,
+                            companyId: 'guest', // Special identifier
+                            title: job.title,
+                            departmentName: job.departmentName,
+                            description: job.description,
+                            status: 'Open',
+                            createdAt: job.createdAt,
+                            closingDate: job.closingDate,
+                            companyName: job.companyName,
+                            departmentId: '', // Not applicable for guest jobs
+                        });
+                    }
+                 });
+            }
 
             allVacancies.sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setVacancies(allVacancies);
@@ -68,11 +91,18 @@ export default function CareersPage() {
              <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-14 items-center justify-between">
                     <Logo />
-                    <Button variant="ghost" asChild>
-                        <Link href="/">
-                            Back to Home
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-4">
+                        <Button variant="outline" asChild>
+                            <Link href="/post-a-job">
+                                Post a Job
+                            </Link>
+                        </Button>
+                        <Button variant="ghost" asChild>
+                            <Link href="/">
+                                Back to Home
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             </header>
             <main className="flex-1 py-12">

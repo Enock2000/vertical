@@ -60,7 +60,6 @@ const navLinks = [
     { href: "/careers", label: "Jobs Centre" },
     { href: "#testimonials", label: "Testimonials" },
     { href: "#pricing", label: "Pricing" },
-    { href: "/post-a-job", label: "Post a Job" },
 ];
 
 export default function HomePage() {
