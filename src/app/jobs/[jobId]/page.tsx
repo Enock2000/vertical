@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, get } from 'firebase/database';
-import type { JobVacancy, Company } from '@/lib/data';
+import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
+import type { JobVacancy, Company, Applicant } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -17,10 +17,13 @@ import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
+import { useAuth } from '@/app/auth-provider';
 
 function JobApplicationForm() {
     const params = useParams();
     const searchParams = useSearchParams();
+    const router = useRouter();
+    const { user, employee, loading: authLoading } = useAuth();
     const jobId = params.jobId as string;
     const companyId = searchParams.get('companyId');
 
@@ -111,15 +114,45 @@ function JobApplicationForm() {
         
         const formData = new FormData(event.currentTarget);
         
+        // If user is logged in, use their details
+        if (user && employee && employee.role === 'Applicant') {
+            formData.set('name', employee.name);
+            formData.set('email', employee.email);
+            // Phone might not be on the base employee model, so we only set it if available
+            if(employee.phone) formData.set('phone', employee.phone);
+        }
+
+        // Check if an applicant with this email already exists but is not logged in.
+        const email = formData.get('email') as string;
+        if (!user && email) {
+            const applicantsRef = ref(db, 'employees');
+            const q = query(applicantsRef, orderByChild('email'), equalTo(email));
+            const snapshot = await get(q);
+            if (snapshot.exists()) {
+                toast({
+                    title: 'Account Exists',
+                    description: 'An account with this email already exists. Please log in to apply.',
+                    action: <Button onClick={() => router.push('/employee-login')}>Login</Button>,
+                });
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
+
         try {
             const result = await handleApplication(formData);
             if (result.success) {
                 toast({
                     title: 'Application Submitted!',
-                    description: 'Thank you for applying. We will be in touch shortly.',
+                    description: result.message,
                 });
-                formRef.current?.reset();
-                setFileName('');
+                if(user) {
+                    router.push('/applicant-portal');
+                } else {
+                    formRef.current?.reset();
+                    setFileName('');
+                }
             } else {
                 toast({
                     variant: 'destructive',
@@ -140,7 +173,7 @@ function JobApplicationForm() {
     };
 
 
-    if (loading) {
+    if (loading || authLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     }
 
@@ -149,6 +182,7 @@ function JobApplicationForm() {
     }
 
     const isClosed = new Date() > new Date(vacancy.closingDate);
+    const isLoggedInApplicant = user && employee && employee.role === 'Applicant';
 
     return (
          <div className="container grid md:grid-cols-3 gap-8">
@@ -183,7 +217,7 @@ function JobApplicationForm() {
                         {isClosed ? (
                             <CardDescription className="text-destructive">Applications for this position are now closed.</CardDescription>
                         ) : (
-                            <CardDescription>Fill out the form below to apply.</CardDescription>
+                            <CardDescription>{isLoggedInApplicant ? `Applying as ${employee.name}` : 'Fill out the form below to apply.'}</CardDescription>
                         )}
                     </CardHeader>
                     <CardContent>
@@ -191,18 +225,24 @@ function JobApplicationForm() {
                             <input type="hidden" name="companyId" value={companyId} />
                             <input type="hidden" name="jobVacancyId" value={jobId} />
                             <input type="hidden" name="vacancyTitle" value={vacancy.title} />
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
-                                <Input id="name" name="name" required disabled={isSubmitting || isClosed} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" required disabled={isSubmitting || isClosed} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" name="phone" type="tel" required disabled={isSubmitting || isClosed} />
-                            </div>
+                            
+                            {!isLoggedInApplicant && (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">Full Name</Label>
+                                        <Input id="name" name="name" required disabled={isSubmitting || isClosed} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input id="email" name="email" type="email" required disabled={isSubmitting || isClosed} />
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="phone">Phone Number</Label>
+                                        <Input id="phone" name="phone" type="tel" required disabled={isSubmitting || isClosed} />
+                                    </div>
+                                </>
+                            )}
+                           
                             <div className="space-y-2">
                                 <Label htmlFor="resume">Resume</Label>
                                 <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>

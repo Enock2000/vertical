@@ -10,12 +10,13 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { db, storage, auth as adminAuth } from '@/lib/firebase'; // Assuming adminAuth is configured
-import { ref as dbRef, push, set } from 'firebase/database';
+import { db, storage, auth, actionCodeSettings } from '@/lib/firebase';
+import { ref as dbRef, push, set, query, orderByChild, equalTo, get } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import type { Applicant } from '@/lib/data';
+import { sendSignInLinkToEmail, createUserWithEmailAndPassword } from 'firebase/auth';
+import type { Applicant, Employee } from '@/lib/data';
 import { createNotification, getAdminUserIds } from '@/lib/data';
+import { headers } from 'next/headers';
 
 const ApplicationInputSchema = z.object({
   companyId: z.string(),
@@ -30,11 +31,6 @@ const ApplicationOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
-
-// We need to use the client-side auth for sending the email link
-// So we will pass the auth object from the client if needed
-// However, for user creation, we need the admin SDK. This is a simplification.
-import { auth as clientAuth } from '@/lib/firebase';
 
 export async function handleApplication(
   formData: FormData
@@ -59,43 +55,70 @@ export async function handleApplication(
         return { success: false, message: 'Invalid form data.' };
     }
 
-    return handleApplicationFlow({ ...validatedFields.data, resumeFile, vacancyTitle });
+    const authUser = auth.currentUser;
+
+    return handleApplicationFlow({ 
+        ...validatedFields.data, 
+        resumeFile, 
+        vacancyTitle,
+        loggedInUserId: authUser?.uid
+    });
 }
 
 
 const handleApplicationFlow = ai.defineFlow(
   {
     name: 'handleApplicationFlow',
-    inputSchema: ApplicationInputSchema.extend({ resumeFile: z.any(), vacancyTitle: z.string() }),
+    inputSchema: ApplicationInputSchema.extend({ 
+        resumeFile: z.any(), 
+        vacancyTitle: z.string(),
+        loggedInUserId: z.string().optional(),
+    }),
     outputSchema: ApplicationOutputSchema,
   },
-  async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle }) => {
+  async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle, loggedInUserId }) => {
     try {
-        const isGuest = companyId === 'guest';
-        
-        // Use a different path for guest applications if needed, for now we will combine them
-        const applicantsRefPath = `companies/${companyId}/applicants`;
-        
-        const fileRefPath = isGuest 
-            ? `resumes/guests/${jobVacancyId}/${Date.now()}-${resumeFile.name}`
-            : `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`;
+        let userId = loggedInUserId;
 
+        // If user is not logged in, check if they exist or create a new account
+        if (!userId) {
+            const employeesRef = ref(db, 'employees');
+            const q = query(employeesRef, orderByChild('email'), equalTo(email));
+            const userSnapshot = await get(q);
+
+            if (userSnapshot.exists()) {
+                // User exists, but isn't logged in. Can't proceed.
+                return { success: false, message: 'An account with this email already exists. Please log in to apply.' };
+            }
+
+            // Create a new applicant account - but just in the database for now.
+            // A password will be set via the magic link.
+            const newApplicantId = push(employeesRef).key!;
+            userId = newApplicantId;
+            const newUser: Partial<Employee> = {
+                id: userId,
+                name,
+                email,
+                role: 'Applicant',
+                status: 'Active',
+                joinDate: new Date().toISOString(),
+                avatar: `https://avatar.vercel.sh/${email}.png`,
+            };
+            await set(ref(db, `employees/${userId}`), newUser);
+        }
+        
         // 1. Upload resume to Firebase Storage
+        const fileRefPath = `resumes/${companyId}/${jobVacancyId}/${Date.now()}-${resumeFile.name}`;
         const fileRef = storageRef(storage, fileRefPath);
         const snapshot = await uploadBytes(fileRef, resumeFile);
         const resumeUrl = await getDownloadURL(snapshot.ref);
 
         // 2. Create applicant record in Realtime Database
-        const applicantsRef = dbRef(db, applicantsRefPath);
+        const applicantsRef = dbRef(db, `companies/${companyId}/applicants`);
         const newApplicantRef = push(applicantsRef);
-        const newApplicantId = newApplicantRef.key!;
         
-        // This is a simplified user creation. In a real-world scenario, you'd check if the user exists.
-        // For this context, we will simply set the applicant ID to be based on a hash of their email.
-        const applicantUserId = `applicant_${Buffer.from(email).toString('base64').replace(/=/g, '')}`;
-
         const newApplicant: Omit<Applicant, 'id'> = {
-            userId: applicantUserId, // Link to auth user
+            userId: userId!, 
             jobVacancyId,
             name,
             email,
@@ -109,21 +132,28 @@ const handleApplicationFlow = ai.defineFlow(
 
         await set(newApplicantRef, {
             ...newApplicant,
-            id: newApplicantId,
+            id: newApplicantRef.key,
         });
 
-        // 3. Send a welcome/login email
-        // This simulates sending a password reset email which acts as a "magic link" for first login.
-        try {
-            await sendPasswordResetEmail(clientAuth, email);
-        } catch (error: any) {
-            // Ignore errors if user doesn't exist, as the application is already saved.
-            // A more robust solution would check for user existence first.
-            console.warn("Could not send login email, user may not exist in Auth yet:", error.message);
+        // 3. Send a welcome/login email if they weren't logged in
+        if (!loggedInUserId) {
+            try {
+                // Generate the URL with query parameters
+                const host = headers().get('host');
+                const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+                const redirectUrl = `${protocol}://${host}/finish-login?email=${encodeURIComponent(email)}`;
+                
+                const customActionCodeSettings = { ...actionCodeSettings, url: redirectUrl };
+
+                await sendSignInLinkToEmail(auth, email, customActionCodeSettings);
+            } catch (error: any) {
+                console.warn("Could not send login email:", error.message);
+                // Don't fail the whole flow if email fails.
+            }
         }
         
         // 4. Notify admins if not a guest application
-        if (!isGuest) {
+        if (companyId !== 'guest') {
             const adminIds = await getAdminUserIds(companyId);
             for (const adminId of adminIds) {
                 await createNotification(companyId, {
@@ -133,11 +163,14 @@ const handleApplicationFlow = ai.defineFlow(
                     link: `/dashboard/recruitment?vacancy=${jobVacancyId}`,
                 });
             }
-        } else {
-            // Logic to notify super admin for guest jobs can be added here
         }
 
-        return { success: true, message: 'Application submitted successfully! Check your email for a link to your applicant portal.' };
+        return { 
+            success: true, 
+            message: loggedInUserId 
+                ? 'Application submitted successfully!' 
+                : 'Application submitted! Check your email for a link to access your applicant portal.' 
+        };
 
     } catch (error: any) {
         console.error("Error handling application:", error);

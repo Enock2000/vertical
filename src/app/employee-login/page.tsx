@@ -46,6 +46,12 @@ export default function GeneralLoginPage() {
             setIsLoading(false);
             return;
         }
+
+        if (employee.role === 'Applicant') {
+            router.push('/applicant-portal');
+            return;
+        }
+        
         const companyRef = ref(db, 'companies/' + employee.companyId);
         const companySnap = await get(companyRef);
         if(companySnap.exists()) {
@@ -65,34 +71,8 @@ export default function GeneralLoginPage() {
         return;
       }
       
-      // If not an employee, check if they are an applicant
-      const applicantsQuery = query(ref(db, `companies`), orderByChild('applicants'));
-      const companiesSnapshot = await get(applicantsQuery);
-      
-      let foundApplicant = false;
-      if (companiesSnapshot.exists()) {
-        const companiesData = companiesSnapshot.val();
-        for (const companyId in companiesData) {
-            const applicantsData = companiesData[companyId].applicants;
-            if(applicantsData) {
-                const applicantsForCompany = Object.values<Applicant>(applicantsData);
-                const applicantRecord = applicantsForCompany.find(app => app.userId === `applicant_${Buffer.from(email).toString('base64').replace(/=/g, '')}`);
-                if (applicantRecord) {
-                    foundApplicant = true;
-                    break;
-                }
-            }
-        }
-      }
-      
-      if (foundApplicant) {
-          router.push('/applicant-portal');
-          return;
-      }
-
       await auth.signOut();
       toast({ variant: "destructive", title: "Login Failed", description: "No employee or applicant profile found for this account." });
-      setIsLoading(false);
 
     } catch (error: any) {
       console.error("Login error:", error);
@@ -143,6 +123,12 @@ export default function GeneralLoginPage() {
             Are you an HR Admin?{" "}
             <Link href="/login" className="underline">
               Admin Login
+            </Link>
+          </div>
+           <div className="mt-4 text-center text-sm">
+            Don't have an applicant account?{" "}
+            <Link href="/applicant-signup" className="underline">
+              Create one
             </Link>
           </div>
         </CardContent>

@@ -1,4 +1,3 @@
-
 // src/app/careers/page.tsx
 'use client';
 
@@ -95,6 +94,11 @@ export default function CareersPage() {
                         <Button variant="outline" asChild>
                             <Link href="/post-a-job">
                                 Post a Job
+                            </Link>
+                        </Button>
+                         <Button variant="secondary" asChild>
+                            <Link href="/employee-login">
+                                Portal Login
                             </Link>
                         </Button>
                         <Button variant="ghost" asChild>
