@@ -41,25 +41,22 @@ export default function CareersPage() {
             
             for (const companyId in companiesData) {
                 const company = companiesData[companyId];
-                if (company.status === 'Active' || company.status === 'Guest') { // Include Guest companies
-                    const jobsRefPath = company.status === 'Guest' 
-                        ? `guestJobVacancies` 
-                        : `companies/${companyId}/jobVacancies`;
-                    const jobsRef = ref(db, jobsRefPath);
-                    
+                // Process jobs for both 'Active' and 'Guest' companies
+                 if (company.status === 'Active' || company.status === 'Guest') {
+                    const jobsRef = ref(db, `companies/${companyId}/jobVacancies`);
                     const jobsSnapshot = await get(jobsRef);
                     const jobsData = jobsSnapshot.val();
 
                     if (jobsData) {
                         Object.keys(jobsData).forEach(jobId => {
                             const job = jobsData[jobId];
-                            const isGuestJob = company.status === 'Guest';
-                             if ((isGuestJob && job.status === 'Approved') || (!isGuestJob && job.status === 'Open')) {
+                            // Only show 'Open' jobs for active companies and 'Approved' jobs for guests
+                            if ((company.status === 'Active' && job.status === 'Open') || (company.status === 'Guest' && job.status === 'Approved')) {
                                 allVacancies.push({ 
                                     ...job, 
                                     id: jobId, 
-                                    companyId: isGuestJob ? 'guest' : companyId,
-                                    companyName: isGuestJob ? job.companyName : company.name 
+                                    companyId: companyId,
+                                    companyName: company.name 
                                 });
                                 if (job.departmentName) allDepartments.add(job.departmentName);
                             }
