@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
@@ -123,6 +124,13 @@ export type Employee = {
   resumeUrl?: string;
 };
 
+export type ApplicationFormQuestion = {
+    id: string;
+    text: string;
+    type: 'text' | 'textarea' | 'yesno';
+    required: boolean;
+};
+
 export type JobVacancy = {
   id: string;
   companyId: string;
@@ -138,6 +146,7 @@ export type JobVacancy = {
   createdAt: string; // ISO 8601 date string
   closingDate: string; // ISO 8601 date string
   views?: number;
+  customForm?: ApplicationFormQuestion[];
 };
 
 export type GuestJobVacancy = {
@@ -201,6 +210,7 @@ export type Applicant = {
   onboardingTasks?: OnboardingTask[];
   source?: string;
   hiredAt?: string; // ISO 8601 date string
+  answers?: Record<string, string>; // questionId: answer
 };
 
 export type PayrollConfig = {

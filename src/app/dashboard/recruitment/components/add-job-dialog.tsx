@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
@@ -29,19 +29,29 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon } from 'lucide-react';
-import type { Department, JobVacancy } from '@/lib/data';
+import { Loader2, CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import type { Department, JobVacancy, ApplicationFormQuestion } from '@/lib/data';
 import { useAuth } from '@/app/auth-provider';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+
+const customQuestionSchema = z.object({
+  text: z.string().min(1, 'Question cannot be empty.'),
+  type: z.enum(['text', 'textarea', 'yesno']),
+  required: z.boolean(),
+});
 
 const formSchema = z.object({
   title: z.string().min(3, 'Job title must be at least 3 characters.'),
   departmentId: z.string().min(1, 'Please select a department.'),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   closingDate: z.date({ required_error: "A closing date is required."}),
+  customForm: z.array(customQuestionSchema).optional(),
 });
 
 type AddJobFormValues = z.infer<typeof formSchema>;
@@ -69,7 +79,13 @@ export function AddJobDialog({
       title: '',
       departmentId: '',
       description: '',
+      customForm: [],
     },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'customForm',
   });
 
   async function onSubmit(values: AddJobFormValues) {
@@ -86,7 +102,6 @@ export function AddJobDialog({
 
     setIsLoading(true);
     try {
-      // Decrement job postings remaining
       await runTransaction(ref(db, `companies/${companyId}/subscription/jobPostingsRemaining`), (currentValue) => {
           return (currentValue || 0) - 1;
       });
@@ -103,6 +118,7 @@ export function AddJobDialog({
         status: 'Open',
         createdAt: new Date().toISOString(),
         closingDate: values.closingDate.toISOString(),
+        customForm: values.customForm?.map(q => ({ ...q, id: push(ref(db)).key! })) || [],
       };
       
       await set(newJobRef, { ...newJob, id: newJobRef.key });
@@ -129,13 +145,14 @@ export function AddJobDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Post New Job Vacancy</DialogTitle>
           <DialogDescription>
             You have {company?.subscription?.jobPostingsRemaining || 0} job postings remaining.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="max-h-[70vh] pr-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -214,7 +231,66 @@ export function AddJobDialog({
                 </FormItem>
               )}
             />
-            <DialogFooter>
+
+            <Separator />
+            
+            <div>
+              <h3 className="text-lg font-medium mb-2">Custom Application Form</h3>
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="p-4 border rounded-md space-y-3 relative bg-muted/50">
+                     <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                    <FormField
+                        control={form.control}
+                        name={`customForm.${index}.text`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Question {index + 1}</FormLabel>
+                                <FormControl><Input {...field} placeholder="e.g., What are your salary expectations?" /></FormControl>
+                                <FormMessage/>
+                            </FormItem>
+                        )}
+                    />
+                    <div className="flex items-center gap-4">
+                       <FormField
+                            control={form.control}
+                            name={`customForm.${index}.type`}
+                            render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <FormLabel>Type</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="text">Short Text</SelectItem>
+                                            <SelectItem value="textarea">Long Text</SelectItem>
+                                            <SelectItem value="yesno">Yes/No</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name={`customForm.${index}.required`}
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-end space-x-2 space-y-0 pt-8">
+                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    <FormLabel>Required</FormLabel>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                  </div>
+                ))}
+                 <Button type="button" variant="outline" onClick={() => append({ text: '', type: 'text', required: false })}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Question
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter className="sticky bottom-0 bg-background py-4">
               <Button type="submit" disabled={isLoading || (company?.subscription?.jobPostingsRemaining || 0) <= 0}>
                 {isLoading ? (
                   <>
@@ -228,6 +304,7 @@ export function AddJobDialog({
             </DialogFooter>
           </form>
         </Form>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
