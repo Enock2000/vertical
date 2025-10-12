@@ -1,4 +1,3 @@
-
 // src/app/dashboard/recruitment/components/add-job-dialog.tsx
 'use client';
 
@@ -52,6 +51,8 @@ const customQuestionSchema = z.object({
 const formSchema = z.object({
   title: z.string().min(3, 'Job title must be at least 3 characters.'),
   departmentId: z.string().min(1, 'Please select a department.'),
+  location: z.string().optional(),
+  jobType: z.enum(['Full-Time', 'Part-Time', 'Contract', 'Remote']).optional(),
   description: z.string().min(20, 'Description must be at least 20 characters.'),
   closingDate: z.date({ required_error: "A closing date is required."}),
   applicationMethod: z.enum(['internal', 'email']).default('internal'),
@@ -131,6 +132,8 @@ export function AddJobDialog({
         title: values.title,
         departmentId: values.departmentId,
         departmentName,
+        location: values.location,
+        jobType: values.jobType,
         description: values.description,
         status: 'Open',
         createdAt: new Date().toISOString(),
@@ -236,6 +239,40 @@ export function AddJobDialog({
                         </FormItem>
                     )}
                 />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+               <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Location (Optional)</FormLabel>
+                          <FormControl>
+                              <Input placeholder="e.g., Lusaka, Zambia" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+              />
+                <FormField
+                  control={form.control}
+                  name="jobType"
+                  render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Job Type (Optional)</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                  <SelectItem value="Full-Time">Full-Time</SelectItem>
+                                  <SelectItem value="Part-Time">Part-Time</SelectItem>
+                                  <SelectItem value="Contract">Contract</SelectItem>
+                                  <SelectItem value="Remote">Remote</SelectItem>
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                      </FormItem>
+                  )}
+              />
             </div>
             <FormField
               control={form.control}
