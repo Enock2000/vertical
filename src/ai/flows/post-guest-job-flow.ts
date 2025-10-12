@@ -1,4 +1,3 @@
-
 // src/ai/flows/post-guest-job-flow.ts
 'use server';
 
@@ -13,8 +12,15 @@ import { z } from 'zod';
 import { db, auth } from '@/lib/firebase';
 import { ref, push, set } from 'firebase/database';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import type { Company, Employee, JobVacancy } from '@/lib/data';
+import type { Company, Employee, JobVacancy, ApplicationFormQuestion } from '@/lib/data';
 import { add } from 'date-fns';
+
+const customQuestionSchema = z.object({
+  id: z.string().optional(),
+  text: z.string().min(1, 'Question cannot be empty.'),
+  type: z.enum(['text', 'textarea', 'yesno']),
+  required: z.boolean(),
+});
 
 const GuestJobInputSchema = z.object({
   companyName: z.string(),
@@ -28,6 +34,7 @@ const GuestJobInputSchema = z.object({
   salary: z.coerce.number().optional(),
   jobType: z.enum(['Full-Time', 'Part-Time', 'Contract', 'Remote']).optional(),
   closingDate: z.string(),
+  customForm: z.array(customQuestionSchema).optional(),
 });
 
 const GuestJobOutputSchema = z.object({
@@ -95,6 +102,7 @@ const handleGuestJobPostingFlow = ai.defineFlow(
             status: 'Pending', // All guest jobs start as pending
             createdAt: new Date().toISOString(),
             views: 0,
+            customForm: jobData.customForm?.map(q => ({...q, id: push(ref(db)).key!})) || [],
         };
         await set(newJobRef, { ...newGuestJob, id: newJobRef.key });
 

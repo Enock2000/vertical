@@ -1,12 +1,11 @@
-
-
+// src/app/jobs/[jobId]/page.tsx
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { ref, get, query, orderByChild, equalTo, runTransaction, update } from 'firebase/database';
-import type { JobVacancy, Company, Applicant } from '@/lib/data';
+import { ref, get, runTransaction } from 'firebase/database';
+import type { JobVacancy, Company, ApplicationFormQuestion } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -20,12 +19,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { format } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Separator } from '@/components/ui/separator';
+
+function CustomFormInput({ question }: { question: ApplicationFormQuestion }) {
+  const commonProps = {
+    name: `answers.${question.id}`,
+    required: question.required,
+  };
+
+  switch (question.type) {
+    case 'text':
+      return <Input {...commonProps} />;
+    case 'textarea':
+      return <Textarea {...commonProps} />;
+    case 'yesno':
+      return (
+        <RadioGroup {...commonProps} className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="Yes" id={`${question.id}-yes`} />
+            <Label htmlFor={`${question.id}-yes`}>Yes</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="No" id={`${question.id}-no`} />
+            <Label htmlFor={`${question.id}-no`}>No</Label>
+          </div>
+        </RadioGroup>
+      );
+    default:
+      return null;
+  }
+}
 
 function JobApplicationForm() {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user, employee, loading: authLoading } = useAuth();
+    const { user, employee } = useAuth();
     const jobId = params.jobId as string;
     const companyId = searchParams.get('companyId');
 
@@ -44,109 +75,64 @@ function JobApplicationForm() {
             return;
         }
 
-        const isGuest = companyId === 'guest';
-        
         const fetchJobData = async () => {
             try {
-                let jobData: JobVacancy | null = null;
-                let companyData: Company | { name: string } | null = null;
                 const jobRef = ref(db, `companies/${companyId}/jobVacancies/${jobId}`);
-                
-                // Increment view count
-                runTransaction(ref(db, `companies/${companyId}/jobVacancies/${jobId}/views`), (currentValue) => {
-                    return (currentValue || 0) + 1;
-                });
+                runTransaction(ref(db, `companies/${companyId}/jobVacancies/${jobId}/views`), (currentValue) => (currentValue || 0) + 1);
                 
                 const companyRef = ref(db, `companies/${companyId}`);
-                
                 const [jobSnap, companySnap] = await Promise.all([get(jobRef), get(companyRef)]);
                 
-                if (jobSnap.exists()) {
-                    jobData = jobSnap.val();
-                }
-                if (companySnap.exists()) {
-                    companyData = companySnap.val();
-                }
-                
-                setVacancy(jobData);
-                setCompany(companyData as Company);
+                setVacancy(jobSnap.exists() ? jobSnap.val() : null);
+                setCompany(companySnap.exists() ? companySnap.val() : null);
 
             } catch (error) {
                 console.error("Firebase read failed:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Error',
-                    description: 'Could not load job details.',
-                });
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not load job details.' });
             } finally {
                 setLoading(false);
             }
         };
 
         fetchJobData();
-
     }, [jobId, companyId, toast]);
-
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            setFileName(file.name);
-        }
+        if (file) setFileName(file.name);
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        
-        if (!isLoggedInApplicant) {
-            toast({
-                title: 'Please Log In',
-                description: 'You must be logged in as an applicant to apply.',
-                action: <Button onClick={() => router.push('/employee-login')}>Login</Button>
-            });
-            return;
-        }
-
         setIsSubmitting(true);
         
         const formData = new FormData(event.currentTarget);
         
-        // If user is logged in, use their details
-        if (user && employee) {
-            formData.set('name', employee.name);
-            formData.set('email', employee.email);
-            formData.set('phone', employee.phone || '');
-        }
-
+        // Manually collect custom form answers
+        vacancy?.customForm?.forEach(question => {
+            const element = event.currentTarget.elements.namedItem(`answers.${question.id}`);
+            if (element instanceof RadioNodeList) { // Handle RadioGroup
+                formData.set(`answers.${question.id}`, (element as RadioNodeList).value);
+            }
+        });
+        
         try {
             const result = await handleApplication(formData);
             if (result.success) {
-                toast({
-                    title: 'Application Submitted!',
-                    description: result.message,
-                });
-                router.push('/applicant-portal');
+                toast({ title: 'Application Submitted!', description: result.message });
+                router.push(user ? '/applicant-portal' : '/careers');
             } else {
-                toast({
-                    variant: 'destructive',
-                    title: 'Submission Failed',
-                    description: result.message,
-                });
+                toast({ variant: 'destructive', title: 'Submission Failed', description: result.message });
             }
         } catch (error: any) {
             console.error(error);
-            toast({
-                variant: 'destructive',
-                title: 'An Error Occurred',
-                description: 'Could not submit your application. Please try again.',
-            });
+            toast({ variant: 'destructive', title: 'An Error Occurred', description: 'Could not submit application.' });
         } finally {
             setIsSubmitting(false);
         }
     };
 
-
-    if (loading || authLoading) {
+    if (loading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
     }
 
@@ -155,7 +141,6 @@ function JobApplicationForm() {
     }
 
     const isClosed = new Date() > new Date(vacancy.closingDate);
-    const isLoggedInApplicant = user && employee && employee.role === 'Applicant';
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', minimumFractionDigits: 0 });
 
     return (
@@ -200,48 +185,57 @@ function JobApplicationForm() {
                         {isClosed ? (
                             <CardDescription className="text-destructive">Applications for this position are now closed.</CardDescription>
                         ) : (
-                            <CardDescription>{isLoggedInApplicant ? `Logged in as ${employee.name}` : 'Log in to apply for this position.'}</CardDescription>
+                            <CardDescription>{user ? `Logged in as ${employee?.name}` : 'Fill in your details to apply.'}</CardDescription>
                         )}
                     </CardHeader>
                     <CardContent>
-                       {isLoggedInApplicant ? (
-                            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-                                <input type="hidden" name="companyId" value={companyId} />
-                                <input type="hidden" name="jobVacancyId" value={jobId} />
-                                <input type="hidden" name="vacancyTitle" value={vacancy.title} />
-                                
-                                <div className="space-y-2">
-                                    <Label htmlFor="resume">Resume (Optional)</Label>
-                                    <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        {fileName || 'Upload your resume'}
-                                    </Button>
-                                    <Input 
-                                        ref={fileInputRef} 
-                                        id="resume" 
-                                        name="resume" 
-                                        type="file" 
-                                        className="hidden" 
-                                        onChange={handleFileChange}
-                                        disabled={isSubmitting || isClosed}
-                                    />
-                                </div>
-                                <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
-                                    {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                                    {isClosed ? 'Applications Closed' : 'Submit Application'}
+                        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                            <input type="hidden" name="companyId" value={companyId} />
+                            <input type="hidden" name="jobVacancyId" value={jobId} />
+                            <input type="hidden" name="vacancyTitle" value={vacancy.title} />
+                            
+                            {!user && (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name">Full Name</Label>
+                                        <Input id="name" name="name" required disabled={isClosed} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="email">Email</Label>
+                                        <Input id="email" name="email" type="email" required disabled={isClosed} />
+                                    </div>
+                                </>
+                            )}
+
+                            <div className="space-y-2">
+                                <Label htmlFor="resume">Resume</Label>
+                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {fileName || 'Upload your resume'}
                                 </Button>
-                            </form>
-                       ) : (
-                            <div className="space-y-4">
-                               <p className="text-sm text-muted-foreground">You must have an applicant profile to apply for jobs.</p>
-                                <Button className="w-full" asChild>
-                                    <Link href="/employee-login">Log In to Apply</Link>
-                                </Button>
-                                 <Button variant="outline" className="w-full" asChild>
-                                    <Link href="/applicant-signup">Create Applicant Account</Link>
-                                </Button>
+                                <Input ref={fileInputRef} id="resume" name="resume" type="file" className="hidden" onChange={handleFileChange} disabled={isSubmitting || isClosed} />
                             </div>
-                       )}
+
+                            {vacancy.customForm && vacancy.customForm.length > 0 && (
+                                <>
+                                    <Separator/>
+                                    <h3 className="font-semibold">Application Questions</h3>
+                                    {vacancy.customForm.map(question => (
+                                        <div key={question.id} className="space-y-2">
+                                            <Label htmlFor={`answers.${question.id}`}>
+                                                {question.text} {question.required && <span className="text-destructive">*</span>}
+                                            </Label>
+                                            <CustomFormInput question={question} />
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+
+                            <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
+                                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
+                                {isClosed ? 'Applications Closed' : 'Submit Application'}
+                            </Button>
+                        </form>
                     </CardContent>
                 </Card>
             </div>
