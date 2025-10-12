@@ -38,27 +38,28 @@ export async function handleApplication(
   input: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
     
+    // Manually extract all form fields to build a clean object
+    const rawData: { [key: string]: any } = {};
     const answers: Record<string, string> = {};
+    let resumeFile: File | null = null;
+    
     for (const [key, value] of input.entries()) {
-        if (key.startsWith('answers.')) {
+        if (key === 'resume') {
+            resumeFile = value instanceof File && value.size > 0 ? value : null;
+        } else if (key.startsWith('answers.')) {
             const questionId = key.substring(8);
-            answers[questionId] = value as string;
+            if (typeof value === 'string') {
+                answers[questionId] = value;
+            }
+        } else if (typeof value === 'string') {
+            rawData[key] = value;
         }
     }
 
-    // Manually extract data from FormData
-    const rawData = {
-        companyId: input.get('companyId') as string,
-        jobVacancyId: input.get('jobVacancyId') as string,
-        name: input.get('name') as string,
-        email: input.get('email') as string,
-        phone: input.get('phone') as string | undefined,
-        source: input.get('source') as string | undefined,
-        answers: Object.keys(answers).length > 0 ? answers : undefined,
-    };
-    const resumeFile = input.get('resume') as File | null;
-    const vacancyTitle = input.get('vacancyTitle') as string;
-
+    if (Object.keys(answers).length > 0) {
+        rawData.answers = answers;
+    }
+    
     // Validate the extracted text fields
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
     if (!validatedFields.success) {
@@ -72,7 +73,7 @@ export async function handleApplication(
     return handleApplicationFlow({ 
         ...validatedFields.data, 
         resumeFile, 
-        vacancyTitle,
+        vacancyTitle: rawData.vacancyTitle,
         loggedInUserId
     });
 }
@@ -148,8 +149,21 @@ const handleApplicationFlow = ai.defineFlow(
 
         // --- Application Record Creation ---
         const applicantsRef = ref(db, `companies/${companyId}/applicants`);
-        const newApplicantRef = push(applicantsRef);
         
+        // Check for existing application
+        const existingAppQuery = query(applicantsRef, orderByChild('userId'), equalTo(userId!));
+        const existingAppSnapshot = await get(existingAppQuery);
+        if (existingAppSnapshot.exists()) {
+            const existingApps = existingAppSnapshot.val();
+            const hasAlreadyApplied = Object.values(existingApps).some(
+                (app: any) => app.jobVacancyId === jobVacancyId
+            );
+            if (hasAlreadyApplied) {
+                return { success: false, message: 'You have already applied for this job.' };
+            }
+        }
+
+        const newApplicantRef = push(applicantsRef);
         const newApplicant: Omit<Applicant, 'id'> = {
             userId: userId!, 
             jobVacancyId,
