@@ -38,14 +38,14 @@ export async function handleApplication(
   input: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
     
-    // Manually extract all form fields to build a clean object
     const rawData: { [key: string]: any } = {};
     const answers: Record<string, string> = {};
     let resumeFile: File | null = null;
     
+    // Correctly parse FormData into a plain object and separate files/answers
     for (const [key, value] of input.entries()) {
-        if (key === 'resume') {
-            resumeFile = value instanceof File && value.size > 0 ? value : null;
+        if (key === 'resume' && value instanceof File && value.size > 0) {
+            resumeFile = value;
         } else if (key.startsWith('answers.')) {
             const questionId = key.substring(8);
             if (typeof value === 'string') {
@@ -56,6 +56,7 @@ export async function handleApplication(
         }
     }
 
+    // Add the parsed answers to the data object for validation
     if (Object.keys(answers).length > 0) {
         rawData.answers = answers;
     }
