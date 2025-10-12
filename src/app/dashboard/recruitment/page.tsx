@@ -1,17 +1,17 @@
-
 // src/app/dashboard/recruitment/page.tsx
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { PlusCircle, Loader2, Search } from 'lucide-react';
+import { PlusCircle, Loader2, Search, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { JobVacancy, Department, Applicant } from '@/lib/data';
 import { AddJobDialog } from './components/add-job-dialog';
+import { AddApplicantDialog } from './components/add-applicant-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { ApplicantKanbanBoard } from './components/applicant-kanban-board';
@@ -121,9 +121,11 @@ export default function RecruitmentPage() {
                                 <div className="text-left">
                                     <p className="font-semibold">{job.title}</p>
                                     <p className="text-sm text-muted-foreground">{job.departmentName}</p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {job.createdAt ? `Posted ${formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}` : ''}
-                                    </p>
+                                    {job.createdAt && (
+                                        <p className="text-xs text-muted-foreground">
+                                            Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                                        </p>
+                                    )}
                                 </div>
                             </Button>
                             ))}
@@ -137,10 +139,20 @@ export default function RecruitmentPage() {
                     {selectedVacancy ? (
                     <>
                         <CardHeader>
-                            <CardTitle>{selectedVacancy.title}</CardTitle>
-                            <CardDescription>
-                                {filteredApplicants.length} applicant(s) for this position.
-                            </CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle>{selectedVacancy.title}</CardTitle>
+                                    <CardDescription>
+                                        {filteredApplicants.length} applicant(s) for this position.
+                                    </CardDescription>
+                                </div>
+                                <AddApplicantDialog vacancy={selectedVacancy}>
+                                    <Button size="sm" variant="outline" className="gap-1">
+                                        <UserPlus className="h-4 w-4" />
+                                        Add Applicant
+                                    </Button>
+                                </AddApplicantDialog>
+                            </div>
                         </CardHeader>
                         <CardContent className="flex-grow overflow-auto">
                             <ApplicantKanbanBoard applicants={filteredApplicants} vacancy={selectedVacancy} departments={departments} />

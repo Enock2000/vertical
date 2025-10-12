@@ -15,3 +15,4 @@ import '@/ai/flows/generate-contract-flow.ts';
 import '@/ai/flows/submit-resignation-flow.ts';
 import '@/ai/flows/process-job-closures.ts';
 import '@/ai/flows/post-guest-job-flow.ts';
+import '@/ai/flows/add-manual-applicant-flow.ts';
