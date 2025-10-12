@@ -1,4 +1,3 @@
-
 // src/app/jobs/[jobId]/page.tsx
 'use client';
 
@@ -141,7 +140,7 @@ function JobApplicationForm() {
         return <div className="flex h-screen items-center justify-center">Job vacancy not found.</div>;
     }
 
-    const isClosed = new Date() > new Date(vacancy.closingDate);
+    const isClosed = vacancy.closingDate && new Date() > new Date(vacancy.closingDate);
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', minimumFractionDigits: 0 });
 
     const isEmailApplication = vacancy.applicationMethod === 'email';
@@ -163,7 +162,7 @@ function JobApplicationForm() {
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center gap-2 flex-shrink-0">
                                <CalendarClock className="h-4 w-4"/>
-                                Closes: {format(new Date(vacancy.closingDate), "MMM d, yyyy")}
+                                Closes: {vacancy.closingDate ? format(new Date(vacancy.closingDate), "MMM d, yyyy") : 'N/A'}
                             </div>
                         </div>
                     </CardHeader>
