@@ -121,7 +121,7 @@ export default function RecruitmentPage() {
                                     <p className="font-semibold">{job.title}</p>
                                     <p className="text-sm text-muted-foreground">{job.departmentName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                                        {job.createdAt ? `Posted ${formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}` : ''}
                                     </p>
                                 </div>
                             </Button>
