@@ -1,3 +1,4 @@
+
 // src/app/jobs/[jobId]/page.tsx
 'use client';
 
@@ -10,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Building2, Upload, CalendarClock, MapPin, Briefcase, DollarSign } from 'lucide-react';
+import { Loader2, ArrowLeft, Building2, Upload, CalendarClock, MapPin, Briefcase, DollarSign, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { handleApplication } from '@/ai/flows/handle-application-flow';
 import Link from 'next/link';
@@ -143,6 +144,8 @@ function JobApplicationForm() {
     const isClosed = new Date() > new Date(vacancy.closingDate);
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', minimumFractionDigits: 0 });
 
+    const isEmailApplication = vacancy.applicationMethod === 'email';
+
     return (
          <div className="container grid md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
@@ -185,57 +188,74 @@ function JobApplicationForm() {
                         {isClosed ? (
                             <CardDescription className="text-destructive">Applications for this position are now closed.</CardDescription>
                         ) : (
-                            <CardDescription>{user ? `Applying as ${employee?.name}` : 'Fill in your details to apply.'}</CardDescription>
+                             <CardDescription>{isEmailApplication ? 'Submit your application via email.' : (user ? `Applying as ${employee?.name}` : 'Fill in your details to apply.')}</CardDescription>
                         )}
                     </CardHeader>
                     <CardContent>
-                        <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-                            <input type="hidden" name="companyId" value={companyId} />
-                            <input type="hidden" name="jobVacancyId" value={jobId} />
-                            <input type="hidden" name="vacancyTitle" value={vacancy.title} />
-                            
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
-                                <Input id="name" name="name" required disabled={isClosed || !!user} defaultValue={employee?.name || ''}/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" required disabled={isClosed || !!user} defaultValue={employee?.email || ''} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone (Optional)</Label>
-                                <Input id="phone" name="phone" type="tel" disabled={isClosed} defaultValue={employee?.phone || ''} />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="resume">Resume</Label>
-                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    {fileName || (employee?.resumeUrl ? 'Resume on file (upload to replace)' : 'Upload your resume')}
+                       {isEmailApplication ? (
+                           <div className="space-y-4">
+                               <p className="text-sm text-muted-foreground">
+                                   This company has requested that applications be sent directly to their email address.
+                               </p>
+                               <div className="rounded-md border bg-muted p-4">
+                                    <p className="font-semibold text-primary">{vacancy.applicationEmail}</p>
+                               </div>
+                                <Button asChild className="w-full">
+                                    <a href={`mailto:${vacancy.applicationEmail}?subject=Application for ${vacancy.title}`}>
+                                        <Mail className="mr-2 h-4 w-4" />
+                                        Open Email Client
+                                    </a>
                                 </Button>
-                                <Input ref={fileInputRef} id="resume" name="resume" type="file" className="hidden" onChange={handleFileChange} disabled={isSubmitting || isClosed} />
-                            </div>
+                           </div>
+                       ) : (
+                            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+                                <input type="hidden" name="companyId" value={companyId} />
+                                <input type="hidden" name="jobVacancyId" value={jobId} />
+                                <input type="hidden" name="vacancyTitle" value={vacancy.title} />
+                                
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Full Name</Label>
+                                    <Input id="name" name="name" required disabled={isClosed || !!user} defaultValue={employee?.name || ''}/>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" name="email" type="email" required disabled={isClosed || !!user} defaultValue={employee?.email || ''} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="phone">Phone (Optional)</Label>
+                                    <Input id="phone" name="phone" type="tel" disabled={isClosed} defaultValue={employee?.phone || ''} />
+                                </div>
 
-                            {vacancy.customForm && vacancy.customForm.length > 0 && (
-                                <>
-                                    <Separator/>
-                                    <h3 className="font-semibold">Application Questions</h3>
-                                    {vacancy.customForm.map(question => (
-                                        <div key={question.id} className="space-y-2">
-                                            <Label htmlFor={`answers.${question.id}`}>
-                                                {question.text} {question.required && <span className="text-destructive">*</span>}
-                                            </Label>
-                                            <CustomFormInput question={question} />
-                                        </div>
-                                    ))}
-                                </>
-                            )}
+                                <div className="space-y-2">
+                                    <Label htmlFor="resume">Resume</Label>
+                                    <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        {fileName || (employee?.resumeUrl ? 'Resume on file (upload to replace)' : 'Upload your resume')}
+                                    </Button>
+                                    <Input ref={fileInputRef} id="resume" name="resume" type="file" className="hidden" onChange={handleFileChange} disabled={isSubmitting || isClosed} />
+                                </div>
 
-                            <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
-                                {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-                                {isClosed ? 'Applications Closed' : 'Submit Application'}
-                            </Button>
-                        </form>
+                                {vacancy.customForm && vacancy.customForm.length > 0 && (
+                                    <>
+                                        <Separator/>
+                                        <h3 className="font-semibold">Application Questions</h3>
+                                        {vacancy.customForm.map(question => (
+                                            <div key={question.id} className="space-y-2">
+                                                <Label htmlFor={`answers.${question.id}`}>
+                                                    {question.text} {question.required && <span className="text-destructive">*</span>}
+                                                </Label>
+                                                <CustomFormInput question={question} />
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+
+                                <Button type="submit" className="w-full" disabled={isSubmitting || isClosed}>
+                                    {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
+                                    {isClosed ? 'Applications Closed' : 'Submit Application'}
+                                </Button>
+                            </form>
+                       )}
                     </CardContent>
                 </Card>
             </div>

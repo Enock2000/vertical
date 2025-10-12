@@ -1,3 +1,4 @@
+
 // src/app/post-a-job/page.tsx
 'use client';
 
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from "@/components/ui/input";
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +24,7 @@ import { handleGuestJobPosting } from '@/ai/flows/post-guest-job-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const customQuestionSchema = z.object({
   id: z.string().optional(),
@@ -43,7 +45,17 @@ const formSchema = z.object({
   salary: z.coerce.number().optional(),
   jobType: z.enum(['Full-Time', 'Part-Time', 'Contract', 'Remote']).optional(),
   closingDate: z.date({ required_error: 'A closing date is required.' }),
+  applicationMethod: z.enum(['internal', 'email']).default('internal'),
+  applicationEmail: z.string().email().optional().or(z.literal('')),
   customForm: z.array(customQuestionSchema).optional(),
+}).refine(data => {
+    if (data.applicationMethod === 'email' && !data.applicationEmail) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Application email is required for this method.",
+    path: ['applicationEmail'],
 });
 
 type GuestJobFormValues = z.infer<typeof formSchema>;
@@ -66,6 +78,8 @@ export default function PostAJobPage() {
       location: '',
       salary: undefined,
       jobType: undefined,
+      applicationMethod: 'internal',
+      applicationEmail: '',
       customForm: [],
     },
   });
@@ -74,6 +88,8 @@ export default function PostAJobPage() {
     control: form.control,
     name: 'customForm',
   });
+  
+  const applicationMethod = form.watch('applicationMethod');
 
   const onSubmit = async (values: GuestJobFormValues) => {
     setIsLoading(true);
@@ -303,65 +319,108 @@ export default function PostAJobPage() {
                                         </FormItem>
                                     )}
                                 />
-
                                 <Separator />
-                                <div>
-                                <h3 className="text-lg font-semibold mb-2">Custom Application Form</h3>
-                                <div className="space-y-4">
-                                    {fields.map((field, index) => (
-                                    <div key={field.id} className="p-4 border rounded-md space-y-3 relative bg-muted/50">
-                                        <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => remove(index)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                        <FormField
-                                            control={form.control}
-                                            name={`customForm.${index}.text`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Question {index + 1}</FormLabel>
-                                                    <FormControl><Input {...field} placeholder="e.g., What are your salary expectations?" /></FormControl>
-                                                    <FormMessage/>
+                                <FormField
+                                    control={form.control}
+                                    name="applicationMethod"
+                                    render={({ field }) => (
+                                        <FormItem className="space-y-3">
+                                            <FormLabel>Application Method</FormLabel>
+                                            <FormControl>
+                                                <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                className="flex items-center space-x-4"
+                                                >
+                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                    <FormControl><RadioGroupItem value="internal" /></FormControl>
+                                                    <FormLabel className="font-normal">Internal Application Form</FormLabel>
                                                 </FormItem>
-                                            )}
-                                        />
-                                        <div className="flex items-center gap-4">
-                                        <FormField
-                                                control={form.control}
-                                                name={`customForm.${index}.type`}
-                                                render={({ field }) => (
-                                                    <FormItem className="flex-1">
-                                                        <FormLabel>Type</FormLabel>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="text">Short Text</SelectItem>
-                                                                <SelectItem value="textarea">Long Text</SelectItem>
-                                                                <SelectItem value="yesno">Yes/No</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name={`customForm.${index}.required`}
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-end space-x-2 space-y-0 pt-8">
-                                                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                                        <FormLabel>Required</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                                    <FormControl><RadioGroupItem value="email" /></FormControl>
+                                                    <FormLabel className="font-normal">External Email Submission</FormLabel>
+                                                </FormItem>
+                                                </RadioGroup>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                {applicationMethod === 'email' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="applicationEmail"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Application Email</FormLabel>
+                                            <FormControl>
+                                                <Input type="email" placeholder="careers@yourcompany.com" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+                                {applicationMethod === 'internal' && (
+                                    <>
+                                        <Separator />
+                                        <div>
+                                        <h3 className="text-lg font-semibold mb-2">Custom Application Form (Optional)</h3>
+                                        <div className="space-y-4">
+                                            {fields.map((field, index) => (
+                                            <div key={field.id} className="p-4 border rounded-md space-y-3 relative bg-muted/50">
+                                                <Button type="button" variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => remove(index)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`customForm.${index}.text`}
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Question {index + 1}</FormLabel>
+                                                            <FormControl><Input {...field} placeholder="e.g., What are your salary expectations?" /></FormControl>
+                                                            <FormMessage/>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <div className="flex items-center gap-4">
+                                                <FormField
+                                                        control={form.control}
+                                                        name={`customForm.${index}.type`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex-1">
+                                                                <FormLabel>Type</FormLabel>
+                                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                    <FormControl><SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="text">Short Text</SelectItem>
+                                                                        <SelectItem value="textarea">Long Text</SelectItem>
+                                                                        <SelectItem value="yesno">Yes/No</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`customForm.${index}.required`}
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-end space-x-2 space-y-0 pt-8">
+                                                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                                <FormLabel>Required</FormLabel>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                            ))}
+                                            <Button type="button" variant="outline" onClick={() => append({ text: '', type: 'text', required: false })}>
+                                                <PlusCircle className="mr-2 h-4 w-4" /> Add Question
+                                            </Button>
                                         </div>
-                                    </div>
-                                    ))}
-                                    <Button type="button" variant="outline" onClick={() => append({ text: '', type: 'text', required: false })}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Add Question
-                                    </Button>
-                                </div>
-                                </div>
-
-
+                                        </div>
+                                    </>
+                                )}
                                 <Button type="submit" className="w-full" disabled={isLoading}>
                                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Submit for Review

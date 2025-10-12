@@ -1,3 +1,4 @@
+
 // src/ai/flows/post-guest-job-flow.ts
 'use server';
 
@@ -34,7 +35,17 @@ const GuestJobInputSchema = z.object({
   salary: z.coerce.number().optional(),
   jobType: z.enum(['Full-Time', 'Part-Time', 'Contract', 'Remote']).optional(),
   closingDate: z.string(),
+  applicationMethod: z.enum(['internal', 'email']).default('internal'),
+  applicationEmail: z.string().email().optional().or(z.literal('')),
   customForm: z.array(customQuestionSchema).optional(),
+}).refine(data => {
+    if (data.applicationMethod === 'email' && !data.applicationEmail) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Application email is required for this method.",
+    path: ['applicationEmail'],
 });
 
 const GuestJobOutputSchema = z.object({

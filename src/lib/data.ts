@@ -146,6 +146,8 @@ export type JobVacancy = {
   closingDate: string; // ISO 8601 date string
   views?: number;
   customForm?: ApplicationFormQuestion[];
+  applicationMethod?: 'internal' | 'email';
+  applicationEmail?: string;
 };
 
 export type GuestJobVacancy = {
