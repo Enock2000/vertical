@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ref, onValue, query, orderByChild, equalTo, get } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { Applicant, JobVacancy, Company } from '@/lib/data';
-import { Loader2, Briefcase, Building2, Upload, CheckCircle } from 'lucide-react';
+import { Loader2, Briefcase, Building2, Upload, CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/app/auth-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -102,46 +102,6 @@ export default function ApplicantPortalPage() {
         };
     }, [user, authLoading]);
 
-    const handleQuickApply = useCallback(async (job: EnrichedJobVacancy) => {
-        if (!employee || !user) return;
-        setSubmittingJobId(job.id);
-
-        const formData = new FormData();
-        formData.append('companyId', job.companyId);
-        formData.append('jobVacancyId', job.id);
-        formData.append('vacancyTitle', job.title);
-        formData.append('name', employee.name);
-        formData.append('email', employee.email);
-        if (employee.phone) {
-            formData.append('phone', employee.phone);
-        }
-        // No need to append resume file; backend will find existing URL.
-
-        try {
-            const result = await handleApplication(formData);
-            if (result.success) {
-                toast({
-                    title: "Application Submitted!",
-                    description: `Your application for ${job.title} was successful.`,
-                });
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Application Failed",
-                    description: result.message,
-                });
-            }
-        } catch (error: any) {
-             toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.message || "An unexpected error occurred.",
-            });
-        } finally {
-            setSubmittingJobId(null);
-        }
-    }, [employee, user, toast]);
-
     const appliedJobIds = useMemo(() => new Set(applications.map(app => app.jobVacancyId)), [applications]);
 
     if (authLoading || loadingData) {
@@ -220,16 +180,11 @@ export default function ApplicantPortalPage() {
                                                     Applied
                                                 </Button>
                                             ) : (
-                                                <Button 
-                                                    size="sm"
-                                                    onClick={() => handleQuickApply(job)}
-                                                    disabled={submittingJobId === job.id}
-                                                >
-                                                    {submittingJobId === job.id ? 
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin"/> :
-                                                        <Upload className="mr-2 h-4 w-4" />
-                                                    }
-                                                    Quick Apply
+                                                <Button size="sm" asChild>
+                                                    <Link href={`/jobs/${job.id}?companyId=${job.companyId}`}>
+                                                        View & Apply
+                                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                                    </Link>
                                                 </Button>
                                             )}
                                         </div>
@@ -247,4 +202,3 @@ export default function ApplicantPortalPage() {
         </div>
     );
 }
-

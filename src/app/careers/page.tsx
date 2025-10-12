@@ -7,27 +7,22 @@ import { ref, onValue, get } from 'firebase/database';
 import type { JobVacancy, Company, Applicant } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowRight, Building2, Search, CheckCircle, Upload } from 'lucide-react';
+import { Loader2, ArrowRight, Building2, Search } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/app/auth-provider';
-import { useToast } from '@/hooks/use-toast';
-import { handleApplication } from '@/ai/flows/handle-application-flow';
 
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
 export default function CareersPage() {
     const { user, employee, loading: authLoading } = useAuth();
-    const { toast } = useToast();
     const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
-    const [userApplications, setUserApplications] = useState<Applicant[]>([]);
     const [departments, setDepartments] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDept, setSelectedDept] = useState('all');
-    const [submittingJobId, setSubmittingJobId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchVacancies = async () => {
@@ -82,73 +77,13 @@ export default function CareersPage() {
 
     }, []);
 
-    useEffect(() => {
-        if (user) {
-            const companiesRef = ref(db, 'companies');
-            const unsubscribe = onValue(companiesRef, (snapshot) => {
-                const companiesData = snapshot.val();
-                if (!companiesData) return;
-                const apps: Applicant[] = [];
-                for (const companyId in companiesData) {
-                    const applicants = companiesData[companyId].applicants || {};
-                    for (const appId in applicants) {
-                        if (applicants[appId].userId === user.uid) {
-                            apps.push(applicants[appId]);
-                        }
-                    }
-                }
-                setUserApplications(apps);
-            });
-            return () => unsubscribe();
-        }
-    }, [user]);
-
-    const handleQuickApply = useCallback(async (job: EnrichedJobVacancy) => {
-        if (!employee || !user) return;
-        setSubmittingJobId(job.id);
-
-        const formData = new FormData();
-        formData.append('companyId', job.companyId);
-        formData.append('jobVacancyId', job.id);
-        formData.append('vacancyTitle', job.title);
-
-        try {
-            const result = await handleApplication(formData);
-            if (result.success) {
-                toast({
-                    title: "Application Submitted!",
-                    description: `Your application for ${job.title} was successful.`,
-                });
-            } else {
-                 toast({
-                    variant: "destructive",
-                    title: "Application Failed",
-                    description: result.message,
-                });
-            }
-        } catch (error: any) {
-             toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.message || "An unexpected error occurred.",
-            });
-        } finally {
-            setSubmittingJobId(null);
-        }
-
-    }, [employee, user, toast]);
-
-    const hasApplied = (jobId: string) => {
-        return userApplications.some(app => app.jobVacancyId === jobId);
-    };
-
     const filteredVacancies = vacancies.filter(job => 
         (job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
          job.companyName.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (selectedDept === 'all' || job.departmentName === selectedDept)
     );
 
-    const isLoggedInApplicant = !authLoading && !!user && !!employee && employee.role === 'Applicant';
+    const isLoggedInApplicant = !authLoading && !!user && !!employee;
 
     return (
         <div className="flex min-h-screen flex-col bg-muted/40">
@@ -220,36 +155,12 @@ export default function CareersPage() {
                                                 </CardDescription>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <Button asChild variant="outline" size="sm">
+                                                <Button asChild>
                                                     <Link href={`/jobs/${job.id}?companyId=${job.companyId}`}>
-                                                        View Details
+                                                        View & Apply
                                                         <ArrowRight className="ml-2 h-4 w-4" />
                                                     </Link>
                                                 </Button>
-                                                {isLoggedInApplicant ? (
-                                                    hasApplied(job.id) ? (
-                                                        <Button disabled variant="secondary" size="sm">
-                                                            <CheckCircle className="mr-2 h-4 w-4"/>
-                                                            Applied
-                                                        </Button>
-                                                    ) : (
-                                                        <Button 
-                                                            size="sm"
-                                                            onClick={() => handleQuickApply(job)}
-                                                            disabled={submittingJobId === job.id}
-                                                        >
-                                                            {submittingJobId === job.id ? 
-                                                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/> :
-                                                                <Upload className="mr-2 h-4 w-4" />
-                                                            }
-                                                            Quick Apply
-                                                        </Button>
-                                                    )
-                                                ) : (
-                                                    <Button size="sm" asChild>
-                                                        <Link href="/employee-login">Log In to Apply</Link>
-                                                    </Button>
-                                                )}
                                             </div>
                                         </CardHeader>
                                     </Card>
