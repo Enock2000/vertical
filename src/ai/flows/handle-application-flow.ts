@@ -25,6 +25,7 @@ const ApplicationInputSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   source: z.string().optional(),
+  answers: z.record(z.string()).optional(),
 });
 
 const ApplicationOutputSchema = z.object({
@@ -37,6 +38,14 @@ export async function handleApplication(
   input: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
     
+    const answers: Record<string, string> = {};
+    for (const [key, value] of input.entries()) {
+        if (key.startsWith('answers.')) {
+            const questionId = key.substring(8);
+            answers[questionId] = value as string;
+        }
+    }
+
     // Manually extract data from FormData
     const rawData = {
         companyId: input.get('companyId') as string,
@@ -45,6 +54,7 @@ export async function handleApplication(
         email: input.get('email') as string,
         phone: input.get('phone') as string | undefined,
         source: input.get('source') as string | undefined,
+        answers: Object.keys(answers).length > 0 ? answers : undefined,
     };
     const resumeFile = input.get('resume') as File | null;
     const vacancyTitle = input.get('vacancyTitle') as string;
@@ -78,7 +88,7 @@ const handleApplicationFlow = ai.defineFlow(
     }),
     outputSchema: ApplicationOutputSchema,
   },
-  async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle, loggedInUserId }) => {
+  async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle, loggedInUserId, answers }) => {
     try {
         let userId = loggedInUserId;
         let resumeUrl: string | null = null;
@@ -151,6 +161,7 @@ const handleApplicationFlow = ai.defineFlow(
             appliedAt: new Date().toISOString(),
             source: source || 'Unknown',
             companyId: companyId,
+            answers: answers || {},
         };
 
         await set(newApplicantRef, {
