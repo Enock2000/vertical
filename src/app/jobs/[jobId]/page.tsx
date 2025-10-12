@@ -194,24 +194,24 @@ function JobApplicationForm() {
                             <input type="hidden" name="jobVacancyId" value={jobId} />
                             <input type="hidden" name="vacancyTitle" value={vacancy.title} />
                             
-                            {!user && (
-                                <>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="name">Full Name</Label>
-                                        <Input id="name" name="name" required disabled={isClosed} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input id="email" name="email" type="email" required disabled={isClosed} />
-                                    </div>
-                                </>
-                            )}
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Full Name</Label>
+                                <Input id="name" name="name" required disabled={isClosed || !!user} defaultValue={employee?.name || ''}/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" name="email" type="email" required disabled={isClosed || !!user} defaultValue={employee?.email || ''} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Phone (Optional)</Label>
+                                <Input id="phone" name="phone" type="tel" disabled={isClosed} defaultValue={employee?.phone || ''} />
+                            </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="resume">Resume</Label>
                                 <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => fileInputRef.current?.click()} disabled={isSubmitting || isClosed}>
                                     <Upload className="mr-2 h-4 w-4" />
-                                    {fileName || 'Upload your resume'}
+                                    {fileName || (employee?.resumeUrl ? 'Resume on file (upload to replace)' : 'Upload your resume')}
                                 </Button>
                                 <Input ref={fileInputRef} id="resume" name="resume" type="file" className="hidden" onChange={handleFileChange} disabled={isSubmitting || isClosed} />
                             </div>
