@@ -36,7 +36,7 @@ function CustomFormInput({ question }: { question: ApplicationFormQuestion }) {
       return <Textarea {...commonProps} />;
     case 'yesno':
       return (
-        <RadioGroup {...commonProps} className="flex gap-4">
+        <RadioGroup name={commonProps.name} required={commonProps.required} className="flex gap-4">
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="Yes" id={`${question.id}-yes`} />
             <Label htmlFor={`${question.id}-yes`}>Yes</Label>
