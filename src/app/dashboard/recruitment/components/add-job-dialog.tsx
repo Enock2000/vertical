@@ -42,6 +42,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const customQuestionSchema = z.object({
+  id: z.string().optional(),
   text: z.string().min(1, 'Question cannot be empty.'),
   type: z.enum(['text', 'textarea', 'yesno']),
   required: z.boolean(),
