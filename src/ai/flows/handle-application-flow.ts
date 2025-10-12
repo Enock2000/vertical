@@ -32,12 +32,12 @@ const ApplicationOutputSchema = z.object({
   message: z.string(),
 });
 
+// The server action that receives FormData from the client.
 export async function handleApplication(
   input: FormData
 ): Promise<z.infer<typeof ApplicationOutputSchema>> {
     
-    const loggedInUserId = (await auth.currentUser?.uid) || undefined;
-
+    // Manually extract data from FormData
     const rawData = {
         companyId: input.get('companyId') as string,
         jobVacancyId: input.get('jobVacancyId') as string,
@@ -49,12 +49,16 @@ export async function handleApplication(
     const resumeFile = input.get('resume') as File | null;
     const vacancyTitle = input.get('vacancyTitle') as string;
 
+    // Validate the extracted text fields
     const validatedFields = ApplicationInputSchema.safeParse(rawData);
     if (!validatedFields.success) {
         console.error("Application validation failed:", validatedFields.error.flatten().fieldErrors);
         return { success: false, message: 'Invalid form data.' };
     }
 
+    const loggedInUserId = (await auth.currentUser?.uid) || undefined;
+
+    // Call the Genkit flow with a clean, structured object
     return handleApplicationFlow({ 
         ...validatedFields.data, 
         resumeFile, 
