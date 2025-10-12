@@ -1,4 +1,5 @@
 
+
 // src/app/dashboard/recruitment/components/columns.tsx
 "use client"
 
@@ -139,11 +140,11 @@ export const columns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                {applicant.resumeUrl && (
+                {(applicant.resumeUrl || applicant.answers) && (
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <ViewDocumentsDialog applicant={applicant}>
+                        <ViewDocumentsDialog applicant={applicant} vacancy={vacancy}>
                             <div className="w-full text-left flex items-center">
-                                <FileText className="mr-2 h-4 w-4" /> View Documents
+                                <FileText className="mr-2 h-4 w-4" /> View Application
                             </div>
                         </ViewDocumentsDialog>
                     </DropdownMenuItem>

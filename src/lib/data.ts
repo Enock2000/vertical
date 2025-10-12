@@ -1,5 +1,4 @@
 
-
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
@@ -556,7 +555,7 @@ export type Transaction = {
 
 
 // Helper function to create a notification
-export const createNotification = async (companyId: string, notification: Omit<Notification, 'id' | 'companyId' | 'isRead' | 'timestamp'>) => {
+export const createNotification = async (companyId: string, notification: Omit<Notification, 'id' | 'isRead' | 'timestamp'>) => {
   try {
     const notificationsRef = ref(db, `companies/${companyId}/notifications`);
     const newNotificationRef = push(notificationsRef);
@@ -565,7 +564,7 @@ export const createNotification = async (companyId: string, notification: Omit<N
       isRead: false,
       timestamp: new Date().toISOString(),
     };
-    await set(newNotificationRef, { ...newNotification, id: newNotificationRef.key });
+    await set(newNotificationRef, { ...newNotification, id: newNotificationRef.key, companyId });
   } catch (error) {
     console.error('Error creating notification:', error);
   }

@@ -1,3 +1,4 @@
+
 // src/app/dashboard/recruitment/components/add-job-dialog.tsx
 'use client';
 
@@ -121,7 +122,7 @@ export function AddJobDialog({
         customForm: values.customForm?.map(q => ({ ...q, id: push(ref(db)).key! })) || [],
       };
       
-      await set(newJobRef, { ...newJob, id: newJobRef.key });
+      await set(newJobRef, { ...newJob, id: newJobRef.key, companyId });
 
       onJobAdded();
       setOpen(false);
