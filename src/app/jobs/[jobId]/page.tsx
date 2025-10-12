@@ -185,7 +185,7 @@ function JobApplicationForm() {
                         {isClosed ? (
                             <CardDescription className="text-destructive">Applications for this position are now closed.</CardDescription>
                         ) : (
-                            <CardDescription>{user ? `Logged in as ${employee?.name}` : 'Fill in your details to apply.'}</CardDescription>
+                            <CardDescription>{user ? `Applying as ${employee?.name}` : 'Fill in your details to apply.'}</CardDescription>
                         )}
                     </CardHeader>
                     <CardContent>
