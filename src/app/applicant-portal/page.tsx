@@ -158,7 +158,7 @@ export default function ApplicantPortalPage() {
                  <CardHeader>
                     <CardTitle>Open Positions</CardTitle>
                     <CardDescription>
-                        Apply to open positions with a single click.
+                        Explore open positions from various companies.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
