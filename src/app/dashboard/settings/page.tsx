@@ -1,14 +1,16 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { db, storage } from '@/lib/firebase';
+import { ref as dbRef, onValue, update } from 'firebase/database';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import type { PayrollConfig, Bank, SubscriptionPlan } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PayrollSettingsTab } from './components/payroll-settings-tab';
@@ -16,6 +18,9 @@ import { BanksTab } from './components/banks-tab';
 import { useAuth } from '@/app/auth-provider';
 import { SubscriptionTab } from './components/subscription-tab';
 import { TestimonialsTab } from './components/testimonials-tab';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -33,6 +38,49 @@ const formSchema = z.object({
 });
 
 type SettingsFormValues = z.infer<typeof formSchema>;
+
+function GeneralSettingsTab() {
+  const { companyId } = useAuth();
+  const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !companyId) return;
+    setIsUploading(true);
+    try {
+      const fileRef = storageRef(storage, `logos/${companyId}/${file.name}`);
+      const snapshot = await uploadBytes(fileRef, file);
+      const logoUrl = await getDownloadURL(snapshot.ref);
+      await update(dbRef(db, `companies/${companyId}`), { logoUrl });
+      toast({ title: "Logo uploaded successfully!" });
+    } catch (error) {
+       toast({ variant: 'destructive', title: "Error", description: "Failed to upload logo." });
+    } finally {
+        setIsUploading(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>General Settings</CardTitle>
+        <CardDescription>Manage general company information.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 max-w-lg">
+        <div>
+          <label className="text-sm font-medium">Company Logo</label>
+          <div className="flex items-center gap-4 mt-2">
+            <Input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} disabled={isUploading} className="flex-1"/>
+            <Button disabled={isUploading}>
+              {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 export default function SettingsPage() {
   const { companyId } = useAuth();
@@ -61,9 +109,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!companyId) return;
     
-    const configRef = ref(db, `companies/${companyId}/payrollConfig`);
-    const banksRef = ref(db, `companies/${companyId}/banks`);
-    const plansRef = ref(db, 'subscriptionPlans');
+    const configRef = dbRef(db, `companies/${companyId}/payrollConfig`);
+    const banksRef = dbRef(db, `companies/${companyId}/banks`);
+    const plansRef = dbRef(db, 'subscriptionPlans');
 
     let configLoaded = false;
     let banksLoaded = false;
@@ -119,13 +167,17 @@ export default function SettingsPage() {
   }
 
   return (
-     <Tabs defaultValue="payroll">
+     <Tabs defaultValue="general">
         <TabsList className="mb-4">
+            <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
             <TabsTrigger value="banks">Bank Management</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
         </TabsList>
+        <TabsContent value="general">
+            <GeneralSettingsTab />
+        </TabsContent>
         <TabsContent value="payroll">
             <PayrollSettingsTab form={form} />
         </TabsContent>

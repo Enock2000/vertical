@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
 import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
@@ -35,6 +36,7 @@ export type Company = {
     status: 'Pending' | 'Active' | 'Rejected' | 'Suspended' | 'Guest';
     subscription: CompanySubscription;
     termsAgreement: TermsAgreement;
+    logoUrl?: string;
 };
 
 export type Branch = {
@@ -723,3 +725,4 @@ export const calculateProductivityScore = (
 
     }).filter(Boolean) as DepartmentProductivityScore[];
 };
+
