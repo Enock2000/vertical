@@ -75,7 +75,7 @@ interface EmployeeFormProps {
   form: UseFormReturn<any>;
   onSubmit: (values: EmployeeFormValues) => void;
   isSubmitting: boolean;
-  submitButtonText: string;
+  submitButtonText?: string;
   departments: Department[];
   branches: Branch[];
   banks: Bank[];
@@ -664,7 +664,8 @@ export function EmployeeForm({
               />
           </div>
 
-          <div className="pt-4">
+          {submitButtonText && (
+            <div className="pt-4">
               <Button type="submit" disabled={isSubmitting} className="w-full">
                   {isSubmitting ? (
                   <>
@@ -675,7 +676,8 @@ export function EmployeeForm({
                     submitButtonText
                   )}
               </Button>
-          </div>
+            </div>
+          )}
       </form>
     </Form>
   )
