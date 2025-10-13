@@ -35,7 +35,7 @@ export default function ApplicantSignUpPage() {
       identificationNumber: '',
       role: 'Applicant',
       status: 'Active',
-      workerType: 'Salaried', // Default, won't be used for applicant but good for schema
+      workerType: 'Salaried',
       salary: 0,
       annualLeaveBalance: 0,
       departmentId: 'unassigned', 
