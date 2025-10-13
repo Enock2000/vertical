@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { db, storage } from '@/lib/firebase';
 import { ref, push, set, query, orderByChild, equalTo, get } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import type { Applicant } from '@/lib/data';
+import type { Applicant, Employee } from '@/lib/data';
 import { createNotification, getAdminUserIds } from '@/lib/data';
 
 const ManualApplicantInputSchema = z.object({
@@ -89,11 +89,28 @@ const addManualApplicantFlow = ai.defineFlow(
                 return { success: false, message: 'An applicant with this email has already applied for this job.' };
             }
         }
+        
+        // 3. Create a new employee record for the manual applicant
+        const employeesRef = ref(db, 'employees');
+        const newEmployeeRef = push(employeesRef);
+        const newEmployee: Partial<Employee> = {
+            id: newEmployeeRef.key!,
+            name: name,
+            email: email,
+            phone: phone || '',
+            role: 'Applicant',
+            status: 'Active',
+            avatar: `https://avatar.vercel.sh/${email}.png`,
+            joinDate: new Date().toISOString(),
+            resumeUrl: resumeUrl,
+        };
+        await set(newEmployeeRef, newEmployee);
 
-        // 3. Create a new applicant record
+
+        // 4. Create a new applicant record
         const newApplicantRef = push(applicantsRef);
         const newApplicant: Omit<Applicant, 'id'> = {
-            userId: newApplicantRef.key!, // Use the push key as a temporary user ID for manually added applicants
+            userId: newEmployeeRef.key!, // Use the new employee's ID
             jobVacancyId,
             name,
             email,
@@ -110,7 +127,7 @@ const addManualApplicantFlow = ai.defineFlow(
             id: newApplicantRef.key,
         });
         
-        // 4. Notify admins about the new applicant
+        // 5. Notify admins about the new applicant
         const adminIds = await getAdminUserIds(companyId);
         for (const adminId of adminIds) {
             await createNotification(companyId, {
