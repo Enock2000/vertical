@@ -5,7 +5,10 @@
     "companies": {
       "$companyId": {
         ".read": "auth.token.companyId === $companyId",
-        ".write": "auth.token.companyId === $companyId"
+        ".write": "auth.token.companyId === $companyId",
+        "applicants": {
+          ".indexOn": ["email", "userId"]
+        }
       }
     },
     "employees": {
