@@ -10,7 +10,8 @@ import type { JobVacancy, Applicant } from '@/lib/data';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ApplicantsTable } from '@/app/dashboard/recruitment/components/applicants-table';
+import { DataTable } from '@/app/dashboard/recruitment/components/data-table';
+import { columns as applicantColumns } from '@/app/dashboard/recruitment/components/columns';
 
 export default function GuestJobApplicantsPage() {
     const { user, companyId, loading: authLoading } = useAuth();
@@ -60,6 +61,11 @@ export default function GuestJobApplicantsPage() {
 
     }, [companyId, jobId, authLoading]);
 
+    const tableColumns = useMemo(() => {
+        if (!vacancy) return [];
+        return applicantColumns(vacancy, []); // Guest employers don't have departments
+    }, [vacancy]);
+
     if (authLoading || loadingData) {
         return (
             <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
@@ -90,7 +96,7 @@ export default function GuestJobApplicantsPage() {
                 </div>
             </CardHeader>
             <CardContent>
-                <ApplicantsTable applicants={applicants} vacancy={vacancy} departments={[]} />
+                <DataTable columns={tableColumns} data={applicants} />
             </CardContent>
         </Card>
     );
