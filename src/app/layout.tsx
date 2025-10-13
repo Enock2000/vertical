@@ -9,6 +9,9 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider, useAuth } from './auth-provider';
 import { useEffect } from 'react';
 import type { ThemeSettings } from '@/lib/data';
+import { db } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
+
 
 const AppBody = ({ children }: { children: React.ReactNode }) => {
     const { employee } = useAuth();
@@ -27,6 +30,24 @@ const AppBody = ({ children }: { children: React.ReactNode }) => {
             root.style.removeProperty('--accent');
         }
     }, [employee]);
+
+    useEffect(() => {
+        const logoUrlRef = ref(db, 'platformSettings/mainLogoUrl');
+        const unsubscribe = onValue(logoUrlRef, (snapshot) => {
+            const logoUrl = snapshot.val();
+            if (logoUrl) {
+                let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'icon';
+                    document.getElementsByTagName('head')[0].appendChild(link);
+                }
+                link.href = logoUrl;
+            }
+        });
+
+        return () => unsubscribe();
+    }, []);
 
     return (
         <>
