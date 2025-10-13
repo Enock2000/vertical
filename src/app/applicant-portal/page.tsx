@@ -2,11 +2,11 @@
 // src/app/applicant-portal/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { ref, onValue, query, orderByChild, equalTo, get } from 'firebase/database';
+import { useState, useEffect, useMemo } from 'react';
+import { ref, onValue } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import type { Applicant, JobVacancy, Company } from '@/lib/data';
-import { Loader2, Briefcase, Building2, Upload, CheckCircle, ArrowRight } from 'lucide-react';
+import { Loader2, Briefcase, Building2, CheckCircle, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/app/auth-provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,19 +14,14 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { handleApplication } from '@/ai/flows/handle-application-flow';
-import { Separator } from '@/components/ui/separator';
 
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
 export default function ApplicantPortalPage() {
     const { user, employee, loading: authLoading } = useAuth();
-    const { toast } = useToast();
     const [applications, setApplications] = useState<(Applicant & { jobTitle?: string; companyName?: string })[]>([]);
     const [openVacancies, setOpenVacancies] = useState<EnrichedJobVacancy[]>([]);
     const [loadingData, setLoadingData] = useState(true);
-    const [submittingJobId, setSubmittingJobId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!user) {
@@ -40,7 +35,7 @@ export default function ApplicantPortalPage() {
             if (appsLoaded && jobsLoaded) setLoadingData(false);
         }
 
-        // Fetch user's applications
+        // Fetch user's applications by iterating through companies
         const companiesRef = ref(db, 'companies');
         const unsubscribeApps = onValue(companiesRef, async (snapshot) => {
             const companiesData = snapshot.val();
