@@ -11,11 +11,12 @@ import { ApplicantProfile } from './applicant-profile';
 import { MoreHorizontal, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { db } from '@/lib/firebase';
-import { ref, update, push } from 'firebase/database';
+import { db, auth } from '@/lib/firebase';
+import { ref, update, push, get } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { RejectApplicantDialog } from './reject-applicant-dialog';
+import { sendPasswordResetEmail } from 'firebase/auth';
 
 const statusOptions: ApplicantStatus[] = ['Screening', 'Interview', 'Offer', 'Onboarding', 'Hired'];
 
@@ -27,13 +28,14 @@ interface ApplicantCardProps {
 
 export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCardProps) {
     const nameInitial = applicant.name.split(' ').map(n => n[0]).join('');
-    const { companyId } = useAuth();
+    const { company, companyId } = useAuth();
     const { toast } = useToast();
     
     const handleStatusChange = async (status: ApplicantStatus) => {
-        if (!companyId) return;
+        if (!companyId || !company) return;
         try {
             const updates: { [key: string]: any } = { status };
+            
             if (status === 'Onboarding' && !applicant.onboardingTasks) {
                 const initialTasks: OnboardingTask[] = defaultOnboardingTasks.map(task => ({
                     id: push(ref(db)).key!,
@@ -43,21 +45,49 @@ export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCard
                 }));
                 updates['onboardingTasks'] = initialTasks;
             }
-             if (status === 'Hired' || status === 'Accepted') {
+
+            if (status === 'Hired') {
                 updates['hiredAt'] = new Date().toISOString();
+                
+                // --- Convert Applicant to Employee Logic ---
+                const employeeRef = ref(db, `employees/${applicant.userId}`);
+                const employeeSnap = await get(employeeRef);
+                
+                if (employeeSnap.exists()) {
+                    const employeeUpdates: Partial<any> = {
+                        role: vacancy.title,
+                        status: 'Active',
+                        departmentId: vacancy.departmentId,
+                        departmentName: vacancy.departmentName,
+                        joinDate: new Date().toISOString(),
+                    };
+                    await update(employeeRef, employeeUpdates);
+
+                    // Send password reset email to set initial password
+                    await sendPasswordResetEmail(auth, applicant.email);
+
+                    toast({
+                        title: "Applicant Hired!",
+                        description: `${applicant.name} is now an employee. An email has been sent for them to set their password.`
+                    });
+                } else {
+                     throw new Error("Could not find the original employee record for this applicant.");
+                }
+            } else {
+                 toast({
+                    title: "Status Updated",
+                    description: `${applicant.name}'s status has been changed to "${status}".`,
+                });
             }
 
             await update(ref(db, `companies/${companyId}/applicants/${applicant.id}`), updates);
-            toast({
-                title: "Status Updated",
-                description: `${applicant.name}'s status has been changed to "${status}".`,
-            });
-        } catch (error) {
+
+        } catch (error: any) {
             console.error(`Failed to update status to ${status}`, error);
             toast({
                 variant: "destructive",
                 title: "Update Failed",
-                description: "Could not update applicant status.",
+                description: error.message || "Could not update applicant status.",
             });
         }
     };

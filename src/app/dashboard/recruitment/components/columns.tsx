@@ -22,16 +22,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import type { Applicant, ApplicantStatus, JobVacancy, OnboardingTask } from "@/lib/data"
 import { defaultOnboardingTasks } from "@/lib/data"
-import { db } from "@/lib/firebase"
-import { ref, update, push } from "firebase/database"
+import { db, auth } from "@/lib/firebase"
+import { ref, update, push, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { GenerateOfferDialog } from "./generate-offer-dialog"
 import type { Department } from "@/lib/data"
 import { ViewDocumentsDialog } from "./view-documents-dialog"
 import { useAuth } from "@/app/auth-provider"
+import { sendPasswordResetEmail } from "firebase/auth"
 
 
-const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, status: ApplicantStatus }) => {
+const StatusUpdateAction = ({ applicantId, status, onHired }: { applicantId: string, status: ApplicantStatus, onHired: (email: string) => void }) => {
     const { companyId } = useAuth();
     const { toast } = useToast();
 
@@ -48,15 +49,21 @@ const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, stat
                 }));
                 updates['onboardingTasks'] = initialTasks;
             }
-             if (status === 'Hired' || status === 'Accepted') {
+             if (status === 'Hired') {
                 updates['hiredAt'] = new Date().toISOString();
+                const applicantSnap = await get(ref(db, `companies/${companyId}/applicants/${applicantId}`));
+                if (applicantSnap.exists()) {
+                    onHired(applicantSnap.val().email);
+                }
             }
 
             await update(ref(db, `companies/${companyId}/applicants/${applicantId}`), updates);
-            toast({
-                title: "Status Updated",
-                description: `Applicant status has been changed to "${status}".`,
-            });
+            if (status !== 'Hired') {
+                toast({
+                    title: "Status Updated",
+                    description: `Applicant status has been changed to "${status}".`,
+                });
+            }
         } catch (error) {
             console.error(`Failed to update status to ${status}`, error);
             toast({
@@ -76,7 +83,30 @@ const StatusUpdateAction = ({ applicantId, status }: { applicantId: string, stat
 export const columns = (
     vacancy: JobVacancy,
     departments: Department[]
-): ColumnDef<Applicant>[] => [
+): ColumnDef<Applicant>[] => {
+    const { toast } = useToast();
+    
+    const handleHired = async (email: string, applicantId: string) => {
+        const employeeRef = ref(db, `employees/${applicantId}`);
+        const employeeSnap = await get(employeeRef);
+        if (employeeSnap.exists()) {
+            const employeeUpdates: Partial<any> = {
+                role: vacancy.title,
+                status: 'Active',
+                departmentId: vacancy.departmentId,
+                departmentName: vacancy.departmentName,
+                joinDate: new Date().toISOString(),
+            };
+            await update(employeeRef, employeeUpdates);
+            await sendPasswordResetEmail(auth, email);
+            toast({
+                title: "Applicant Hired!",
+                description: `${employeeSnap.val().name} is now an employee. An email has been sent for them to set their password.`
+            });
+        }
+    };
+    
+    return [
   {
     accessorKey: "name",
     header: ({ column }) => {
@@ -161,14 +191,14 @@ export const columns = (
                     <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
                     <DropdownMenuPortal>
                         <DropdownMenuSubContent>
-                             <StatusUpdateAction applicantId={applicant.id} status="Screening" />
-                             <StatusUpdateAction applicantId={applicant.id} status="Interview" />
-                             <StatusUpdateAction applicantId={applicant.id} status="Offer" />
-                             <StatusUpdateAction applicantId={applicant.id} status="Onboarding" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Screening" onHired={() => {}} />
+                             <StatusUpdateAction applicantId={applicant.id} status="Interview" onHired={() => {}} />
+                             <StatusUpdateAction applicantId={applicant.id} status="Offer" onHired={() => {}} />
+                             <StatusUpdateAction applicantId={applicant.id} status="Onboarding" onHired={() => {}} />
                             <DropdownMenuSeparator />
-                             <StatusUpdateAction applicantId={applicant.id} status="Hired" />
-                             <StatusUpdateAction applicantId={applicant.id} status="Rejected" />
-                             <StatusUpdateAction applicantId={applicant.id} status="Accepted" />
+                             <StatusUpdateAction applicantId={applicant.id} status="Hired" onHired={(email) => handleHired(email, applicant.id)} />
+                             <StatusUpdateAction applicantId={applicant.id} status="Rejected" onHired={() => {}} />
+                             <StatusUpdateAction applicantId={applicant.id} status="Accepted" onHired={() => {}} />
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
@@ -179,3 +209,4 @@ export const columns = (
     },
   },
 ]
+}
