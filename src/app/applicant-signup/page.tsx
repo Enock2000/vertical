@@ -110,7 +110,7 @@ export default function ApplicantSignUpPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-            <ScrollArea className="max-h-[60vh] pr-4">
+            <ScrollArea className="h-[60vh] pr-4">
                 <EmployeeForm
                     form={form}
                     onSubmit={onSubmit}
