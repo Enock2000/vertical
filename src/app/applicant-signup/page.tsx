@@ -1,61 +1,76 @@
-// src/app/applicant-signup/page.tsx
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
 import type { Employee } from '@/lib/data';
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { EmployeeForm, employeeFormSchema, type EmployeeFormValues } from '../dashboard/employees/components/employee-form';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function ApplicantSignUpPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      role: 'Applicant',
+      status: 'Active',
+      workerType: 'Salaried',
+      salary: 0,
+      annualLeaveBalance: 0,
+      departmentId: 'unassigned', 
+      location: '',
+      hourlyRate: 0,
+      hoursWorked: 0,
+      allowances: 0,
+      deductions: 0,
+      overtime: 0,
+      bonus: 0,
+      reimbursements: 0,
+    },
+  });
+
+  const onSubmit = async (values: EmployeeFormValues) => {
     setIsLoading(true);
 
     try {
       // 1. Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
+
+      const { password, ...employeeData } = values;
 
       // 2. Create an Employee record with role 'Applicant'
       const employeeRef = ref(db, `employees/${user.uid}`);
       const newApplicantProfile: Partial<Employee> = {
+          ...employeeData,
           id: user.uid,
-          name: name,
-          email: email,
-          role: 'Applicant',
-          status: 'Active', // Applicant profiles are active by default
-          avatar: `https://avatar.vercel.sh/${email}.png`,
+          avatar: `https://avatar.vercel.sh/${values.email}.png`,
           joinDate: new Date().toISOString(),
+          companyId: 'applicant-pool', // Special identifier for un-hired applicants
+          departmentName: 'N/A',
       };
       await set(employeeRef, newApplicantProfile);
       
       toast({
         title: "Account Created!",
-        description: "You can now log in to the applicant portal.",
+        description: "You can now log in and apply for jobs.",
       });
       router.push('/applicant-portal');
 
@@ -73,7 +88,7 @@ export default function ApplicantSignUpPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="mx-auto w-full max-w-sm shadow-2xl">
+      <Card className="mx-auto w-full max-w-lg shadow-2xl">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center">
             <Logo />
@@ -84,23 +99,20 @@ export default function ApplicantSignUpPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="you@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="animate-spin" /> : 'Create Profile'}
-            </Button>
-          </form>
+            <ScrollArea className="max-h-[60vh] pr-4">
+                <EmployeeForm
+                    form={form}
+                    onSubmit={onSubmit}
+                    isSubmitting={isLoading}
+                    submitButtonText="Create Profile"
+                    showAccountFields={true}
+                    isApplicantForm={true}
+                    // Pass empty arrays as they are not needed for this form
+                    departments={[]}
+                    branches={[]}
+                    banks={[]}
+                />
+            </ScrollArea>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/employee-login" className="underline">
