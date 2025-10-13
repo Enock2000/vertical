@@ -1,4 +1,3 @@
-
 // src/app/dashboard/settings/page.tsx
 'use client';
 
@@ -6,11 +5,10 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { ref as dbRef, onValue, update } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import type { PayrollConfig, Bank, SubscriptionPlan } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PayrollSettingsTab } from './components/payroll-settings-tab';
@@ -19,10 +17,10 @@ import { useAuth } from '@/app/auth-provider';
 import { SubscriptionTab } from './components/subscription-tab';
 import { TestimonialsTab } from './components/testimonials-tab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -42,24 +40,26 @@ const formSchema = z.object({
 type SettingsFormValues = z.infer<typeof formSchema>;
 
 function GeneralSettingsTab() {
-  const { companyId } = useAuth();
+  const { company, companyId } = useAuth();
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(company?.logoUrl || '');
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !companyId) return;
-    setIsUploading(true);
+  useEffect(() => {
+    setLogoUrl(company?.logoUrl || '');
+  }, [company]);
+  
+
+  const handleSaveLogo = async () => {
+    if (!companyId) return;
+    setIsSaving(true);
     try {
-      const fileRef = storageRef(storage, `logos/${companyId}/${file.name}`);
-      const snapshot = await uploadBytes(fileRef, file);
-      const logoUrl = await getDownloadURL(snapshot.ref);
-      await update(dbRef(db, `companies/${companyId}`), { logoUrl });
-      toast({ title: "Logo uploaded successfully!" });
+      await update(dbRef(db, `companies/${companyId}`), { logoUrl: logoUrl });
+      toast({ title: "Logo URL saved successfully!" });
     } catch (error) {
-       toast({ variant: 'destructive', title: "Error", description: "Failed to upload logo." });
+       toast({ variant: 'destructive', title: "Error", description: "Failed to save logo URL." });
     } finally {
-        setIsUploading(false);
+        setIsSaving(false);
     }
   }
 
@@ -69,19 +69,30 @@ function GeneralSettingsTab() {
         <CardTitle>General Settings</CardTitle>
         <CardDescription>Manage general company information.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 max-w-lg">
-        <div>
-          <Label className="text-sm font-medium">Company Logo</Label>
-          <div className="flex items-center gap-4 mt-2">
-             <div className="flex-1">
-                <Label htmlFor="logo-upload" className={cn("w-full flex items-center justify-center gap-2", buttonVariants({ variant: "outline" }), "cursor-pointer")}>
-                    {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
-                    <span>{isUploading ? 'Uploading...' : 'Choose Logo'}</span>
-                </Label>
-                <Input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} disabled={isUploading} className="hidden"/>
-            </div>
+      <CardContent className="space-y-6 max-w-lg">
+        <div className="space-y-2">
+          <Label htmlFor="logo-url">Company Logo URL</Label>
+          <div className="flex items-center gap-2">
+            <Input 
+              id="logo-url" 
+              placeholder="https://example.com/logo.png"
+              value={logoUrl}
+              onChange={(e) => setLogoUrl(e.target.value)}
+            />
+            <Button onClick={handleSaveLogo} disabled={isSaving} size="sm">
+              {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
+              <span className="sr-only">Save</span>
+            </Button>
           </div>
         </div>
+         {logoUrl && (
+          <div>
+            <Label>Logo Preview</Label>
+            <div className="mt-2 flex items-center justify-center rounded-md border p-4 h-32">
+              <Image src={logoUrl} alt="Company Logo Preview" width={100} height={100} className="object-contain" />
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
