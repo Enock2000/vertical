@@ -29,8 +29,10 @@ import { Loader2, Upload } from 'lucide-react';
 import type { JobVacancy } from '@/lib/data';
 import { useAuth } from '@/app/auth-provider';
 import { addManualApplicant } from '@/ai/flows/add-manual-applicant-flow';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const formSchema = z.object({
+  jobVacancyId: z.string().min(1, 'Please select a job vacancy.'),
   name: z.string().min(1, "Name is required."),
   email: z.string().email("A valid email is required."),
   phone: z.string().optional(),
@@ -42,11 +44,11 @@ type AddApplicantFormValues = z.infer<typeof formSchema>;
 
 interface AddApplicantDialogProps {
   children: React.ReactNode;
-  vacancy: JobVacancy;
+  vacancies: JobVacancy[];
   onApplicantAdded: () => void;
 }
 
-export function AddApplicantDialog({ children, vacancy, onApplicantAdded }: AddApplicantDialogProps) {
+export function AddApplicantDialog({ children, vacancies, onApplicantAdded }: AddApplicantDialogProps) {
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +59,7 @@ export function AddApplicantDialog({ children, vacancy, onApplicantAdded }: AddA
   const form = useForm<AddApplicantFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      jobVacancyId: '',
       name: '',
       email: '',
       phone: '',
@@ -70,13 +73,17 @@ export function AddApplicantDialog({ children, vacancy, onApplicantAdded }: AddA
 
     const formData = new FormData(formRef.current);
     formData.append('companyId', companyId);
-    formData.append('jobVacancyId', vacancy.id);
-    formData.append('vacancyTitle', vacancy.title);
+    
+    const selectedVacancy = vacancies.find(v => v.id === values.jobVacancyId);
+    if(selectedVacancy) {
+        formData.append('vacancyTitle', selectedVacancy.title);
+    }
+
 
     try {
       const result = await addManualApplicant(formData);
       if (result.success) {
-        toast({ title: 'Applicant Added', description: `"${values.name}" has been added to this vacancy.` });
+        toast({ title: 'Applicant Added', description: `"${values.name}" has been added.` });
         form.reset();
         setFileName('');
         setOpen(false);
@@ -98,11 +105,33 @@ export function AddApplicantDialog({ children, vacancy, onApplicantAdded }: AddA
         <DialogHeader>
           <DialogTitle>Manually Add Applicant</DialogTitle>
           <DialogDescription>
-            Add a candidate who applied via email or another external source to the "{vacancy.title}" vacancy.
+            Add a candidate who applied via email or another external source.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <FormField
+                control={form.control}
+                name="jobVacancyId"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Job Vacancy</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} name={field.name}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a job vacancy..." />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {vacancies.filter(v => v.status === 'Open').map(v => (
+                            <SelectItem key={v.id} value={v.id}>{v.title}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+            />
             <FormField
               control={form.control}
               name="name"

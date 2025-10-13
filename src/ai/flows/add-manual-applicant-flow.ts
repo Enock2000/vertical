@@ -17,7 +17,7 @@ import { createNotification, getAdminUserIds } from '@/lib/data';
 
 const ManualApplicantInputSchema = z.object({
   companyId: z.string(),
-  jobVacancyId: z.string(),
+  jobVacancyId: z.string().min(1, 'Please select a job vacancy.'),
   vacancyTitle: z.string(),
   name: z.string().min(1, "Name is required."),
   email: z.string().email("A valid email is required."),
@@ -43,6 +43,11 @@ export async function addManualApplicant(
     
     const validatedFields = ManualApplicantInputSchema.safeParse(rawData);
     if (!validatedFields.success) {
+        // Find the specific error for jobVacancyId to give a better message
+        const jobVacancyError = validatedFields.error.flatten().fieldErrors.jobVacancyId;
+        if (jobVacancyError) {
+             return { success: false, message: jobVacancyError[0] };
+        }
         return { success: false, message: 'Invalid form data.' };
     }
 

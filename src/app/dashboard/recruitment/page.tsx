@@ -76,7 +76,7 @@ export default function RecruitmentPage() {
       deptsUnsubscribe();
       applicantsUnsubscribe();
     };
-  }, [companyId]);
+  }, [companyId, selectedVacancy]);
 
   const filteredApplicants = useMemo(() => {
     if (!selectedVacancy) return [];
@@ -93,14 +93,24 @@ export default function RecruitmentPage() {
                 <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
                 <TabsTrigger value="reporting">Reporting</TabsTrigger>
             </TabsList>
-            <AddJobDialog departments={departments} onJobAdded={handleAction}>
-                <Button size="sm" className="gap-1" disabled={(company?.subscription?.jobPostingsRemaining || 0) <= 0}>
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-                    Post Job Vacancy
-                    </span>
-                </Button>
-            </AddJobDialog>
+             <div className="flex items-center gap-2">
+                <AddApplicantDialog vacancies={jobVacancies} onApplicantAdded={handleAction}>
+                    <Button size="sm" variant="outline" className="gap-1">
+                        <UserPlus className="h-4 w-4" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                            Add Applicant
+                        </span>
+                    </Button>
+                </AddApplicantDialog>
+                <AddJobDialog departments={departments} onJobAdded={handleAction}>
+                    <Button size="sm" className="gap-1" disabled={(company?.subscription?.jobPostingsRemaining || 0) <= 0}>
+                        <PlusCircle className="h-3.5 w-3.5" />
+                        <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                        Post Job Vacancy
+                        </span>
+                    </Button>
+                </AddJobDialog>
+            </div>
         </div>
         <TabsContent value="vacancies" className="flex-grow mt-0">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
@@ -156,12 +166,6 @@ export default function RecruitmentPage() {
                                         {filteredApplicants.length} applicant(s) for this position.
                                     </CardDescription>
                                 </div>
-                                <AddApplicantDialog vacancy={selectedVacancy} onApplicantAdded={handleAction}>
-                                    <Button size="sm" variant="outline" className="gap-1">
-                                        <UserPlus className="h-4 w-4" />
-                                        Add Applicant
-                                    </Button>
-                                </AddApplicantDialog>
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow overflow-auto">
