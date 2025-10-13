@@ -43,9 +43,10 @@ type AddApplicantFormValues = z.infer<typeof formSchema>;
 interface AddApplicantDialogProps {
   children: React.ReactNode;
   vacancy: JobVacancy;
+  onApplicantAdded: () => void;
 }
 
-export function AddApplicantDialog({ children, vacancy }: AddApplicantDialogProps) {
+export function AddApplicantDialog({ children, vacancy, onApplicantAdded }: AddApplicantDialogProps) {
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,6 +80,7 @@ export function AddApplicantDialog({ children, vacancy }: AddApplicantDialogProp
         form.reset();
         setFileName('');
         setOpen(false);
+        onApplicantAdded();
       } else {
         toast({ variant: 'destructive', title: 'Submission Failed', description: result.message });
       }

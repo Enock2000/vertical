@@ -26,6 +26,11 @@ export default function RecruitmentPage() {
   const [selectedVacancy, setSelectedVacancy] = useState<JobVacancy | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const handleAction = () => {
+    // This is now used as a callback to indicate data has changed.
+    // The onValue listeners will handle the actual UI update.
+  };
+
   useEffect(() => {
     if (!companyId) return;
 
@@ -83,7 +88,7 @@ export default function RecruitmentPage() {
                 <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
                 <TabsTrigger value="reporting">Reporting</TabsTrigger>
             </TabsList>
-            <AddJobDialog departments={departments} onJobAdded={() => {}}>
+            <AddJobDialog departments={departments} onJobAdded={handleAction}>
                 <Button size="sm" className="gap-1" disabled={(company?.subscription?.jobPostingsRemaining || 0) <= 0}>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-rap">
@@ -146,7 +151,7 @@ export default function RecruitmentPage() {
                                         {filteredApplicants.length} applicant(s) for this position.
                                     </CardDescription>
                                 </div>
-                                <AddApplicantDialog vacancy={selectedVacancy}>
+                                <AddApplicantDialog vacancy={selectedVacancy} onApplicantAdded={handleAction}>
                                     <Button size="sm" variant="outline" className="gap-1">
                                         <UserPlus className="h-4 w-4" />
                                         Add Applicant
