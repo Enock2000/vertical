@@ -68,7 +68,7 @@ export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCard
 
                     toast({
                         title: "Applicant Hired!",
-                        description: `${applicant.name} is now an employee. An email has been sent for them to set their password.`
+                        description: `${applicant.name} is now an employee. An email has been sent for them to set their password and log in.`,
                     });
                 } else {
                      throw new Error("Could not find the original employee record for this applicant.");
