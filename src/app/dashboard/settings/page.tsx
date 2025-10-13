@@ -1,4 +1,5 @@
 
+// src/app/dashboard/settings/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -73,7 +74,7 @@ function GeneralSettingsTab() {
           <Label className="text-sm font-medium">Company Logo</Label>
           <div className="flex items-center gap-4 mt-2">
              <div className="flex-1">
-                <Label htmlFor="logo-upload" className={cn("w-full flex items-center justify-center gap-2", buttonVariants({ variant: "outline" }))}>
+                <Label htmlFor="logo-upload" className={cn("w-full flex items-center justify-center gap-2", buttonVariants({ variant: "outline" }), "cursor-pointer")}>
                     {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
                     <span>{isUploading ? 'Uploading...' : 'Choose Logo'}</span>
                 </Label>

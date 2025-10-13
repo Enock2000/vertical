@@ -62,7 +62,7 @@ export default function GuestEmployerLayout({
             href="/guest-employer"
             className="flex items-center gap-2 font-semibold"
           >
-            <Logo companyName={company.name} />
+            <Logo companyName={company.name} logoUrl={company.logoUrl}/>
           </Link>
         </div>
         <nav className="flex flex-col gap-1 p-4">
@@ -96,7 +96,7 @@ export default function GuestEmployerLayout({
                   href="/guest-employer"
                   className="group flex h-10 shrink-0 items-center justify-center gap-2 rounded-full text-lg font-semibold"
                 >
-                  <Logo companyName={company.name} />
+                  <Logo companyName={company.name} logoUrl={company.logoUrl} />
                 </Link>
                 {navItems.map((item) => (
                   <Link
