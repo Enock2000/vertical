@@ -50,7 +50,6 @@ export default function ApplicantSignUpPage() {
       bankName: '',
       accountNumber: '',
       branchCode: '',
-      branchId: '',
       contractType: 'Permanent',
       contractStartDate: '',
       contractEndDate: '',
@@ -117,23 +116,12 @@ export default function ApplicantSignUpPage() {
                     isSubmitting={isLoading}
                     showAccountFields={true}
                     isApplicantForm={true}
+                    submitButtonText="Create Profile"
                     departments={[]}
                     branches={[]}
                     banks={[]}
                 />
             </ScrollArea>
-             <div className="pt-4">
-              <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={isLoading} className="w-full">
-                  {isLoading ? (
-                  <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
-                  </>
-                  ) : (
-                    "Create Profile"
-                  )}
-              </Button>
-            </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{" "}
             <Link href="/employee-login" className="underline">
