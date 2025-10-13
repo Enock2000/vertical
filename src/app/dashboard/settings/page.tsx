@@ -6,9 +6,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref as dbRef, onValue, update } from 'firebase/database';
+import { ref as dbRef, onValue } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import type { PayrollConfig, Bank, SubscriptionPlan } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PayrollSettingsTab } from './components/payroll-settings-tab';
@@ -16,11 +16,6 @@ import { BanksTab } from './components/banks-tab';
 import { useAuth } from '@/app/auth-provider';
 import { SubscriptionTab } from './components/subscription-tab';
 import { TestimonialsTab } from './components/testimonials-tab';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import Image from 'next/image';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -38,65 +33,6 @@ const formSchema = z.object({
 });
 
 type SettingsFormValues = z.infer<typeof formSchema>;
-
-function GeneralSettingsTab() {
-  const { company, companyId } = useAuth();
-  const { toast } = useToast();
-  const [logoUrl, setLogoUrl] = useState(company?.logoUrl || '');
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    setLogoUrl(company?.logoUrl || '');
-  }, [company]);
-  
-
-  const handleSaveLogo = async () => {
-    if (!companyId) return;
-    setIsSaving(true);
-    try {
-      await update(dbRef(db, `companies/${companyId}`), { logoUrl: logoUrl });
-      toast({ title: "Logo URL saved successfully!" });
-    } catch (error) {
-       toast({ variant: 'destructive', title: "Error", description: "Failed to save logo URL." });
-    } finally {
-        setIsSaving(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>General Settings</CardTitle>
-        <CardDescription>Manage general company information.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6 max-w-lg">
-        <div className="space-y-2">
-          <Label htmlFor="logo-url">Company Logo URL</Label>
-          <div className="flex items-center gap-2">
-            <Input 
-              id="logo-url" 
-              placeholder="https://example.com/logo.png"
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-            />
-            <Button onClick={handleSaveLogo} disabled={isSaving} size="sm">
-              {isSaving ? <Loader2 className="animate-spin" /> : <Save />}
-              <span className="sr-only">Save</span>
-            </Button>
-          </div>
-        </div>
-         {logoUrl && (
-          <div>
-            <Label>Logo Preview</Label>
-            <div className="mt-2 flex items-center justify-center rounded-md border p-4 h-32">
-              <Image src={logoUrl} alt="Company Logo Preview" width={100} height={100} className="object-contain" />
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 export default function SettingsPage() {
   const { companyId } = useAuth();
@@ -183,17 +119,13 @@ export default function SettingsPage() {
   }
 
   return (
-     <Tabs defaultValue="general">
+     <Tabs defaultValue="payroll">
         <TabsList className="mb-4">
-            <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
             <TabsTrigger value="banks">Bank Management</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
         </TabsList>
-        <TabsContent value="general">
-            <GeneralSettingsTab />
-        </TabsContent>
         <TabsContent value="payroll">
             <PayrollSettingsTab form={form} />
         </TabsContent>
