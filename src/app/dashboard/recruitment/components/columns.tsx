@@ -196,9 +196,10 @@ export const columns = (
                              <StatusUpdateAction applicantId={applicant.id} status="Offer" onHired={() => {}} />
                              <StatusUpdateAction applicantId={applicant.id} status="Onboarding" onHired={() => {}} />
                             <DropdownMenuSeparator />
-                             <StatusUpdateAction applicantId={applicant.id} status="Hired" onHired={(email) => handleHired(email, applicant.id)} />
+                             <DropdownMenuItem onClick={() => handleHired(applicant.email, applicant.id)} className="text-green-600 focus:text-green-600">
+                                 Mark as Hired
+                             </DropdownMenuItem>
                              <StatusUpdateAction applicantId={applicant.id} status="Rejected" onHired={() => {}} />
-                             <StatusUpdateAction applicantId={applicant.id} status="Accepted" onHired={() => {}} />
                         </DropdownMenuSubContent>
                     </DropdownMenuPortal>
                 </DropdownMenuSub>
