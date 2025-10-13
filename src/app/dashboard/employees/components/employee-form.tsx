@@ -664,17 +664,17 @@ export function EmployeeForm({
               />
           </div>
 
-          <div className="sticky bottom-0 bg-background py-4">
-          <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-              <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-              </>
-              ) : (
-                submitButtonText
-              )}
-          </Button>
+          <div className="pt-4">
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                  {isSubmitting ? (
+                  <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                  </>
+                  ) : (
+                    submitButtonText
+                  )}
+              </Button>
           </div>
       </form>
     </Form>
