@@ -372,65 +372,65 @@ export function EmployeeForm({
                 </div>
             </>
           )}
-
-          <Separator />
-          <h3 className="text-lg font-semibold">Contract Details</h3>
-            <FormField
-              control={form.control}
-              name="contractType"
-              render={({ field }) => (
-              <FormItem>
-                  <FormLabel>Contract Type</FormLabel>
-                  <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  >
-                  <FormControl>
-                      <SelectTrigger>
-                      <SelectValue placeholder="Select contract type" />
-                      </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                      <SelectItem value="Permanent">Permanent</SelectItem>
-                      <SelectItem value="Fixed-Term">Fixed-Term</SelectItem>
-                      <SelectItem value="Internship">Internship</SelectItem>
-                  </SelectContent>
-                  </Select>
-                  <FormMessage />
-              </FormItem>
-              )}
-          />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="contractStartDate"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Contract Start Date</FormLabel>
-                      <FormControl>
-                      <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
-                <FormField
-                  control={form.control}
-                  name="contractEndDate"
-                  render={({ field }) => (
-                  <FormItem>
-                      <FormLabel>Contract End Date</FormLabel>
-                      <FormControl>
-                      <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
-                  )}
-              />
-          </div>
-
+          
           {!isApplicantForm && (
             <>
+                <Separator />
+                <h3 className="text-lg font-semibold">Contract Details</h3>
+                <FormField
+                    control={form.control}
+                    name="contractType"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Contract Type</FormLabel>
+                        <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        >
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select contract type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Permanent">Permanent</SelectItem>
+                            <SelectItem value="Fixed-Term">Fixed-Term</SelectItem>
+                            <SelectItem value="Internship">Internship</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="contractStartDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contract Start Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="contractEndDate"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Contract End Date</FormLabel>
+                            <FormControl>
+                            <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                </div>
+
                 <Separator />
                 <h3 className="text-lg font-semibold">Compensation Details</h3>
                 
@@ -606,63 +606,64 @@ export function EmployeeForm({
                         )}
                     />
                 </div>
-            </>
+
+                <Separator />
+                <h3 className="text-lg font-semibold">Bank Details (Optional)</h3>
+                <FormField
+                    control={form.control}
+                    name="bankName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Bank Name</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a bank" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <ScrollArea className="h-40">
+                                {banks.map(bank => (
+                                    <SelectItem key={bank.id} value={bank.name}>{bank.name}</SelectItem>
+                                ))}
+                                </ScrollArea>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="accountNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Account Number</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter account number" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="branchCode"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Branch Code</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Enter branch code" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+              </>
           )}
 
-          <Separator />
-          <h3 className="text-lg font-semibold">Bank Details (Optional)</h3>
-          <FormField
-              control={form.control}
-              name="bankName"
-              render={({ field }) => (
-                  <FormItem>
-                  <FormLabel>Bank Name</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                      <SelectTrigger>
-                          <SelectValue placeholder="Select a bank" />
-                      </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <ScrollArea className="h-40">
-                          {banks.map(bank => (
-                              <SelectItem key={bank.id} value={bank.name}>{bank.name}</SelectItem>
-                          ))}
-                        </ScrollArea>
-                      </SelectContent>
-                  </Select>
-                  <FormMessage />
-                  </FormItem>
-              )}
-          />
-          <div className="grid grid-cols-2 gap-4">
-              <FormField
-                  control={form.control}
-                  name="accountNumber"
-                  render={({ field }) => (
-                      <FormItem>
-                      <FormLabel>Account Number</FormLabel>
-                      <FormControl>
-                          <Input placeholder="Enter account number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-              />
-              <FormField
-                  control={form.control}
-                  name="branchCode"
-                  render={({ field }) => (
-                      <FormItem>
-                      <FormLabel>Branch Code</FormLabel>
-                      <FormControl>
-                          <Input placeholder="Enter branch code" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-              />
-          </div>
 
           {submitButtonText && (
             <div className="pt-4">
