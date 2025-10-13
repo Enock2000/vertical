@@ -38,7 +38,7 @@ export default function ApplicantSignUpPage() {
       workerType: 'Salaried',
       salary: 0,
       annualLeaveBalance: 0,
-      departmentId: '', 
+      departmentId: '',
       location: '',
       hourlyRate: 0,
       hoursWorked: 0,
