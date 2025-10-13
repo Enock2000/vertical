@@ -38,7 +38,7 @@ export default function ApplicantSignUpPage() {
       workerType: 'Salaried',
       salary: 0,
       annualLeaveBalance: 0,
-      departmentId: 'unassigned', 
+      departmentId: '', 
       location: '',
       hourlyRate: 0,
       hoursWorked: 0,
@@ -75,6 +75,7 @@ export default function ApplicantSignUpPage() {
           joinDate: new Date().toISOString(),
           companyId: 'applicant-pool', // Special identifier for un-hired applicants
           departmentName: 'N/A',
+          departmentId: '', // No department until hired
       };
       await set(employeeRef, newApplicantProfile);
       

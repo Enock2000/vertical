@@ -37,7 +37,7 @@ export const employeeFormSchema = z.object({
   identificationType: z.enum(['ID Number', 'Passport', 'License']).optional(),
   identificationNumber: z.string().optional(),
   role: z.string().min(2, 'Role must be at least 2 characters.'),
-  departmentId: z.string().min(1, 'Please select a department.'),
+  departmentId: z.string().min(1, 'Please select a department.').optional(),
   branchId: z.string().optional(),
   status: z.enum(['Active', 'Inactive', 'Suspended', 'On Leave', 'Sick', 'Applicant']),
   location: z.string().min(2, 'Location must be at least 2 characters.'),
