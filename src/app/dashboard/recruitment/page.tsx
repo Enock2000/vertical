@@ -54,6 +54,8 @@ export default function RecruitmentPage() {
       } else if (selectedVacancy) {
         const updatedVacancy = list.find(v => v.id === selectedVacancy.id);
         setSelectedVacancy(updatedVacancy || (list.length > 0 ? list[0] : null));
+      } else if (list.length === 0) {
+        setSelectedVacancy(null);
       }
 
       jobsLoaded = true; checkLoading();
@@ -74,11 +76,14 @@ export default function RecruitmentPage() {
       deptsUnsubscribe();
       applicantsUnsubscribe();
     };
-  }, [companyId, selectedVacancy]);
+  }, [companyId]);
 
-  const filteredApplicants = useMemo(() => applicants.filter(
-    (app) => app.jobVacancyId === selectedVacancy?.id
-  ), [applicants, selectedVacancy]);
+  const filteredApplicants = useMemo(() => {
+    if (!selectedVacancy) return [];
+    return applicants.filter(
+      (app) => app.jobVacancyId === selectedVacancy.id
+    );
+  }, [applicants, selectedVacancy]);
 
   return (
     <Tabs defaultValue="vacancies" className="h-full flex flex-col">
