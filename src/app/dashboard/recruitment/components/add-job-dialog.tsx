@@ -1,3 +1,4 @@
+
 // src/app/dashboard/recruitment/components/add-job-dialog.tsx
 'use client';
 
@@ -92,6 +93,8 @@ export function AddJobDialog({
     defaultValues: {
       title: '',
       departmentId: '',
+      location: '',
+      jobType: undefined,
       description: '',
       applicationMethod: 'internal',
       applicationEmail: '',
