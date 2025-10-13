@@ -23,6 +23,7 @@ import { auth, db } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import { EmployeeForm, employeeFormSchema, type EmployeeFormValues } from './employee-form';
+import { format } from 'date-fns';
 
 interface AddEmployeeDialogProps {
   children: React.ReactNode;
@@ -68,10 +69,10 @@ export function AddEmployeeDialog({
       bankName: '',
       accountNumber: '',
       branchCode: '',
-      identificationType: 'ID Number',
-      identificationNumber: '',
       gender: undefined,
       dateOfBirth: '',
+      identificationType: 'ID Number',
+      identificationNumber: '',
       contractType: 'Permanent',
       contractStartDate: '',
       contractEndDate: '',
@@ -91,7 +92,7 @@ export function AddEmployeeDialog({
     
     try {
       // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
       const user = userCredential.user;
 
       const { password, ...employeeData } = values;
@@ -102,7 +103,7 @@ export function AddEmployeeDialog({
           ...employeeData,
           companyId: companyId,
           departmentName,
-          branchName,
+          branchName: branchName || '',
           avatar: `https://avatar.vercel.sh/${values.email}.png`,
           salary: values.salary || 0,
           hourlyRate: values.hourlyRate || 0,

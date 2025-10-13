@@ -29,6 +29,10 @@ export default function ApplicantSignUpPage() {
       name: '',
       email: '',
       password: '',
+      gender: undefined,
+      dateOfBirth: '',
+      identificationType: undefined,
+      identificationNumber: '',
       role: 'Applicant',
       status: 'Active',
       workerType: 'Salaried',
@@ -43,6 +47,13 @@ export default function ApplicantSignUpPage() {
       overtime: 0,
       bonus: 0,
       reimbursements: 0,
+      bankName: '',
+      accountNumber: '',
+      branchCode: '',
+      branchId: '',
+      contractType: 'Permanent',
+      contractStartDate: '',
+      contractEndDate: '',
     },
   });
 
@@ -51,7 +62,7 @@ export default function ApplicantSignUpPage() {
 
     try {
       // 1. Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
       const user = userCredential.user;
 
       const { password, ...employeeData } = values;
