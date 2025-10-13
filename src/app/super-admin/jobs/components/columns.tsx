@@ -77,7 +77,17 @@ export const columns = (
   {
     accessorKey: "createdAt",
     header: "Date Posted",
-    cell: ({ row }) => format(new Date(row.original.createdAt), 'MMM d, yyyy'),
+    cell: ({ row }) => {
+        const createdAt = row.original.createdAt;
+        if (!createdAt) {
+            return "-";
+        }
+        try {
+            return format(new Date(createdAt), 'MMM d, yyyy');
+        } catch (error) {
+            return "Invalid Date";
+        }
+    },
   },
   {
     accessorKey: "status",
