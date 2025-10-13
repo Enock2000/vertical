@@ -21,6 +21,7 @@ import { TestimonialsTab } from './components/testimonials-tab';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -69,12 +70,15 @@ function GeneralSettingsTab() {
       </CardHeader>
       <CardContent className="space-y-4 max-w-lg">
         <div>
-          <label className="text-sm font-medium">Company Logo</label>
+          <Label className="text-sm font-medium">Company Logo</Label>
           <div className="flex items-center gap-4 mt-2">
-            <Input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} disabled={isUploading} className="flex-1"/>
-            <Button disabled={isUploading}>
-              {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
-            </Button>
+             <div className="flex-1">
+                <Label htmlFor="logo-upload" className={cn("w-full flex items-center justify-center gap-2", buttonVariants({ variant: "outline" }))}>
+                    {isUploading ? <Loader2 className="animate-spin" /> : <Upload />}
+                    <span>{isUploading ? 'Uploading...' : 'Choose Logo'}</span>
+                </Label>
+                <Input type="file" id="logo-upload" accept="image/*" onChange={handleLogoUpload} disabled={isUploading} className="hidden"/>
+            </div>
           </div>
         </div>
       </CardContent>
