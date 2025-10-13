@@ -8,13 +8,14 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ApplicantProfile } from './applicant-profile';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { db } from '@/lib/firebase';
 import { ref, update, push } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import { useToast } from '@/hooks/use-toast';
+import { RejectApplicantDialog } from './reject-applicant-dialog';
 
 const statusOptions: ApplicantStatus[] = ['Screening', 'Interview', 'Offer', 'Onboarding', 'Hired'];
 
@@ -91,6 +92,13 @@ export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCard
                                         Move to {status}
                                     </DropdownMenuItem>
                                 ))}
+                                <DropdownMenuSeparator />
+                                <RejectApplicantDialog applicant={applicant} vacancy={vacancy}>
+                                     <div className="relative flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-red-600 focus:text-red-600 focus:bg-red-50">
+                                        <XCircle className="h-4 w-4" />
+                                        Reject Application
+                                    </div>
+                                </RejectApplicantDialog>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
