@@ -154,24 +154,24 @@ export function AddApplicantDialog({ children, vacancy }: AddApplicantDialogProp
                     <FormItem>
                         <FormLabel>Resume</FormLabel>
                         <FormControl>
-                            <>
-                            <Input 
-                                type="file" 
-                                className="hidden"
-                                ref={rest.ref}
-                                name={rest.name}
-                                accept=".pdf,.doc,.docx"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    onChange(file);
-                                    setFileName(file?.name || '');
-                                }}
-                            />
-                             <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => formRef.current?.querySelector<HTMLInputElement>('input[type="file"]')?.click()}>
-                                <Upload className="mr-2 h-4 w-4" />
-                                {fileName || 'Upload resume file'}
-                            </Button>
-                            </>
+                            <div>
+                                <Input 
+                                    type="file" 
+                                    className="hidden"
+                                    ref={rest.ref}
+                                    name={rest.name}
+                                    accept=".pdf,.doc,.docx"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        onChange(file);
+                                        setFileName(file?.name || '');
+                                    }}
+                                />
+                                <Button type="button" variant="outline" className="w-full justify-start text-muted-foreground" onClick={() => formRef.current?.querySelector<HTMLInputElement>('input[type="file"]')?.click()}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    {fileName || 'Upload resume file'}
+                                </Button>
+                            </div>
                         </FormControl>
                         <FormMessage />
                     </FormItem>
