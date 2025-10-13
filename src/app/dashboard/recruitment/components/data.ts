@@ -1,41 +1,41 @@
 
 import { ApplicantStatus } from "@/lib/data"
-import { CheckCircledIcon, CircleIcon, CrossCircledIcon, QuestionMarkCircledIcon, StopwatchIcon } from "@radix-ui/react-icons"
+import { CheckCircle2, Circle, XCircle, HelpCircle, Timer } from "lucide-react"
 
 export const statuses = [
   {
     value: ApplicantStatus.New,
     label: "New",
-    icon: QuestionMarkCircledIcon,
+    icon: HelpCircle,
   },
   {
     value: ApplicantStatus.Screening,
     label: "Screening",
-    icon: CircleIcon,
+    icon: Circle,
   },
    {
     value: ApplicantStatus.Interview,
     label: "Interview",
-    icon: StopwatchIcon,
+    icon: Timer,
   },
   {
     value: ApplicantStatus.Offer,
     label: "Offer",
-    icon: CheckCircledIcon,
+    icon: CheckCircle2,
   },
    {
     value: ApplicantStatus.Onboarding,
     label: "Onboarding",
-    icon: CheckCircledIcon,
+    icon: CheckCircle2,
   },
    {
     value: ApplicantStatus.Hired,
     label: "Hired",
-    icon: CheckCircledIcon,
+    icon: CheckCircle2,
   },
   {
     value: ApplicantStatus.Rejected,
     label: "Rejected",
-    icon: CrossCircledIcon,
+    icon: XCircle,
   },
 ]

@@ -1,7 +1,7 @@
 // src/app/dashboard/recruitment/components/data-table-toolbar.tsx
 "use client"
 
-import { Cross2Icon } from "@radix-ui/react-icons"
+import { X } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -45,7 +45,7 @@ export function DataTableToolbar<TData>({
             className="h-8 px-2 lg:px-3"
           >
             Reset
-            <Cross2Icon className="ml-2 h-4 w-4" />
+            <X className="ml-2 h-4 w-4" />
           </Button>
         )}
       </div>
