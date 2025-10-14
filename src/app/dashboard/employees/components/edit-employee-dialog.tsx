@@ -33,6 +33,10 @@ interface EditEmployeeDialogProps {
   onEmployeeUpdated: () => void;
 }
 
+// Define a separate schema for editing, which does not include the password field.
+const editEmployeeSchema = employeeFormSchema.omit({ password: true });
+
+
 export function EditEmployeeDialog({
   children,
   employee,
@@ -45,11 +49,8 @@ export function EditEmployeeDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // We remove password from the schema for editing
-  const editSchema = employeeFormSchema.omit({ password: true });
-
   const form = useForm<Omit<EmployeeFormValues, 'password'>>({
-    resolver: zodResolver(editSchema),
+    resolver: zodResolver(editEmployeeSchema),
     defaultValues: {
       ...employee,
       gender: employee.gender || undefined,
