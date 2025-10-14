@@ -1,5 +1,6 @@
+
 // src/app/api/genkit/[...slug]/route.ts
-import { GET, POST, OPTIONS } from '@genkit-ai/next/plugin';
+import { POST } from '@genkit-ai/next';
 import '@/ai/dev';
 
-export { GET, POST, OPTIONS };
+export { POST };
