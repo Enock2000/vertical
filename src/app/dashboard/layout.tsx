@@ -120,16 +120,24 @@ export default function DashboardLayout({
   }, [employee, companyId]);
 
   const visibleNavItems = useMemo(() => {
-    // If the user is the primary admin (no specific admin role), show all items.
+    if (!company) return [];
+
+    // If company has specific modules enabled, use them
+    if (company.enabledModules && company.enabledModules.length > 0) {
+        return navItems.filter(item => company.enabledModules?.includes(item.permission));
+    }
+    
+    // Fallback for older data structure or if enabledModules is not set: use admin role permissions
     if (employee?.role === 'Admin' && !employee.adminRoleId) {
         return navItems;
     }
     if (adminRole) {
         return navItems.filter(item => adminRole.permissions.includes(item.permission));
     }
-    // If role is still loading or not found, show nothing to be safe.
-    return [];
-  }, [employee, adminRole]);
+    
+    // Default to a minimal set if no rules match
+    return navItems.filter(item => item.permission === 'dashboard');
+  }, [employee, adminRole, company]);
 
 
   if (loading || !employee || !company) {

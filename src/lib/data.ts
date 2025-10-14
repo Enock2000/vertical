@@ -37,6 +37,7 @@ export type Company = {
     subscription: CompanySubscription;
     termsAgreement: TermsAgreement;
     logoUrl?: string;
+    enabledModules?: Permission[];
 };
 
 export type Branch = {
@@ -725,4 +726,5 @@ export const calculateProductivityScore = (
 
     }).filter(Boolean) as DepartmentProductivityScore[];
 };
+
 
