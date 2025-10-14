@@ -99,12 +99,16 @@ export default function DashboardLayout({
     if (!loading) {
       if (!user) {
         router.push('/login');
-      } else if (employee?.role === 'Super Admin') {
-        router.push('/super-admin');
-      } else if (employee?.role === 'GuestAdmin') {
-        router.push('/guest-employer');
-      } else if (employee?.role !== 'Admin') {
-        router.push('/employee-portal');
+      } else if (employee && employee.role !== 'Admin') {
+        // This is the critical security check.
+        // If the user is logged in but not an admin, redirect them.
+        if (employee.role === 'Super Admin') {
+          router.push('/super-admin');
+        } else if (employee.role === 'GuestAdmin') {
+            router.push('/guest-employer');
+        } else {
+          router.push('/employee-portal');
+        }
       }
     }
   }, [user, employee, loading, router]);
