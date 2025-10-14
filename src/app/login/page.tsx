@@ -49,22 +49,23 @@ export default function LoginPage() {
       
       const employee: Employee = employeeSnap.val();
       
+      if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
+          await auth.signOut();
+          toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "You are not an admin. Please use the employee portal to log in.",
+          });
+          setIsLoading(false);
+          return;
+      }
+
       if (employee.role === 'Super Admin') {
           router.push('/super-admin');
           return;
       }
 
-       if (employee.role === 'Applicant') {
-        router.push('/applicant-portal');
-        return;
-      }
-
-       if (employee.role === 'GuestAdmin') {
-        router.push('/guest-employer');
-        return;
-      }
-      
-      // Check company status for all other users
+      // Check company status for Admin users
       const companyRef = ref(db, 'companies/' + employee.companyId);
       const companySnap = await get(companyRef);
 
@@ -87,7 +88,7 @@ export default function LoginPage() {
           await auth.signOut();
           toast({ variant: "destructive", title: "Account Suspended", description: "This company account has been suspended. Please contact support." });
       } else {
-          // If company is Active, proceed to correct dashboard
+          // If company is Active and user is Admin, proceed to dashboard
           router.push('/dashboard');
       }
 
