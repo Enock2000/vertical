@@ -43,10 +43,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async rewrites() {
-    const { genkit } = await import('@genkit-ai/next');
-    return genkit();
-  },
 };
 
 export default nextConfig;
