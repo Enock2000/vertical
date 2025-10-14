@@ -18,3 +18,4 @@ import '@/ai/flows/post-guest-job-flow.ts';
 import '@/ai/flows/add-manual-applicant-flow.ts';
 import '@/ai/flows/reject-applicant-flow.ts';
 import '@/ai/flows/send-email-flow.ts';
+import '@/ai/flows/create-campaign-flow.ts';
