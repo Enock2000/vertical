@@ -3,7 +3,7 @@ import * as Brevo from '@getbrevo/brevo';
 import type { Company, Employee } from './data';
 
 const apiInstance = new Brevo.TransactionalEmailsApi();
-apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY!);
+apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, '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');
 
 const SENDER_EMAIL = "no-reply@verticalsync.com";
 const SENDER_NAME = "VerticalSync";
