@@ -1,4 +1,3 @@
-
 // src/app/page.tsx
 'use client';
 
@@ -56,7 +55,7 @@ const navLinks = [
   { href: '/who-we-serve', label: 'Who We Serve' },
 ];
 
-const features = [
+const featuresList = [
   { 
     icon: <FileText className="h-6 w-6 text-primary" />, 
     title: "Automated Payroll", 
@@ -454,14 +453,19 @@ export default function HomePage() {
                         <CardHeader><CardTitle>Employees Trained per Department</CardTitle></CardHeader>
                         <CardContent><EmployeesTrainedChart enrollments={mockEnrollments} employees={mockEmployees} departments={mockDepartments} /></CardContent>
                     </Card>
-                    <Card>
-                        <CardHeader><CardTitle>Training Hours by Category</CardTitle></CardHeader>
-                        <CardContent><TrainingHoursChart enrollments={mockEnrollments} courses={mockCourses} /></CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader><CardTitle>Training vs. Performance Impact</CardTitle></CardHeader>
-                        <CardContent><TrainingImpactChart enrollments={mockEnrollments} courses={mockCourses} reviews={mockReviews} /></CardContent>
-                    </Card>
+                    <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card>
+                            <CardHeader><CardTitle>Training vs. Performance Impact</CardTitle></CardHeader>
+                            <CardContent><TrainingImpactChart enrollments={mockEnrollments} courses={mockCourses} reviews={mockReviews} /></CardContent>
+                        </Card>
+                        <Card className="flex flex-col items-center justify-center bg-primary/10">
+                            <CardContent className="text-center">
+                                <h3 className="text-2xl font-bold uppercase tracking-wider text-primary">
+                                    Experience the Power of VerticalSync
+                                </h3>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </section>
@@ -478,7 +482,7 @@ export default function HomePage() {
                 </p>
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => (
+              {featuresList.map((feature, index) => (
                 <Card key={index} className="bg-card">
                   <CardHeader className="flex flex-row items-center gap-4">
                     <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
