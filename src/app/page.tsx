@@ -44,7 +44,40 @@ const navLinks = [
   { href: '/post-a-job', label: 'Post a Job' },
 ];
 
-const chartConfig = {
+const features = [
+  { 
+    icon: <FileText className="h-6 w-6 text-primary" />, 
+    title: "Automated Payroll", 
+    description: "Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically." 
+  },
+  { 
+    icon: <ShieldCheck className="h-6 w-6 text-primary" />, 
+    title: "Compliance Management", 
+    description: "Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine." 
+  },
+  { 
+    icon: <Briefcase className="h-6 w-6 text-primary" />, 
+    title: "Recruitment & Onboarding", 
+    description: "From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place." 
+  },
+  { 
+    icon: <Trophy className="h-6 w-6 text-primary" />, 
+    title: "Performance & Training", 
+    description: "Set goals, track performance with 360-degree feedback, and manage employee training programs." 
+  },
+  { 
+    icon: <Users className="h-6 w-6 text-primary" />, 
+    title: "Employee Self-Service", 
+    description: "Empower your employees with a portal to manage their attendance, leave, and view payslips." 
+  },
+  { 
+    icon: <BarChart3 className="h-6 w-6 text-primary" />, 
+    title: "Insightful Reporting", 
+    description: "Get real-time insights into your workforce with comprehensive reports on headcount, turnover, and diversity." 
+  }
+];
+
+const chartConfig: ChartConfig = {
   total: { label: 'Total Payroll', color: 'hsl(var(--chart-1))' },
   hires: { label: 'Hires', color: 'hsl(var(--chart-2))' },
   separations: { label: 'Separations', color: 'hsl(var(--destructive))' },
@@ -85,7 +118,16 @@ const chartConfig = {
   Meets: { label: 'Meets', color: 'hsl(var(--chart-1))' },
   'Needs Improvement': { label: 'Needs Improvement', color: 'hsl(var(--chart-5))' },
   count: { label: 'Top Performers', color: 'hsl(var(--chart-2))' },
-} satisfies ChartConfig;
+  value: { label: 'Value' },
+  Sales: { label: 'Sales', color: 'hsl(var(--chart-1))' },
+  Engineering: { label: 'Engineering', color: 'hsl(var(--chart-2))' },
+  Marketing: { label: 'Marketing', color: 'hsl(var(--chart-3))' },
+  Support: { label: 'Support', color: 'hsl(var(--chart-4))' },
+  HR: { label: 'HR', color: 'hsl(var(--chart-5))' },
+  Leadership: { label: 'Leadership' },
+  Technical: { label: 'Technical' },
+  Compliance: { label: 'Compliance' },
+};
 
 const totalPayrollData = [ { month: 'Jan', total: 186000 }, { month: 'Feb', total: 305000 }, { month: 'Mar', total: 237000 }, { month: 'Apr', total: 173000 }, { month: 'May', total: 209000 }, { month: 'Jun', total: 214000 } ];
 const turnoverData = [ { month: "Jan", hires: 10, separations: 2 }, { month: "Feb", hires: 12, separations: 3 }, { month: "Mar", hires: 5, separations: 1 }, { month: "Apr", hires: 15, separations: 4 }, { month: "May", hires: 8, separations: 2 }, { month: "Jun", hires: 11, separations: 1 } ];
@@ -230,6 +272,35 @@ export default function HomePage() {
                     <Card><CardHeader><CardTitle>Department Distribution</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={deptDistData} dataKey="value" nameKey="name" innerRadius={40}><Cell key="cell-0" fill="var(--color-Sales)" /><Cell key="cell-1" fill="var(--color-Engineering)" /><Cell key="cell-2" fill="var(--color-Marketing)" /></RechartsPie></ChartContainer></CardContent></Card>
                 </div>
             </div>
+        </section>
+
+        {/* Features Section */}
+        <section id="features" className="py-20 md:py-28">
+          <div className="container">
+            <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                    Everything you need. Nothing you don't.
+                </h2>
+                <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
+                    Discover a full suite of HR tools designed to streamline your operations and empower your team.
+                </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {features.map((feature, index) => (
+                <Card key={index} className="bg-card">
+                  <CardHeader className="flex flex-row items-center gap-4">
+                    <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
+                        {feature.icon}
+                    </div>
+                    <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </section>
 
       </main>
