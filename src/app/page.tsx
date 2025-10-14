@@ -42,6 +42,7 @@ const navLinks = [
   { href: '#features', label: 'Features' },
   { href: '/careers', label: 'Jobs Centre' },
   { href: '/post-a-job', label: 'Post a Job' },
+  { href: '/who-we-serve', label: 'Who We Serve' },
 ];
 
 const features = [
@@ -199,6 +200,9 @@ export default function HomePage() {
                             </SheetClose>
                              <SheetClose asChild>
                                 <Link href="/post-a-job">Post a Job</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
+                                <Link href="/who-we-serve">Who We Serve</Link>
                             </SheetClose>
                             <SheetClose asChild>
                                 <Link href="/login">Login</Link>
