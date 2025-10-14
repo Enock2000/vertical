@@ -11,7 +11,7 @@ import {
   BarChart3,
   TrendingUp,
   TrendingDown,
-  PieChart,
+  PieChart as PieChartIcon,
   Wallet,
   CalendarCheck,
   Award,
@@ -19,6 +19,12 @@ import {
   DollarSign,
   Menu,
   X,
+  FileText,
+  ShieldCheck,
+  Network,
+  Megaphone,
+  Landmark,
+  Trophy,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -26,8 +32,10 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from '@/components/ui/chart';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, PolarAngleAxis, PolarGrid, Radar, RadarChart, Funnel, FunnelChart, LabelList, Pie as RechartsPie, Cell } from 'recharts';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, PolarAngleAxis, PolarGrid, Radar, RadarChart, Funnel, FunnelChart, LabelList, Pie as RechartsPie, Cell, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter } from 'recharts';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 
 const navLinks = [
@@ -36,80 +44,74 @@ const navLinks = [
   { href: '/post-a-job', label: 'Post a Job' },
 ];
 
-const totalPayrollChartConfig = {
+const chartConfig = {
   total: { label: 'Total Payroll', color: 'hsl(var(--chart-1))' },
-} satisfies ChartConfig;
-const totalPayrollData = [
-    { month: 'Jan', total: 186000 },
-    { month: 'Feb', total: 305000 },
-    { month: 'Mar', total: 237000 },
-    { month: 'Apr', total: 173000 },
-    { month: 'May', total: 209000 },
-    { month: 'Jun', total: 214000 },
-];
-
-const turnoverChartConfig = {
   hires: { label: 'Hires', color: 'hsl(var(--chart-2))' },
   separations: { label: 'Separations', color: 'hsl(var(--destructive))' },
-} satisfies ChartConfig;
-const turnoverData = [
-    { month: "Jan", hires: 10, separations: 2 },
-    { month: "Feb", hires: 12, separations: 3 },
-    { month: "Mar", hires: 5, separations: 1 },
-    { month: "Apr", hires: 15, separations: 4 },
-    { month: "May", hires: 8, separations: 2 },
-    { month: "Jun", hires: 11, separations: 1 },
-];
-
-const headcountChartConfig = {
-    employees: { label: "Employees", color: "hsl(var(--primary))" },
-} satisfies ChartConfig;
-const headcountData = [
-    { month: "Jan", employees: 50 },
-    { month: "Feb", employees: 55 },
-    { month: "Mar", employees: 58 },
-    { month: "Apr", employees: 62 },
-    { month: "May", employees: 65 },
-    { month: "Jun", employees: 70 },
-];
-
-const genderDistributionChartConfig = {
+  employees: { label: "Employees", color: "hsl(var(--primary))" },
   Male: { label: 'Male', color: 'hsl(var(--chart-1))' },
   Female: { label: 'Female', color: 'hsl(var(--chart-2))' },
-} satisfies ChartConfig;
-
-const genderDistributionData = [
-    { name: 'Male', value: 40, fill: 'var(--color-Male)' },
-    { name: 'Female', value: 30, fill: 'var(--color-Female)' },
-];
-
-const candidatePipelineChartConfig = {
-  value: { label: "Candidates" },
   New: { label: 'New', color: `hsl(var(--chart-1))` },
   Screening: { label: 'Screening', color: `hsl(var(--chart-2))` },
   Interview: { label: 'Interview', color: `hsl(var(--chart-3))` },
   Offer: { label: 'Offer', color: `hsl(var(--chart-4))` },
   Hired: { label: 'Hired', color: `hsl(var(--chart-5))` },
-} satisfies ChartConfig;
-const candidatePipelineData = [
-    { value: 120, name: 'New', fill: candidatePipelineChartConfig.New.color },
-    { value: 80, name: 'Screening', fill: candidatePipelineChartConfig.Screening.color },
-    { value: 45, name: 'Interview', fill: candidatePipelineChartConfig.Interview.color },
-    { value: 20, name: 'Offer', fill: candidatePipelineChartConfig.Offer.color },
-    { value: 11, name: 'Hired', fill: candidatePipelineChartConfig.Hired.color },
-];
-
-const productivityChartConfig = {
   average: { label: 'Avg Score', color: 'hsl(var(--chart-1))' },
+  requisitions: { label: "Requisitions", color: "hsl(var(--chart-1))" },
+  days: { label: "Days", color: "hsl(var(--chart-1))" },
+  onTime: { label: 'On Time', color: 'hsl(var(--chart-2))' },
+  late: { label: 'Late', color: 'hsl(var(--chart-3))' },
+  hoursMet: { label: 'Target Hours Met', color: 'hsl(var(--chart-1))' },
+  attendanceRate: { label: 'Attendance Rate', color: 'hsl(var(--chart-1))' },
+  Annual: { label: 'Annual', color: 'hsl(var(--chart-1))' },
+  Sick: { label: 'Sick', color: 'hsl(var(--chart-2))' },
+  Unpaid: { label: 'Unpaid', color: 'hsl(var(--chart-3))' },
+  Maternity: { label: 'Maternity', color: 'hsl(var(--chart-4))' },
+  absences: { label: 'Absences', color: 'hsl(var(--destructive))' },
+  napsa: { label: 'NAPSA', color: 'hsl(var(--chart-1))' },
+  nhima: { label: 'NHIMA', color: 'hsl(var(--chart-2))' },
+  paye: { label: 'PAYE', color: 'hsl(var(--chart-3))' },
+  trained: { label: 'Trained Employees', color: 'hsl(var(--chart-1))' },
+  hours: { label: 'Hours', color: 'hsl(var(--chart-1))' },
+  performance: { label: 'Performance Score', color: 'hsl(var(--chart-1))' },
+  averageSalary: { label: 'Average Salary', color: 'hsl(var(--chart-4))' },
+  'On Leave': { label: 'On Leave', color: 'hsl(var(--chart-2))' },
+  Resigned: { label: 'Resigned', color: 'hsl(var(--chart-5))' },
+  Terminated: { label: 'Terminated', color: 'hsl(var(--destructive))' },
+  Permanent: { label: 'Permanent', color: 'hsl(var(--chart-1))' },
+  'Fixed-Term': { label: 'Fixed-Term', color: 'hsl(var(--chart-2))' },
+  Internship: { label: 'Internship', color: 'hsl(var(--chart-3))' },
+  Exceeds: { label: 'Exceeds', color: 'hsl(var(--chart-2))' },
+  Meets: { label: 'Meets', color: 'hsl(var(--chart-1))' },
+  'Needs Improvement': { label: 'Needs Improvement', color: 'hsl(var(--chart-5))' },
+  count: { label: 'Top Performers', color: 'hsl(var(--chart-2))' },
 } satisfies ChartConfig;
 
-const productivityData = [
-  { department: 'Sales', average: 82 },
-  { department: 'Engineering', average: 95 },
-  { department: 'Marketing', average: 78 },
-  { department: 'Support', average: 88 },
-  { department: 'HR', average: 91 },
-];
+const totalPayrollData = [ { month: 'Jan', total: 186000 }, { month: 'Feb', total: 305000 }, { month: 'Mar', total: 237000 }, { month: 'Apr', total: 173000 }, { month: 'May', total: 209000 }, { month: 'Jun', total: 214000 } ];
+const turnoverData = [ { month: "Jan", hires: 10, separations: 2 }, { month: "Feb", hires: 12, separations: 3 }, { month: "Mar", hires: 5, separations: 1 }, { month: "Apr", hires: 15, separations: 4 }, { month: "May", hires: 8, separations: 2 }, { month: "Jun", hires: 11, separations: 1 } ];
+const headcountData = [ { month: "Jan", employees: 50 }, { month: "Feb", employees: 55 }, { month: "Mar", employees: 58 }, { month: "Apr", employees: 62 }, { month: "May", employees: 65 }, { month: "Jun", employees: 70 } ];
+const genderDistributionData = [ { name: 'Male', value: 40, fill: 'var(--color-Male)' }, { name: 'Female', value: 30, fill: 'var(--color-Female)' } ];
+const candidatePipelineData = [ { value: 120, name: 'New', fill: chartConfig.New.color }, { value: 80, name: 'Screening', fill: chartConfig.Screening.color }, { value: 45, name: 'Interview', fill: chartConfig.Interview.color }, { value: 20, name: 'Offer', fill: chartConfig.Offer.color }, { value: 11, name: 'Hired', fill: chartConfig.Hired.color } ];
+const productivityData = [ { department: 'Sales', average: 82 }, { department: 'Engineering', average: 95 }, { department: 'Marketing', average: 78 }, { department: 'Support', average: 88 }, { department: 'HR', average: 91 } ];
+const requisitionsByDeptData = [ { name: 'Sales', requisitions: 5 }, { name: 'Engineering', requisitions: 8 }, { name: 'Marketing', requisitions: 2 } ];
+const timeToHireData = [ { month: 'Jan', days: 25 }, { month: 'Feb', days: 30 }, { month: 'Mar', days: 28 } ];
+const attendancePerformanceData = [ { label: 'Jan', onTime: 200, late: 20, hoursMet: 210 }, { label: 'Feb', onTime: 220, late: 25, hoursMet: 230 }, { label: 'Mar', onTime: 210, late: 18, hoursMet: 220 } ];
+const attendanceRateData = [ { month: 'Jan', attendanceRate: 95 }, { month: 'Feb', attendanceRate: 96 }, { month: 'Mar', attendanceRate: 94 } ];
+const leaveTypesData = [ { name: 'Annual', value: 40, fill: chartConfig.Annual.color }, { name: 'Sick', value: 15, fill: chartConfig.Sick.color }, { name: 'Unpaid', value: 5, fill: chartConfig.Unpaid.color } ];
+const topDeptAbsenceData = [ { name: 'Sales', absences: 12 }, { name: 'Support', absences: 8 }, { name: 'Marketing', absences: 5 } ];
+const monthlyContributionsData = [ { month: 'Jan', napsa: 10000, nhima: 2000, paye: 15000 }, { month: 'Feb', napsa: 11000, nhima: 2200, paye: 16000 } ];
+const contributionBreakdownData = [ { name: 'NAPSA', value: 21000, fill: 'var(--color-napsa)' }, { name: 'NHIMA', value: 4200, fill: 'var(--color-nhima)' }, { name: 'PAYE', value: 31000, fill: 'var(--color-paye)' } ];
+const trainedEmployeesData = [ { name: 'Sales', trained: 15 }, { name: 'Engineering', trained: 25 }, { name: 'Marketing', trained: 10 } ];
+const trainingHoursData = [ { name: 'Leadership', hours: 50 }, { name: 'Technical', hours: 120 }, { name: 'Compliance', hours: 30 } ];
+const trainingImpactData = [ { trainingHours: 10, performance: 80 }, { trainingHours: 20, performance: 85 }, { trainingHours: 5, performance: 75 } ];
+const averageSalaryData = [ { name: 'Engineering', averageSalary: 95000 }, { name: 'Sales', averageSalary: 75000 }, { name: 'Marketing', averageSalary: 70000 } ];
+const performanceRatingData = [ { name: 'Exceeds', value: 15, fill: 'var(--color-Exceeds)' }, { name: 'Meets', value: 45, fill: 'var(--color-Meets)' }, { name: 'Needs Improvement', value: 5, fill: 'var(--color-Needs Improvement)' } ];
+const topPerformersData = [ { quarter: 'Q1 23', count: 5 }, { quarter: 'Q2 23', count: 8 }, { quarter: 'Q3 23', count: 7 } ];
+const activeContractsData = [ { name: 'Permanent', count: 60, fill: 'var(--color-Permanent)' }, { name: 'Fixed-Term', count: 8, fill: 'var(--color-Fixed-Term)' }, { name: 'Internship', count: 2, fill: 'var(--color-Internship)' } ];
+const employeeStatusData = [ { name: 'On Leave', count: 3, fill: 'var(--color-On Leave)' }, { name: 'Sick', count: 2, fill: 'var(--color-Sick)' }, { name: 'Terminated', count: 1, fill: 'var(--color-Terminated)' } ];
+const deptHeadcountData = [ { name: 'Sales', employees: 20 }, { name: 'Engineering', employees: 30 }, { name: 'Marketing', employees: 15 } ];
+const deptDistData = [ { name: 'Sales', value: 20, fill: 'hsl(var(--chart-1))' }, { name: 'Engineering', value: 30, fill: 'hsl(var(--chart-2))' }, { name: 'Marketing', value: 15, fill: 'hsl(var(--chart-3))' } ];
+
 
 export default function HomePage() {
   return (
@@ -201,100 +203,31 @@ export default function HomePage() {
                     </p>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {/* Headcount */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>Employee Headcount</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={headcountChartConfig} className="min-h-[200px] w-full">
-                                <BarChart accessibilityLayer data={headcountData}>
-                                    <CartesianGrid vertical={false} />
-                                    <Bar dataKey="employees" fill="var(--color-employees)" radius={4} />
-                                </BarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
-                    {/* Turnover */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle>Turnover Rate</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={turnoverChartConfig} className="min-h-[200px] w-full">
-                                <AreaChart accessibilityLayer data={turnoverData}>
-                                    <CartesianGrid vertical={false} />
-                                    <Area dataKey="hires" type="natural" fill="var(--color-hires)" fillOpacity={0.4} stroke="var(--color-hires)" stackId="a" />
-                                    <Area dataKey="separations" type="natural" fill="var(--color-separations)" fillOpacity={0.4} stroke="var(--color-separations)" stackId="a" />
-                                </AreaChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
-                     {/* Payroll Trend */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle>Total Payroll Cost</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={totalPayrollChartConfig} className="min-h-[200px] w-full">
-                                <LineChart accessibilityLayer data={totalPayrollData}>
-                                    <CartesianGrid vertical={false} />
-                                    <Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={false} />
-                                </LineChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
-                    {/* Gender Distribution */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>Gender Distribution</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={genderDistributionChartConfig} className="mx-auto aspect-square max-h-[200px]">
-                                <RechartsPie data={genderDistributionData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
-                                    {genderDistributionData.map((entry) => (
-                                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
-                                    ))}
-                                </RechartsPie>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-                    
-                    {/* Candidate Pipeline */}
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle>Candidate Pipeline</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={candidatePipelineChartConfig} className="mx-auto aspect-video min-h-[200px]">
-                                <FunnelChart layout="vertical">
-                                    <Funnel dataKey="value" data={candidatePipelineData} nameKey="name">
-                                        <LabelList position="center" fill="#fff" stroke="none" dataKey="name" />
-                                    </Funnel>
-                                </FunnelChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
-
-                     {/* Productivity Score */}
-                    <Card className="lg:col-span-1">
-                        <CardHeader>
-                            <CardTitle>Department Productivity</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ChartContainer config={productivityChartConfig} className="mx-auto aspect-square max-h-[200px]">
-                                <RadarChart data={productivityData}>
-                                    <PolarGrid />
-                                    <PolarAngleAxis dataKey="department" />
-                                    <Radar dataKey="average" fill="var(--color-average)" fillOpacity={0.6} dot={{r: 4, fillOpacity: 1}} />
-                                </RadarChart>
-                            </ChartContainer>
-                        </CardContent>
-                    </Card>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <Card><CardHeader><CardTitle>Employee Headcount</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={headcountData}><Bar dataKey="employees" fill="var(--color-employees)" radius={4} /></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Turnover Rate</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><AreaChart data={turnoverData}><Area dataKey="hires" type="natural" fill="var(--color-hires)" fillOpacity={0.4} stroke="var(--color-hires)" stackId="a" /><Area dataKey="separations" type="natural" fill="var(--color-separations)" fillOpacity={0.4} stroke="var(--color-separations)" stackId="a" /></AreaChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Total Payroll Cost</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={totalPayrollData}><Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={false} /></LineChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Gender Distribution</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={genderDistributionData} dataKey="value" nameKey="name" innerRadius={40} strokeWidth={5}><Cell key="cell-0" fill="var(--color-Male)" /><Cell key="cell-1" fill="var(--color-Female)" /></RechartsPie></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Candidate Pipeline</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square min-h-[150px]"><FunnelChart layout="vertical"><Funnel dataKey="value" data={candidatePipelineData} nameKey="name"><LabelList position="center" fill="#fff" stroke="none" dataKey="name" fontSize={10} /></Funnel></FunnelChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Dept Productivity</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RadarChart data={productivityData}><PolarGrid /><PolarAngleAxis dataKey="department" /><Radar dataKey="average" fill="var(--color-average)" fillOpacity={0.6} dot={{r: 2}} /></RadarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Open Requisitions</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={requisitionsByDeptData} layout="vertical"><YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={60} fontSize={10}/><XAxis type="number" hide /><Bar dataKey="requisitions" fill="var(--color-requisitions)" radius={2}><LabelList dataKey="requisitions" position="right" offset={4} fontSize={10} /></Bar></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Time-to-Hire</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={timeToHireData}><XAxis dataKey="month" fontSize={10}/><YAxis unit="d" fontSize={10}/><Line dataKey="days" stroke="var(--color-days)" strokeWidth={2}/></LineChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Attendance Performance</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><AreaChart data={attendancePerformanceData}><XAxis dataKey="label" fontSize={10} /><YAxis fontSize={10} /><Area dataKey="hoursMet" stroke="var(--color-hoursMet)" fill="var(--color-hoursMet)" stackId="a" /><Area dataKey="onTime" stroke="var(--color-onTime)" fill="var(--color-onTime)" stackId="a" /><Area dataKey="late" stroke="var(--color-late)" fill="var(--color-late)" stackId="a" /></AreaChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Attendance Rate</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={attendanceRateData}><XAxis dataKey="month" fontSize={10}/><YAxis unit="%" domain={[80, 100]} fontSize={10}/><Line dataKey="attendanceRate" stroke="var(--color-attendanceRate)" /></LineChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Leave Types</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={leaveTypesData} dataKey="value" nameKey="name" innerRadius={40}><Cell key="cell-0" fill="var(--color-Annual)" /><Cell key="cell-1" fill="var(--color-Sick)" /><Cell key="cell-2" fill="var(--color-Unpaid)" /></RechartsPie></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Absenteeism by Dept</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={topDeptAbsenceData} layout="vertical"><YAxis dataKey="name" type="category" width={60} fontSize={10} /><XAxis type="number" hide /><Bar dataKey="absences" fill="var(--color-absences)" radius={2} /></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Statutory Contributions</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={monthlyContributionsData}><XAxis dataKey="month" fontSize={10} /><YAxis fontSize={10} tickFormatter={(v) => `${v/1000}k`}/><Line dataKey="napsa" stroke="var(--color-napsa)" dot={false}/><Line dataKey="nhima" stroke="var(--color-nhima)" dot={false}/><Line dataKey="paye" stroke="var(--color-paye)" dot={false}/></LineChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Contribution Breakdown</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={contributionBreakdownData} dataKey="value" nameKey="name" innerRadius={40}><Cell key="cell-0" fill="var(--color-napsa)" /><Cell key="cell-1" fill="var(--color-nhima)" /><Cell key="cell-2" fill="var(--color-paye)" /></RechartsPie></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Employees Trained</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={trainedEmployeesData} layout="vertical"><YAxis dataKey="name" type="category" width={60} fontSize={10}/><XAxis type="number" hide /><Bar dataKey="trained" fill="var(--color-trained)" radius={2}/></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Training Hours</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={trainingHoursData}><XAxis dataKey="name" fontSize={10} /><YAxis fontSize={10} /><Bar dataKey="hours" stackId="a" fill="var(--color-hours)" /></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Training Impact</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><ScatterChart><XAxis type="number" dataKey="trainingHours" name="Training (h)" unit="h" fontSize={10}/><YAxis type="number" dataKey="performance" name="Performance" unit="%" fontSize={10}/><Scatter name="Employees" data={trainingImpactData} fill="var(--color-performance)" /></ScatterChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Salary by Department</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={averageSalaryData} layout="vertical"><YAxis dataKey="name" type="category" width={60} fontSize={10}/><XAxis type="number" hide /><Bar dataKey="averageSalary" fill="var(--color-averageSalary)" radius={2} /></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Performance Ratings</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={performanceRatingData} dataKey="value" nameKey="name" innerRadius={40}><Cell key="cell-0" fill="var(--color-Exceeds)" /><Cell key="cell-1" fill="var(--color-Meets)" /><Cell key="cell-2" fill="var(--color-Needs Improvement)" /></RechartsPie></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Top Performers</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={topPerformersData}><XAxis dataKey="quarter" fontSize={10}/><YAxis allowDecimals={false} fontSize={10}/><Line dataKey="count" stroke="var(--color-count)" /></LineChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Active Contracts</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={activeContractsData}><XAxis dataKey="name" fontSize={10}/><YAxis hide /><Bar dataKey="count" radius={2}><Cell key="cell-0" fill="var(--color-Permanent)"/><Cell key="cell-1" fill="var(--color-Fixed-Term)"/><Cell key="cell-2" fill="var(--color-Internship)"/></Bar></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Employee Status</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={employeeStatusData} layout="vertical"><YAxis dataKey="name" type="category" width={60} fontSize={10} /><XAxis type="number" hide /><Bar dataKey="count" radius={2}><Cell key="cell-0" fill="var(--color-On Leave)"/><Cell key="cell-1" fill="var(--color-Sick)"/><Cell key="cell-2" fill="var(--color-Terminated)"/></Bar></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Department Headcount</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={deptHeadcountData} layout="vertical"><YAxis dataKey="name" type="category" width={60} fontSize={10} /><XAxis type="number" hide /><Bar dataKey="employees" fill="var(--color-employees)" radius={2} /></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Department Distribution</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={deptDistData} dataKey="value" nameKey="name" innerRadius={40}><Cell key="cell-0" fill="var(--color-Sales)" /><Cell key="cell-1" fill="var(--color-Engineering)" /><Cell key="cell-2" fill="var(--color-Marketing)" /></RechartsPie></ChartContainer></CardContent></Card>
                 </div>
             </div>
         </section>
