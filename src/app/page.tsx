@@ -2,80 +2,116 @@
 'use client';
 
 import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
-import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap, Menu, X } from 'lucide-react';
-import Image from 'next/image';
-import { Card, CardContent } from "@/components/ui/card";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { placeholderImages } from '@/lib/placeholder-images.json';
+  Users,
+  Briefcase,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  PieChart,
+  Wallet,
+  CalendarCheck,
+  Award,
+  BookOpen,
+  DollarSign,
+  Menu,
+  X,
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, PolarAngleAxis, PolarGrid, Radar, RadarChart, Funnel, FunnelChart, LabelList, Pie as RechartsPie, Cell } from 'recharts';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
-import { db } from '@/lib/firebase';
-import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { Testimonial } from '@/lib/data';
-import { Loader2 } from 'lucide-react';
-
-const features = [
-  {
-    icon: <FileText />,
-    title: 'Automated Payroll',
-    description: 'Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically.',
-  },
-  {
-    icon: <ShieldCheck />,
-    title: 'Compliance Management',
-    description: 'Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine.',
-  },
-  {
-    icon: <Briefcase />,
-    title: 'Recruitment & Onboarding',
-    description: 'From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place.',
-  },
-  {
-    icon: <Trophy />,
-    title: 'Performance & Training',
-    description: 'Set goals, track performance with 360-degree feedback, and manage employee training programs.',
-  },
-  {
-    icon: <Users />,
-    title: 'Employee Self-Service',
-    description: 'Empower your employees with a portal to manage their attendance, leave, and view payslips.',
-  },
-  {
-    icon: <BarChart />,
-    title: 'Insightful Reporting',
-    description: 'Get real-time insights into your workforce with comprehensive reports on headcount, turnover, and diversity.',
-  },
-];
 
 const navLinks = [
-    { href: "#features", label: "Features" },
-    { href: "/careers", label: "Jobs Centre" },
-    { href: "#testimonials", label: "Testimonials" },
-    { href: "#pricing", label: "Pricing" },
+  { href: '#features', label: 'Features' },
+  { href: '/careers', label: 'Jobs Centre' },
+  { href: '/post-a-job', label: 'Post a Job' },
+];
+
+const totalPayrollChartConfig = {
+  total: { label: 'Total Payroll', color: 'hsl(var(--chart-1))' },
+} satisfies ChartConfig;
+const totalPayrollData = [
+    { month: 'Jan', total: 186000 },
+    { month: 'Feb', total: 305000 },
+    { month: 'Mar', total: 237000 },
+    { month: 'Apr', total: 173000 },
+    { month: 'May', total: 209000 },
+    { month: 'Jun', total: 214000 },
+];
+
+const turnoverChartConfig = {
+  hires: { label: 'Hires', color: 'hsl(var(--chart-2))' },
+  separations: { label: 'Separations', color: 'hsl(var(--destructive))' },
+} satisfies ChartConfig;
+const turnoverData = [
+    { month: "Jan", hires: 10, separations: 2 },
+    { month: "Feb", hires: 12, separations: 3 },
+    { month: "Mar", hires: 5, separations: 1 },
+    { month: "Apr", hires: 15, separations: 4 },
+    { month: "May", hires: 8, separations: 2 },
+    { month: "Jun", hires: 11, separations: 1 },
+];
+
+const headcountChartConfig = {
+    employees: { label: "Employees", color: "hsl(var(--primary))" },
+} satisfies ChartConfig;
+const headcountData = [
+    { month: "Jan", employees: 50 },
+    { month: "Feb", employees: 55 },
+    { month: "Mar", employees: 58 },
+    { month: "Apr", employees: 62 },
+    { month: "May", employees: 65 },
+    { month: "Jun", employees: 70 },
+];
+
+const genderDistributionChartConfig = {
+  Male: { label: 'Male', color: 'hsl(var(--chart-1))' },
+  Female: { label: 'Female', color: 'hsl(var(--chart-2))' },
+} satisfies ChartConfig;
+
+const genderDistributionData = [
+    { name: 'Male', value: 40, fill: 'var(--color-Male)' },
+    { name: 'Female', value: 30, fill: 'var(--color-Female)' },
+];
+
+const candidatePipelineChartConfig = {
+  value: { label: "Candidates" },
+  New: { label: 'New', color: `hsl(var(--chart-1))` },
+  Screening: { label: 'Screening', color: `hsl(var(--chart-2))` },
+  Interview: { label: 'Interview', color: `hsl(var(--chart-3))` },
+  Offer: { label: 'Offer', color: `hsl(var(--chart-4))` },
+  Hired: { label: 'Hired', color: `hsl(var(--chart-5))` },
+} satisfies ChartConfig;
+const candidatePipelineData = [
+    { value: 120, name: 'New', fill: candidatePipelineChartConfig.New.color },
+    { value: 80, name: 'Screening', fill: candidatePipelineChartConfig.Screening.color },
+    { value: 45, name: 'Interview', fill: candidatePipelineChartConfig.Interview.color },
+    { value: 20, name: 'Offer', fill: candidatePipelineChartConfig.Offer.color },
+    { value: 11, name: 'Hired', fill: candidatePipelineChartConfig.Hired.color },
+];
+
+const productivityChartConfig = {
+  average: { label: 'Avg Score', color: 'hsl(var(--chart-1))' },
+} satisfies ChartConfig;
+
+const productivityData = [
+  { department: 'Sales', average: 82 },
+  { department: 'Engineering', average: 95 },
+  { department: 'Marketing', average: 78 },
+  { department: 'Support', average: 88 },
+  { department: 'HR', average: 91 },
 ];
 
 export default function HomePage() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
-
-  useEffect(() => {
-    const testimonialsQuery = query(ref(db, 'testimonials'), orderByChild('status'), equalTo('Approved'));
-    const unsubscribe = onValue(testimonialsQuery, (snapshot) => {
-        const data = snapshot.val();
-        setTestimonials(data ? Object.values(data) : []);
-        setLoadingTestimonials(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Header */}
@@ -85,7 +121,6 @@ export default function HomePage() {
             <Logo />
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
             {navLinks.map(link => (
                  <Link key={link.href} href={link.href}>{link.label}</Link>
@@ -94,14 +129,13 @@ export default function HomePage() {
 
           <div className="hidden md:flex items-center justify-end space-x-4">
             <Button variant="ghost" asChild>
-                <Link href="/login">Login</Link>
+                <Link href="/login">Admin Login</Link>
             </Button>
             <Button asChild>
                 <Link href="/signup">Get Started</Link>
             </Button>
           </div>
           
-           {/* Mobile Navigation */}
            <div className="md:hidden">
                 <Sheet>
                     <SheetTrigger asChild>
@@ -120,16 +154,10 @@ export default function HomePage() {
                                 <Link href="/careers">Jobs Centre</Link>
                             </SheetClose>
                              <SheetClose asChild>
-                                <Link href="#testimonials">Testimonials</Link>
-                            </SheetClose>
-                             <SheetClose asChild>
-                                <Link href="#pricing">Pricing</Link>
-                            </SheetClose>
-                             <SheetClose asChild>
                                 <Link href="/post-a-job">Post a Job</Link>
                             </SheetClose>
                             <SheetClose asChild>
-                                <Link href="/login">Login</Link>
+                                <Link href="/login">Admin Login</Link>
                             </SheetClose>
                              <SheetClose asChild>
                                 <Button asChild>
@@ -157,127 +185,120 @@ export default function HomePage() {
               <Button size="lg" asChild>
                 <Link href="/signup">Request a Demo</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="#features">Explore Features</Link>
-              </Button>
             </div>
           </div>
         </section>
         
-        <div className="relative my-16">
-            <Carousel
-                className="w-full"
-                opts={{
-                    loop: true,
-                }}
-                plugins={[
-                    require('embla-carousel-autoplay')({ delay: 10000, stopOnInteraction: true }),
-                ]}
-                >
-                <CarouselContent>
-                    {placeholderImages.map((image) => (
-                    <CarouselItem key={image.id}>
-                        <Card className="overflow-hidden border-0 rounded-none">
-                            <CardContent className="p-0">
-                                <Image
-                                    src={image.imageUrl}
-                                    alt={image.description}
-                                    width={1600}
-                                    height={800}
-                                    className="w-full max-h-[600px] aspect-video object-cover"
-                                    data-ai-hint={image.imageHint}
-                                />
-                            </CardContent>
-                        </Card>
-                    </CarouselItem>
-                    ))}
-                </CarouselContent>
-                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
-                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
-            </Carousel>
-        </div>
-
-
-        {/* Features Section */}
-        <section id="features" className="py-20 md:py-28 bg-muted/50">
-          <div className="container">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-                Everything you need. Nothing you don't.
-              </h2>
-              <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-                Stop juggling multiple systems. VerticalSync brings all your essential HR functions under one roof.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {features.map((feature, index) => (
-                <div key={index} className="flex flex-col gap-4 rounded-lg border bg-card p-6 shadow-sm">
-                   <div className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                        {React.cloneElement(feature.icon, { className: "h-6 w-6" })}
-                    </div>
-                  <h3 className="text-xl font-bold">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials Section */}
-        <section id="testimonials" className="py-20 md:py-28 bg-muted/50">
+        {/* Reporting Overview Section */}
+        <section className="py-20 md:py-28 bg-muted/50">
             <div className="container">
-                <div className="text-center">
+                <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-                        Loved by Growing Companies
+                        Powerful Insights at a Glance
                     </h2>
                     <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-                        See how VerticalSync is transforming HR for businesses like yours.
+                        Visualize your entire HR landscape with our comprehensive reporting dashboard.
                     </p>
                 </div>
-                {loadingTestimonials ? (
-                    <div className="flex items-center justify-center h-48">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                ) : testimonials.length > 0 ? (
-                    <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        {testimonials.map((testimonial) => (
-                            <div key={testimonial.id} className="rounded-lg border bg-card p-6 shadow-sm">
-                                <p className="text-muted-foreground">"{testimonial.testimonialText}"</p>
-                                <div className="mt-4 flex items-center gap-4">
-                                     <Image src={`https://avatar.vercel.sh/${testimonial.authorName}.png`} alt="Avatar" width={40} height={40} className="rounded-full" />
-                                    <div>
-                                        <p className="font-semibold">{testimonial.authorName}</p>
-                                        <p className="text-sm text-muted-foreground">{testimonial.authorTitle}, {testimonial.companyName}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="mt-12 text-center text-muted-foreground">
-                        <p>No testimonials yet. Be the first!</p>
-                    </div>
-                )}
+
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {/* Headcount */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>Employee Headcount</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={headcountChartConfig} className="min-h-[200px] w-full">
+                                <BarChart accessibilityLayer data={headcountData}>
+                                    <CartesianGrid vertical={false} />
+                                    <Bar dataKey="employees" fill="var(--color-employees)" radius={4} />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Turnover */}
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle>Turnover Rate</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={turnoverChartConfig} className="min-h-[200px] w-full">
+                                <AreaChart accessibilityLayer data={turnoverData}>
+                                    <CartesianGrid vertical={false} />
+                                    <Area dataKey="hires" type="natural" fill="var(--color-hires)" fillOpacity={0.4} stroke="var(--color-hires)" stackId="a" />
+                                    <Area dataKey="separations" type="natural" fill="var(--color-separations)" fillOpacity={0.4} stroke="var(--color-separations)" stackId="a" />
+                                </AreaChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                     {/* Payroll Trend */}
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle>Total Payroll Cost</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={totalPayrollChartConfig} className="min-h-[200px] w-full">
+                                <LineChart accessibilityLayer data={totalPayrollData}>
+                                    <CartesianGrid vertical={false} />
+                                    <Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={false} />
+                                </LineChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* Gender Distribution */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>Gender Distribution</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={genderDistributionChartConfig} className="mx-auto aspect-square max-h-[200px]">
+                                <RechartsPie data={genderDistributionData} dataKey="value" nameKey="name" innerRadius={60} strokeWidth={5}>
+                                    {genderDistributionData.map((entry) => (
+                                        <Cell key={`cell-${entry.name}`} fill={entry.fill} />
+                                    ))}
+                                </RechartsPie>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                    
+                    {/* Candidate Pipeline */}
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle>Candidate Pipeline</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={candidatePipelineChartConfig} className="mx-auto aspect-video min-h-[200px]">
+                                <FunnelChart layout="vertical">
+                                    <Funnel dataKey="value" data={candidatePipelineData} nameKey="name">
+                                        <LabelList position="center" fill="#fff" stroke="none" dataKey="name" />
+                                    </Funnel>
+                                </FunnelChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+
+                     {/* Productivity Score */}
+                    <Card className="lg:col-span-1">
+                        <CardHeader>
+                            <CardTitle>Department Productivity</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={productivityChartConfig} className="mx-auto aspect-square max-h-[200px]">
+                                <RadarChart data={productivityData}>
+                                    <PolarGrid />
+                                    <PolarAngleAxis dataKey="department" />
+                                    <Radar dataKey="average" fill="var(--color-average)" fillOpacity={0.6} dot={{r: 4, fillOpacity: 1}} />
+                                </RadarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </section>
 
-        {/* CTA Section */}
-        <section id="pricing" className="py-20 md:py-28">
-          <div className="container text-center">
-            <Zap className="mx-auto h-12 w-12 text-primary" />
-            <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl">
-              Ready to Simplify Your HR?
-            </h2>
-            <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-              Join dozens of companies streamlining their operations with VerticalSync. Get started today.
-            </p>
-            <div className="mt-8">
-              <Button size="lg" asChild>
-                <Link href="/signup">Sign Up for Free</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}
@@ -286,7 +307,6 @@ export default function HomePage() {
                 <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.</p>
                  <nav className="flex items-center space-x-6 text-sm font-medium">
                     <Link href="/documentation">Documentation</Link>
-                    <Link href="/careers">Jobs Centre</Link>
                     <Link href="#">Terms of Service</Link>
                     <Link href="#">Privacy Policy</Link>
                 </nav>
