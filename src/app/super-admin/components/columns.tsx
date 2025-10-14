@@ -22,7 +22,7 @@ import { useState } from "react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { ViewCompanyProfileDialog } from "./view-company-profile-dialog"
 import { ChangeSubscriptionDialog } from "./change-subscription-dialog"
-import { sendCompanyApprovedEmail } from "@/lib/email"
+import { sendCompanyApprovedEmail, sendCompanySuspendedEmail } from "@/lib/email"
 import { SendEmailDialog } from "./send-email-dialog"
 
 export type EnrichedCompany = Company & { employeeCount: number };
@@ -31,11 +31,11 @@ const handleStatusUpdate = async (company: Company, status: Company['status'], t
     try {
         await update(ref(db, `companies/${company.id}`), { status });
 
-        // Also update the primary admin's status if they are being activated for the first time
         if (status === 'Active') {
              await update(ref(db, `employees/${company.id}`), { status: 'Active' });
-             const companySnap = await get(ref(db, `companies/${company.id}`));
-             await sendCompanyApprovedEmail(companySnap.val());
+             await sendCompanyApprovedEmail(company);
+        } else if (status === 'Suspended') {
+            await sendCompanySuspendedEmail(company);
         }
         
         toast({

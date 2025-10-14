@@ -1,36 +1,56 @@
-
+// src/lib/email.ts
 import { sendEmail } from '@/ai/flows/send-email-flow';
 import type { Company, Employee } from './data';
+import { db } from './firebase';
+import { ref, get } from 'firebase/database';
+
+type TemplateName = 'welcomePending' | 'companyApproved' | 'companySuspended' | 'newEmployeeWelcome';
+
+async function sendTemplatedEmail(templateName: TemplateName, to: { email: string; name: string }[], params: Record<string, string | number>) {
+    const templateRef = ref(db, `platformSettings/emailTemplates/${templateName}`);
+    const templateSnap = await get(templateRef);
+    if (!templateSnap.exists()) {
+        throw new Error(`Email template "${templateName}" not found.`);
+    }
+    const template = templateSnap.val();
+
+    let htmlContent = template.htmlContent;
+    for (const key in params) {
+        htmlContent = htmlContent.replace(new RegExp(`{{${key}}}`, 'g'), String(params[key]));
+    }
+
+    return sendEmail({
+        to,
+        subject: template.subject,
+        htmlContent,
+    });
+}
+
 
 export const sendWelcomePendingEmail = (company: Company) => {
-    return sendEmail({
-        templateId: 1,
-        to: [{ email: company.adminEmail, name: company.contactName }],
-        params: {
-            companyName: company.name,
-            contactName: company.contactName,
-        }
-    });
+    return sendTemplatedEmail('welcomePending', 
+        [{ email: company.adminEmail, name: company.contactName }],
+        { companyName: company.name, contactName: company.contactName }
+    );
 };
 
 export const sendCompanyApprovedEmail = (company: Company) => {
-     return sendEmail({
-        templateId: 2,
-        to: [{ email: company.adminEmail, name: company.contactName }],
-        params: {
-            companyName: company.name,
-            contactName: company.contactName,
-        }
-    });
+     return sendTemplatedEmail('companyApproved',
+        [{ email: company.adminEmail, name: company.contactName }],
+        { companyName: company.name, contactName: company.contactName }
+    );
+};
+
+export const sendCompanySuspendedEmail = (company: Company) => {
+     return sendTemplatedEmail('companySuspended',
+        [{ email: company.adminEmail, name: company.contactName }],
+        { companyName: company.name, contactName: company.contactName }
+    );
 };
 
 export const sendNewEmployeeWelcomeEmail = (employee: Employee, companyName: string) => {
-    return sendEmail({
-        templateId: 3,
-        to: [{ email: employee.email, name: employee.name }],
-        params: {
-            employeeName: employee.name,
-            companyName: companyName,
-        }
-    });
+    return sendTemplatedEmail('newEmployeeWelcome',
+        [{ email: employee.email, name: employee.name }],
+        { employeeName: employee.name, companyName: companyName }
+    );
 };
