@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2 } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,6 +30,7 @@ import { PromoteEmployeeDialog } from "./promote-employee-dialog"
 import { DemoteAdminDialog } from "./demote-admin-dialog"
 import { GenerateContractDialog } from "./generate-contract-dialog"
 import { TerminateContractDialog } from "./terminate-contract-dialog"
+import { ViewEmployeeDialog } from "./view-employee-dialog"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
@@ -152,6 +153,13 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
                 onClick={() => navigator.clipboard.writeText(employee.id)}
                 >
                 Copy employee ID
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <ViewEmployeeDialog employee={employee}>
+                    <div className="w-full text-left flex items-center">
+                        <User className="mr-2 h-4 w-4" /> View Profile
+                    </div>
+                  </ViewEmployeeDialog>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuSub>
