@@ -1,7 +1,7 @@
 // src/app/careers/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, forwardRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, forwardRef, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
