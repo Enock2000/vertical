@@ -15,11 +15,10 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { placeholderImages } from '@/lib/placeholder-images.json';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { Testimonial } from '@/lib/data';
+import type { Testimonial, SubscriptionPlan } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 
 const features = [
@@ -58,23 +57,55 @@ const features = [
 const navLinks = [
     { href: "#features", label: "Features" },
     { href: "/careers", label: "Jobs Centre" },
-    { href: "#testimonials", label: "Testimonials" },
-    { href: "#pricing", label: "Pricing" },
+    { href: "/who-we-serve", label: "Who We Serve" },
+    { href: "/pricing", label: "Pricing" },
 ];
+
+interface HeroImage {
+    id: string;
+    imageUrl: string;
+    description: string;
+    imageHint: string;
+}
 
 export default function HomePage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+  const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
+  const [loadingHeroImages, setLoadingHeroImages] = useState(true);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
 
   useEffect(() => {
     const testimonialsQuery = query(ref(db, 'testimonials'), orderByChild('status'), equalTo('Approved'));
-    const unsubscribe = onValue(testimonialsQuery, (snapshot) => {
+    const unsubscribeTestimonials = onValue(testimonialsQuery, (snapshot) => {
         const data = snapshot.val();
         setTestimonials(data ? Object.values(data) : []);
         setLoadingTestimonials(false);
     });
-    return () => unsubscribe();
+
+    const heroImagesRef = ref(db, 'platformSettings/heroImages');
+    const unsubscribeImages = onValue(heroImagesRef, (snapshot) => {
+        const data = snapshot.val();
+        setHeroImages(data ? Object.values(data) : []);
+        setLoadingHeroImages(false);
+    });
+    
+    const plansRef = ref(db, 'subscriptionPlans');
+    const unsubscribePlans = onValue(plansRef, (snapshot) => {
+        const data = snapshot.val();
+        setPlans(data ? Object.values(data) : []);
+        setLoadingPlans(false);
+    });
+
+    return () => {
+        unsubscribeTestimonials();
+        unsubscribeImages();
+        unsubscribePlans();
+    };
   }, []);
+
+  const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' });
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -113,24 +144,12 @@ export default function HomePage() {
                     <SheetContent side="right">
                          <nav className="flex flex-col gap-6 text-lg font-medium mt-8">
                             <Logo />
-                            <SheetClose asChild>
-                                <Link href="#features">Features</Link>
-                            </SheetClose>
-                             <SheetClose asChild>
-                                <Link href="/careers">Jobs Centre</Link>
-                            </SheetClose>
-                             <SheetClose asChild>
-                                <Link href="#testimonials">Testimonials</Link>
-                            </SheetClose>
-                             <SheetClose asChild>
-                                <Link href="#pricing">Pricing</Link>
-                            </SheetClose>
-                             <SheetClose asChild>
-                                <Link href="/post-a-job">Post a Job</Link>
-                            </SheetClose>
-                            <SheetClose asChild>
-                                <Link href="/login">Login</Link>
-                            </SheetClose>
+                            <SheetClose asChild><Link href="#features">Features</Link></SheetClose>
+                             <SheetClose asChild><Link href="/careers">Jobs Centre</Link></SheetClose>
+                             <SheetClose asChild><Link href="/who-we-serve">Who We Serve</Link></SheetClose>
+                             <SheetClose asChild><Link href="/pricing">Pricing</Link></SheetClose>
+                             <SheetClose asChild><Link href="/post-a-job">Post a Job</Link></SheetClose>
+                            <SheetClose asChild><Link href="/login">Login</Link></SheetClose>
                              <SheetClose asChild>
                                 <Button asChild>
                                     <Link href="/signup">Get Started</Link>
@@ -165,36 +184,39 @@ export default function HomePage() {
         </section>
         
         <div className="relative my-16">
-            <Carousel
-                className="w-full"
-                opts={{
-                    loop: true,
-                }}
-                plugins={[
-                    require('embla-carousel-autoplay')({ delay: 10000, stopOnInteraction: true }),
-                ]}
-                >
-                <CarouselContent>
-                    {placeholderImages.map((image) => (
-                    <CarouselItem key={image.id}>
-                        <Card className="overflow-hidden border-0 rounded-none">
-                            <CardContent className="p-0">
-                                <Image
-                                    src={image.imageUrl}
-                                    alt={image.description}
-                                    width={1600}
-                                    height={800}
-                                    className="w-full max-h-[600px] aspect-video object-cover"
-                                    data-ai-hint={image.imageHint}
-                                />
-                            </CardContent>
-                        </Card>
-                    </CarouselItem>
-                    ))}
-                </CarouselContent>
-                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
-                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
-            </Carousel>
+            {loadingHeroImages ? (
+                 <div className="flex items-center justify-center h-[600px]">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+            ) : (
+                <Carousel
+                    className="w-full"
+                    opts={{ loop: true, }}
+                    plugins={[ require('embla-carousel-autoplay')({ delay: 5000, stopOnInteraction: true }), ]}
+                    >
+                    <CarouselContent>
+                        {heroImages.map((image) => (
+                        <CarouselItem key={image.id}>
+                            <Card className="overflow-hidden border-0 rounded-none">
+                                <CardContent className="p-0">
+                                    <Image
+                                        src={image.imageUrl}
+                                        alt={image.description}
+                                        width={1600}
+                                        height={800}
+                                        className="w-full max-h-[600px] aspect-video object-cover"
+                                        data-ai-hint={image.imageHint}
+                                        priority
+                                    />
+                                </CardContent>
+                            </Card>
+                        </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
+                </Carousel>
+            )}
         </div>
 
 
@@ -221,6 +243,55 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+        </section>
+        
+        {/* Pricing Section */}
+        <section id="pricing" className="py-20 md:py-28">
+            <div className="container">
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
+                        Find a Plan That's Right For You
+                    </h2>
+                    <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
+                        Simple, transparent pricing. No hidden fees.
+                    </p>
+                </div>
+                 {loadingPlans ? (
+                     <div className="flex items-center justify-center h-48">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                 ) : (
+                    <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                        {plans.map((plan) => (
+                        <Card key={plan.id} className="flex flex-col">
+                            <CardHeader>
+                            <CardTitle>{plan.name}</CardTitle>
+                            <CardContent className="p-0 pt-4">
+                                <span className="text-4xl font-bold">{currencyFormatter.format(plan.price)}</span>
+                                <span className="text-muted-foreground">/month</span>
+                            </CardContent>
+                            </CardHeader>
+                            <CardContent className="flex-1 space-y-4">
+                                <p className="font-semibold">{plan.jobPostings} job postings included</p>
+                                <ul className="space-y-2 text-sm text-muted-foreground">
+                                    {plan.features.map((feature, index) => (
+                                    <li key={index} className="flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-primary" />
+                                        <span>{feature}</span>
+                                    </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                            <CardContent>
+                                <Button className="w-full" asChild>
+                                    <Link href="/signup">Get Started</Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                        ))}
+                    </div>
+                 )}
+            </div>
         </section>
 
         {/* Testimonials Section */}
@@ -262,7 +333,7 @@ export default function HomePage() {
         </section>
 
         {/* CTA Section */}
-        <section id="pricing" className="py-20 md:py-28">
+        <section className="py-20 md:py-28">
           <div className="container text-center">
             <Zap className="mx-auto h-12 w-12 text-primary" />
             <h2 className="mt-4 text-3xl font-bold tracking-tighter sm:text-4xl">
