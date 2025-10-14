@@ -1,8 +1,8 @@
 
 'use client';
 
-import Link from 'next/link';
 import React from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import {
@@ -31,8 +31,8 @@ import {
   ScatterChart,
   Cell,
   Bar,
-  BarChart,
   AreaChart,
+  BarChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -62,11 +62,13 @@ import EmployeesTrainedChart from './dashboard/reporting/components/employees-tr
 import TrainingHoursChart from './dashboard/reporting/components/training-hours-chart';
 import TrainingImpactChart from './dashboard/reporting/components/training-impact-chart';
 import GenderDistributionChart from './dashboard/reporting/components/gender-distribution-chart';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { SubscriptionPlan } from '@/lib/data';
+import type { SubscriptionPlan, DepartmentProductivityScore, Employee, Department, LeaveRequest, ResignationRequest, PayrollRun, PerformanceReview, Goal, TrainingCourse, Enrollment, AttendanceRecord } from '@/lib/data';
+import { calculateProductivityScore } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
+import { addDays, subDays } from 'date-fns';
 
 
 const navLinks = [
@@ -111,7 +113,7 @@ const features = [
 ];
 
 // Mock data for charts
-const mockEmployees = Array.from({ length: 50 }, (_, i) => ({
+const mockEmployees: Employee[] = Array.from({ length: 50 }, (_, i) => ({
   id: `emp${i}`,
   companyId: 'comp1',
   name: `Employee ${i}`,
@@ -135,16 +137,16 @@ const mockEmployees = Array.from({ length: 50 }, (_, i) => ({
   annualLeaveBalance: 21,
   gender: i % 3 === 0 ? 'Male' : 'Female',
   contractType: i % 4 === 0 ? 'Fixed-Term' : 'Permanent',
-} as const));
+} as Employee));
 
-const mockDepartments = [
+const mockDepartments: Department[] = [
   { id: 'dept0', name: 'Engineering', companyId: 'comp1', minSalary: 60000, maxSalary: 120000 },
   { id: 'dept1', name: 'Product', companyId: 'comp1', minSalary: 70000, maxSalary: 130000 },
   { id: 'dept2', name: 'Sales', companyId: 'comp1', minSalary: 50000, maxSalary: 100000 },
   { id: 'dept3', name: 'Marketing', companyId: 'comp1', minSalary: 55000, maxSalary: 110000 },
 ];
 
-const mockLeaveRequests = Array.from({ length: 20 }, (_, i) => ({
+const mockLeaveRequests: LeaveRequest[] = Array.from({ length: 20 }, (_, i) => ({
     id: `leave${i}`,
     companyId: 'comp1',
     employeeId: `emp${i}`,
@@ -156,7 +158,7 @@ const mockLeaveRequests = Array.from({ length: 20 }, (_, i) => ({
     status: 'Approved',
 }));
 
-const mockResignationRequests = Array.from({ length: 5 }, (_, i) => ({
+const mockResignationRequests: ResignationRequest[] = Array.from({ length: 5 }, (_, i) => ({
     id: `resign${i}`,
     companyId: 'comp1',
     employeeId: `emp${i + 45}`,
@@ -167,7 +169,7 @@ const mockResignationRequests = Array.from({ length: 5 }, (_, i) => ({
     status: 'Approved'
 }));
 
-const mockPayrollRuns = Array.from({ length: 6 }, (_, i) => ({
+const mockPayrollRuns: PayrollRun[] = Array.from({ length: 6 }, (_, i) => ({
     id: `run${i}`,
     companyId: 'comp1',
     runDate: new Date(2023, i, 28).toISOString(),
@@ -192,7 +194,7 @@ const mockPayrollRuns = Array.from({ length: 6 }, (_, i) => ({
     )
 }));
 
-const mockReviews = Array.from({ length: 30 }, (_, i) => ({
+const mockReviews: PerformanceReview[] = Array.from({ length: 30 }, (_, i) => ({
     id: `review${i}`,
     companyId: 'comp1',
     employeeId: `emp${i}`,
@@ -202,11 +204,50 @@ const mockReviews = Array.from({ length: 30 }, (_, i) => ({
     goals: [],
     employeeSelfAssessment: '',
     managerFeedback: '',
-    overallRating: (i % 5) + 1,
-}) as any);
+    overallRating: ((i % 5) + 1) as any,
+}));
 
-const mockAllAttendance = {};
-const mockGoals = Array.from({ length: 15 }, (_, i) => ({
+const mockAllAttendance: Record<string, Record<string, AttendanceRecord>> = {};
+mockEmployees.filter(e => e.status === 'Active').forEach(emp => {
+    for (let i = 0; i < 90; i++) {
+        const date = subDays(new Date(), i);
+        const dateString = date.toISOString().split('T')[0];
+        if (!mockAllAttendance[dateString]) {
+            mockAllAttendance[dateString] = {};
+        }
+        const isAbsent = Math.random() < 0.1;
+        if (!isAbsent) {
+            const checkIn = new Date(date);
+            checkIn.setHours(8, Math.floor(Math.random() * 30));
+            const checkOut = new Date(date);
+            checkOut.setHours(17, Math.floor(Math.random() * 30));
+            mockAllAttendance[dateString][emp.id] = {
+                id: `${dateString}-${emp.id}`,
+                companyId: 'comp1',
+                employeeId: emp.id,
+                employeeName: emp.name,
+                date: dateString,
+                checkInTime: checkIn.toISOString(),
+                checkOutTime: checkOut.toISOString(),
+                status: 'Present',
+            };
+        } else {
+             mockAllAttendance[dateString][emp.id] = {
+                id: `${dateString}-${emp.id}`,
+                companyId: 'comp1',
+                employeeId: emp.id,
+                employeeName: emp.name,
+                date: dateString,
+                checkInTime: new Date(date).toISOString(),
+                checkOutTime: null,
+                status: 'Absent',
+            };
+        }
+    }
+});
+
+
+const mockGoals: Goal[] = Array.from({ length: 15 }, (_, i) => ({
     id: `goal${i}`,
     companyId: 'comp1',
     employeeId: `emp${i}`,
@@ -215,21 +256,22 @@ const mockGoals = Array.from({ length: 15 }, (_, i) => ({
     status: 'On Track',
     progress: (i % 10) * 10,
     dueDate: new Date().toISOString(),
-}) as any);
+}));
 
-const mockCourses = [
-    { id: 'course1', category: 'Sales', duration: 2 },
-    { id: 'course2', category: 'Engineering', duration: 4 },
-    { id: 'course3', category: 'Marketing', duration: 3 },
+const mockCourses: TrainingCourse[] = [
+    { id: 'course1', companyId: 'comp1', title: 'Sales Training', description: 'Sales', category: 'Sales', duration: 2, questions: [] },
+    { id: 'course2', companyId: 'comp1', title: 'React Basics', description: 'React', category: 'Engineering', duration: 4, questions: [] },
+    { id: 'course3', companyId: 'comp1', title: 'SEO Fundamentals', description: 'SEO', category: 'Marketing', duration: 3, questions: [] },
 ];
 
-const mockEnrollments = Array.from({ length: 15 }, (_, i) => ({
+const mockEnrollments: Enrollment[] = Array.from({ length: 15 }, (_, i) => ({
     id: `enroll${i}`,
     companyId: 'comp1',
     employeeId: `emp${i}`,
     courseId: `course${(i % 3) + 1}`,
+    enrollmentDate: new Date().toISOString(),
     status: 'Completed',
-}) as any);
+}));
 
 const mockPayrollConfig = {
     employeeNapsaRate: 5,
@@ -241,8 +283,11 @@ const mockPayrollConfig = {
     dailyTargetHours: 8,
     weeklyTargetHours: 40,
     monthlyTargetHours: 160,
-    yearlyTargetHours: 1920
+    yearlyTargetHours: 1920,
+    allowedIpAddress: '',
 };
+
+const mockProductivityScores = calculateProductivityScore(mockEmployees, mockDepartments, mockAllAttendance, mockReviews, mockGoals, mockPayrollConfig);
 
 
 export default function HomePage() {
@@ -400,7 +445,7 @@ export default function HomePage() {
                     </Card>
                     <Card>
                         <CardHeader><CardTitle>Average Productivity Score</CardTitle></CardHeader>
-                        <CardContent><AverageProductivityChart scores={[]} /></CardContent>
+                        <CardContent><AverageProductivityChart scores={mockProductivityScores} /></CardContent>
                     </Card>
                     <Card>
                         <CardHeader><CardTitle>Top Performers Trend</CardTitle></CardHeader>
@@ -537,3 +582,4 @@ export default function HomePage() {
   );
 
     
+}
