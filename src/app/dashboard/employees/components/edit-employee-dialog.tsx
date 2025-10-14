@@ -34,7 +34,45 @@ interface EditEmployeeDialogProps {
 }
 
 // Define a separate schema for editing, which does not include the password field.
-const editEmployeeSchema = employeeFormSchema.omit({ password: true });
+const editEmployeeSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters.'),
+  email: z.string().email('Invalid email address.'),
+  gender: z.enum(['Male', 'Female', 'Other']).optional(),
+  dateOfBirth: z.string().optional(),
+  identificationType: z.enum(['ID Number', 'Passport', 'License']).optional(),
+  identificationNumber: z.string().optional(),
+  role: z.string().min(2, 'Role must be at least 2 characters.'),
+  departmentId: z.string().min(1, 'Please select a department.'),
+  branchId: z.string().optional(),
+  status: z.enum(['Active', 'Inactive', 'Suspended', 'On Leave', 'Sick', 'Applicant']),
+  location: z.string().min(2, 'Location must be at least 2 characters.'),
+  annualLeaveBalance: z.coerce.number().min(0, 'Leave balance cannot be negative.'),
+  workerType: z.enum(['Salaried', 'Hourly', 'Contractor']),
+  salary: z.coerce.number().min(0, 'Salary must be a positive number.').optional(),
+  hourlyRate: z.coerce.number().min(0, 'Hourly rate must be a positive number.').optional(),
+  hoursWorked: z.coerce.number().min(0, 'Hours worked must be a positive number.').optional(),
+  allowances: z.coerce.number().min(0, 'Allowances cannot be negative.'),
+  deductions: z.coerce.number().min(0, 'Deductions cannot be negative.'),
+  overtime: z.coerce.number().min(0, 'Overtime cannot be negative.'),
+  bonus: z.coerce.number().min(0, 'Bonus cannot be negative.'),
+  reimbursements: z.coerce.number().min(0, 'Reimbursements cannot be negative.'),
+  // Bank Details
+  bankName: z.string().optional(),
+  accountNumber: z.string().optional(),
+  branchCode: z.string().optional(),
+  // Contract Details
+  contractType: z.enum(['Permanent', 'Fixed-Term', 'Internship']).optional(),
+  contractStartDate: z.string().optional(),
+  contractEndDate: z.string().optional(),
+}).refine(data => {
+    if (data.workerType === 'Hourly' && (data.hourlyRate === undefined || data.hoursWorked === undefined)) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Hourly rate and hours worked are required for Hourly employees.",
+    path: ["hourlyRate"],
+});
 
 
 export function EditEmployeeDialog({
