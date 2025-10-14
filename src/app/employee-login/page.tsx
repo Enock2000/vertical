@@ -53,14 +53,14 @@ export default function GeneralLoginPage() {
         
         if (companySnap.exists()) {
             const company: Company = companySnap.val();
-            if (company.status === 'Suspended' || company.employeePortalDisabled) {
+            if (company.status !== 'Active' || company.employeePortalDisabled) {
                 await auth.signOut();
                 toast({
                     variant: "destructive",
                     title: "Access Denied",
                     description: company.employeePortalDisabled 
                         ? "Your company's employee portal is currently disabled. Please contact your administrator."
-                        : "Your company's account has been suspended. Please contact your administrator.",
+                        : `Your company's account is currently ${company.status}. Please contact your administrator.`,
                 });
                 setIsLoading(false);
                 return;
