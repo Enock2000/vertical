@@ -40,6 +40,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/s
 
 const navLinks = [
   { href: '#features', label: 'Features' },
+  { href: '#pricing', label: 'Pricing' },
   { href: '/careers', label: 'Jobs Centre' },
   { href: '/post-a-job', label: 'Post a Job' },
   { href: '/who-we-serve', label: 'Who We Serve' },
@@ -196,6 +197,9 @@ export default function HomePage() {
                                 <Link href="#features">Features</Link>
                             </SheetClose>
                              <SheetClose asChild>
+                                <Link href="#pricing">Pricing</Link>
+                            </SheetClose>
+                             <SheetClose asChild>
                                 <Link href="/careers">Jobs Centre</Link>
                             </SheetClose>
                              <SheetClose asChild>
@@ -250,12 +254,12 @@ export default function HomePage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <Card><CardHeader><CardTitle>Employee Headcount</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={headcountData}><Bar dataKey="employees" fill="var(--color-employees)" radius={4} /></BarChart></ChartContainer></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Turnover Rate</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><AreaChart data={turnoverData}><Area dataKey="hires" type="natural" fill="var(--color-hires)" fillOpacity={0.4} stroke="var(--color-hires)" stackId="a" /><Area dataKey="separations" type="natural" fill="var(--color-separations)" fillOpacity={0.4} stroke="var(--color-separations)" stackId="a" /></AreaChart></ChartContainer></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Total Payroll Cost</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={totalPayrollData}><Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={false} /></LineChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Employee Headcount</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={headcountData}><XAxis dataKey="month" fontSize={10} /><YAxis hide /><Bar dataKey="employees" fill="var(--color-employees)" radius={4} /></BarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Turnover Rate</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><AreaChart data={turnoverData}><XAxis dataKey="month" fontSize={10} /><YAxis hide /><Area dataKey="hires" type="natural" fill="var(--color-hires)" fillOpacity={0.4} stroke="var(--color-hires)" stackId="a" /><Area dataKey="separations" type="natural" fill="var(--color-separations)" fillOpacity={0.4} stroke="var(--color-separations)" stackId="a" /></AreaChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Total Payroll Cost</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={totalPayrollData}><XAxis dataKey="month" fontSize={10}/><YAxis hide /><Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={false} /></LineChart></ChartContainer></CardContent></Card>
                     <Card><CardHeader><CardTitle>Gender Distribution</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RechartsPie data={genderDistributionData} dataKey="value" nameKey="name" innerRadius={40} strokeWidth={5}><Cell key="cell-0" fill="var(--color-Male)" /><Cell key="cell-1" fill="var(--color-Female)" /></RechartsPie></ChartContainer></CardContent></Card>
                     <Card><CardHeader><CardTitle>Candidate Pipeline</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square min-h-[150px]"><FunnelChart layout="vertical"><Funnel dataKey="value" data={candidatePipelineData} nameKey="name"><LabelList position="center" fill="#fff" stroke="none" dataKey="name" fontSize={10} /></Funnel></FunnelChart></ChartContainer></CardContent></Card>
-                    <Card><CardHeader><CardTitle>Dept Productivity</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RadarChart data={productivityData}><PolarGrid /><PolarAngleAxis dataKey="department" /><Radar dataKey="average" fill="var(--color-average)" fillOpacity={0.6} dot={{r: 2}} /></RadarChart></ChartContainer></CardContent></Card>
+                    <Card><CardHeader><CardTitle>Dept Productivity</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]"><RadarChart data={productivityData}><PolarGrid /><PolarAngleAxis dataKey="department" fontSize={10} /><Radar dataKey="average" fill="var(--color-average)" fillOpacity={0.6} dot={{r: 2}} /></RadarChart></ChartContainer></CardContent></Card>
                     <Card><CardHeader><CardTitle>Open Requisitions</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><BarChart data={requisitionsByDeptData} layout="vertical"><YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={60} fontSize={10}/><XAxis type="number" hide /><Bar dataKey="requisitions" fill="var(--color-requisitions)" radius={2}><LabelList dataKey="requisitions" position="right" offset={4} fontSize={10} /></Bar></BarChart></ChartContainer></CardContent></Card>
                     <Card><CardHeader><CardTitle>Time-to-Hire</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><LineChart data={timeToHireData}><XAxis dataKey="month" fontSize={10}/><YAxis unit="d" fontSize={10}/><Line dataKey="days" stroke="var(--color-days)" strokeWidth={2}/></LineChart></ChartContainer></CardContent></Card>
                     <Card><CardHeader><CardTitle>Attendance Performance</CardTitle></CardHeader><CardContent><ChartContainer config={chartConfig} className="min-h-[150px] w-full"><AreaChart data={attendancePerformanceData}><XAxis dataKey="label" fontSize={10} /><YAxis fontSize={10} /><Area dataKey="hoursMet" stroke="var(--color-hoursMet)" fill="var(--color-hoursMet)" stackId="a" /><Area dataKey="onTime" stroke="var(--color-onTime)" fill="var(--color-onTime)" stackId="a" /><Area dataKey="late" stroke="var(--color-late)" fill="var(--color-late)" stackId="a" /></AreaChart></ChartContainer></CardContent></Card>
