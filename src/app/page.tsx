@@ -1,3 +1,4 @@
+
 // src/app/page.tsx
 'use client';
 
@@ -5,8 +6,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
-<<<<<<< HEAD
-import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap, Menu, X } from 'lucide-react';
+import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap, Menu, X, BarChart3 } from 'lucide-react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
@@ -16,19 +16,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-=======
-import {
-  Users,
-  Briefcase,
-  BarChart3,
-  FileText,
-  ShieldCheck,
-  Trophy,
-  Menu,
-  CheckCircle,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import HeadcountChart from './dashboard/reporting/components/headcount-chart';
 import TurnoverChart from './dashboard/reporting/components/turnover-chart';
@@ -53,18 +40,12 @@ import TrainingHoursChart from './dashboard/reporting/components/training-hours-
 import TrainingImpactChart from './dashboard/reporting/components/training-impact-chart';
 import GenderDistributionChart from './dashboard/reporting/components/gender-distribution-chart';
 import { db } from '@/lib/firebase';
-<<<<<<< HEAD
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { Testimonial, SubscriptionPlan } from '@/lib/data';
-=======
-import { ref, onValue } from 'firebase/database';
-import type { SubscriptionPlan, Employee, Department, LeaveRequest, ResignationRequest, PayrollRun, PerformanceReview, Goal, TrainingCourse, Enrollment, AttendanceRecord } from '@/lib/data';
+import type { Testimonial, SubscriptionPlan, Employee, Department, LeaveRequest, ResignationRequest, PayrollRun, PerformanceReview, Goal, TrainingCourse, Enrollment, AttendanceRecord } from '@/lib/data';
 import { calculateProductivityScore } from '@/lib/data';
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
 import { Loader2 } from 'lucide-react';
 import { subDays } from 'date-fns';
 
-<<<<<<< HEAD
 type HeroImage = {
     id: string;
     description: string;
@@ -72,93 +53,44 @@ type HeroImage = {
     imageHint: string;
 };
 
-const features = [
-  {
-    icon: <FileText />,
-    title: 'Automated Payroll',
-    description: 'Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically.',
-  },
-  {
-    icon: <ShieldCheck />,
-    title: 'Compliance Management',
-    description: 'Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine.',
-  },
-  {
-    icon: <Briefcase />,
-    title: 'Recruitment & Onboarding',
-    description: 'From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place.',
-  },
-  {
-    icon: <Trophy />,
-    title: 'Performance & Training',
-    description: 'Set goals, track performance with 360-degree feedback, and manage employee training programs.',
-  },
-  {
-    icon: <Users />,
-    title: 'Employee Self-Service',
-    description: 'Empower your employees with a portal to manage their attendance, leave, and view payslips.',
-  },
-  {
-    icon: <BarChart />,
-    title: 'Insightful Reporting',
-    description: 'Get real-time insights into your workforce with comprehensive reports on headcount, turnover, and diversity.',
-  },
+const featuresList = [
+    {
+      icon: <FileText />,
+      title: 'Automated Payroll',
+      description: 'Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically.',
+    },
+    {
+      icon: <ShieldCheck />,
+      title: 'Compliance Management',
+      description: 'Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine.',
+    },
+    {
+      icon: <Briefcase />,
+      title: 'Recruitment & Onboarding',
+      description: 'From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place.',
+    },
+    {
+      icon: <Trophy />,
+      title: 'Performance & Training',
+      description: 'Set goals, track performance with 360-degree feedback, and manage employee training programs.',
+    },
+    {
+      icon: <Users />,
+      title: 'Employee Self-Service',
+      description: 'Empower your employees with a portal to manage their attendance, leave, and view payslips.',
+    },
+    {
+      icon: <BarChart3 />,
+      title: 'Insightful Reporting',
+      description: 'Get real-time insights into your workforce with comprehensive reports on headcount, turnover, and diversity.',
+    },
 ];
-=======
->>>>>>> 631854e433f08ac611e2e5e612edfefb7069aeaf
 
 const navLinks = [
-<<<<<<< HEAD
     { href: "#features", label: "Features" },
     { href: "/careers", label: "Jobs Centre" },
     { href: "/who-we-serve", label: "Who We Serve" },
     { href: "/pricing", label: "Pricing" },
-];
-
-export default function HomePage() {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
-  const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
-  const [loadingHeroImages, setLoadingHeroImages] = useState(true);
-=======
-  { href: '#features', label: 'Features' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '/careers', label: 'Jobs Centre' },
-  { href: '/post-a-job', label: 'Post a Job' },
-  { href: '/who-we-serve', label: 'Who We Serve' },
-];
-
-const featuresList = [
-  { 
-    icon: <FileText className="h-6 w-6 text-primary" />, 
-    title: "Automated Payroll", 
-    description: "Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically." 
-  },
-  { 
-    icon: <ShieldCheck className="h-6 w-6 text-primary" />, 
-    title: "Compliance Management", 
-    description: "Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine." 
-  },
-  { 
-    icon: <Briefcase className="h-6 w-6 text-primary" />, 
-    title: "Recruitment & Onboarding", 
-    description: "From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place." 
-  },
-  { 
-    icon: <Trophy className="h-6 w-6 text-primary" />, 
-    title: "Performance & Training", 
-    description: "Set goals, track performance with 360-degree feedback, and manage employee training programs." 
-  },
-  { 
-    icon: <Users className="h-6 w-6 text-primary" />, 
-    title: "Employee Self-Service", 
-    description: "Empower your employees with a portal to manage their attendance, leave, and view payslips." 
-  },
-  { 
-    icon: <BarChart3 className="h-6 w-6 text-primary" />, 
-    title: "Insightful Reporting", 
-    description: "Get real-time insights into your workforce with comprehensive reports on headcount, turnover, and diversity." 
-  }
 ];
 
 // Mock data for charts
@@ -342,27 +274,24 @@ const mockProductivityScores = calculateProductivityScore(mockEmployees, mockDep
 
 
 export default function HomePage() {
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loadingTestimonials, setLoadingTestimonials] = useState(true);
+  const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
+  const [loadingHeroImages, setLoadingHeroImages] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
 
   useEffect(() => {
-<<<<<<< HEAD
     const testimonialsQuery = query(ref(db, 'testimonials'), orderByChild('status'), equalTo('Approved'));
     const unsubscribeTestimonials = onValue(testimonialsQuery, (snapshot) => {
-=======
-    const plansRef = ref(db, 'subscriptionPlans');
-    const unsubscribe = onValue(plansRef, (snapshot) => {
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
         const data = snapshot.val();
-        setPlans(data ? Object.values(data) : []);
-        setLoadingPlans(false);
+        setTestimonials(data ? Object.values(data) : []);
+        setLoadingTestimonials(false);
     }, (error) => {
         console.error(error);
-        setLoadingPlans(false);
+        setLoadingTestimonials(false);
     });
 
-<<<<<<< HEAD
     const heroImagesRef = ref(db, 'platformSettings/heroImages');
     const unsubscribeHeroImages = onValue(heroImagesRef, (snapshot) => {
         const data = snapshot.val();
@@ -382,9 +311,6 @@ export default function HomePage() {
         unsubscribeHeroImages();
         unsubscribePlans();
     };
-=======
-    return () => unsubscribe();
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
   }, []);
 
   const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' });
@@ -424,23 +350,12 @@ export default function HomePage() {
                     <SheetContent side="right">
                          <nav className="flex flex-col gap-6 text-lg font-medium mt-8">
                             <Logo />
-<<<<<<< HEAD
                             <SheetClose asChild><Link href="#features">Features</Link></SheetClose>
                              <SheetClose asChild><Link href="/careers">Jobs Centre</Link></SheetClose>
                              <SheetClose asChild><Link href="/who-we-serve">Who We Serve</Link></SheetClose>
                              <SheetClose asChild><Link href="/pricing">Pricing</Link></SheetClose>
                              <SheetClose asChild><Link href="/post-a-job">Post a Job</Link></SheetClose>
                             <SheetClose asChild><Link href="/login">Login</Link></SheetClose>
-=======
-                            {navLinks.map(link => (
-                                <SheetClose asChild key={link.href}>
-                                    <Link href={link.href}>{link.label}</Link>
-                                </SheetClose>
-                            ))}
-                            <SheetClose asChild>
-                                <Link href="/login">Login</Link>
-                            </SheetClose>
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
                              <SheetClose asChild>
                                 <Button asChild>
                                     <Link href="/signup">Get Started</Link>
@@ -471,7 +386,6 @@ export default function HomePage() {
           </div>
         </section>
         
-<<<<<<< HEAD
         <div className="relative my-16">
             {loadingHeroImages ? (
                  <div className="flex items-center justify-center h-[600px]">
@@ -508,7 +422,6 @@ export default function HomePage() {
             )}
         </div>
 
-=======
         {/* Charts Section */}
         <section className="py-20 md:py-28 bg-muted/50">
             <div className="container">
@@ -617,7 +530,6 @@ export default function HomePage() {
                 </div>
             </div>
         </section>
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
 
         {/* Features Section */}
         <section id="features" className="py-20 md:py-28">
@@ -635,7 +547,7 @@ export default function HomePage() {
                 <Card key={index} className="bg-card">
                   <CardHeader className="flex flex-row items-center gap-4">
                     <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
-                        {feature.icon}
+                        {React.cloneElement(feature.icon, { className: 'h-6 w-6 text-primary' })}
                     </div>
                     <CardTitle className="text-lg">{feature.title}</CardTitle>
                   </CardHeader>
@@ -648,55 +560,6 @@ export default function HomePage() {
           </div>
         </section>
         
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 md:py-28">
-            <div className="container">
-                <div className="text-center">
-                    <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-                        Find a Plan That's Right For You
-                    </h2>
-                    <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-                        Simple, transparent pricing. No hidden fees.
-                    </p>
-                </div>
-                 {loadingPlans ? (
-                     <div className="flex items-center justify-center h-48">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                 ) : (
-                    <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                        {plans.map((plan) => (
-                        <Card key={plan.id} className="flex flex-col">
-                            <CardHeader>
-                            <CardTitle>{plan.name}</CardTitle>
-                            <CardContent className="p-0 pt-4">
-                                <span className="text-4xl font-bold">{currencyFormatter.format(plan.price)}</span>
-                                <span className="text-muted-foreground">/month</span>
-                            </CardContent>
-                            </CardHeader>
-                            <CardContent className="flex-1 space-y-4">
-                                <p className="font-semibold">{plan.jobPostings} job postings included</p>
-                                <ul className="space-y-2 text-sm text-muted-foreground">
-                                    {plan.features.map((feature, index) => (
-                                    <li key={index} className="flex items-center gap-2">
-                                        <CheckCircle className="h-4 w-4 text-primary" />
-                                        <span>{feature}</span>
-                                    </li>
-                                    ))}
-                                </ul>
-                            </CardContent>
-                            <CardContent>
-                                <Button className="w-full" asChild>
-                                    <Link href="/signup">Get Started</Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-                        ))}
-                    </div>
-                 )}
-            </div>
-        </section>
-
         {/* Pricing Section */}
         <section id="pricing" className="py-20 md:py-28  bg-muted/50">
             <div className="container">
@@ -746,7 +609,6 @@ export default function HomePage() {
             </div>
         </section>
 
-<<<<<<< HEAD
         {/* CTA Section */}
         <section className="py-20 md:py-28">
           <div className="container text-center">
@@ -764,8 +626,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-=======
->>>>>>> dbf5a1a1c9e06dcfca18508cd6d6dbd6e25f9827
       </main>
 
       {/* Footer */}
