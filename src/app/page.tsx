@@ -20,6 +20,7 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import type { Testimonial, SubscriptionPlan } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
+import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 
 const features = [
   {
@@ -61,17 +62,10 @@ const navLinks = [
     { href: "/pricing", label: "Pricing" },
 ];
 
-interface HeroImage {
-    id: string;
-    imageUrl: string;
-    description: string;
-    imageHint: string;
-}
-
 export default function HomePage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
-  const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
+  const [heroImages, setHeroImages] = useState<ImagePlaceholder[]>([]);
   const [loadingHeroImages, setLoadingHeroImages] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -84,12 +78,9 @@ export default function HomePage() {
         setLoadingTestimonials(false);
     });
 
-    const heroImagesRef = ref(db, 'platformSettings/heroImages');
-    const unsubscribeImages = onValue(heroImagesRef, (snapshot) => {
-        const data = snapshot.val();
-        setHeroImages(data ? Object.values(data) : []);
-        setLoadingHeroImages(false);
-    });
+    // Fetch static hero images from the JSON file
+    setHeroImages(PlaceHolderImages);
+    setLoadingHeroImages(false);
     
     const plansRef = ref(db, 'subscriptionPlans');
     const unsubscribePlans = onValue(plansRef, (snapshot) => {
@@ -100,7 +91,6 @@ export default function HomePage() {
 
     return () => {
         unsubscribeTestimonials();
-        unsubscribeImages();
         unsubscribePlans();
     };
   }, []);

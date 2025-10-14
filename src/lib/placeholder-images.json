@@ -15,7 +15,7 @@
     {
       "id": "hero-3",
       "description": "Diverse group of colleagues discussing a project on a whiteboard.",
-      "imageUrl": "https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0ZWFtJTIwY29sbGFib3JhdGlvbnxlbnwwfHx8fDE3NTkwMzMzOTJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx0ZWFtJTIwY29sbGFib3JhdGlvbnxlbnwwfHx8fDE3NTkwMzMzOTJ8MA&ixlib-rb-4.1.0&q=80&w=1080",
       "imageHint": "team collaboration"
     },
     {
@@ -27,7 +27,7 @@
     {
       "id": "hero-5",
       "description": "Two professionals having a one-on-one performance review meeting.",
-      "imageUrl": "https://images.unsplash.com/photo-1699078394333-41a21c12ac4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyZm9ybWFuY2UlMjByZXZpZXd8ZW58MHx8fHwxNzU5MDc3MjM0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1699078394333-41a21c12ac4c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyZm9ybWFuY2UlMjByZXZpZXd8ZW58MHx8fHwxNzU5MDc3MjM0fDA&ixlib-rb-4.1.0&q=80&w=1080",
       "imageHint": "performance review"
     }
   ]
