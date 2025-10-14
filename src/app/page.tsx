@@ -21,13 +21,8 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import type { Testimonial, SubscriptionPlan } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
+import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 
-type HeroImage = {
-    id: string;
-    description: string;
-    imageUrl: string;
-    imageHint: string;
-};
 
 const featuresList = [
     {
@@ -73,7 +68,7 @@ const navLinks = [
 export default function HomePage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
-  const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
+  const [heroImages, setHeroImages] = useState<ImagePlaceholder[]>([]);
   const [loadingHeroImages, setLoadingHeroImages] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
@@ -167,22 +162,43 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="pt-20 md:pt-32 pb-10 md:pb-16">
-          <div className="container text-center">
-            <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl">
-              The All-in-One HR Platform for Modern Businesses
-            </h1>
-            <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-xl">
-              VerticalSync automates your payroll, compliance, and HR processes, so you can focus on what matters most: your people.
-            </p>
-            <div className="mt-8 flex justify-center gap-4">
-              <Button size="lg" asChild>
-                <Link href="/signup">Request a Demo</Link>
-              </Button>
+        <section className="py-20 md:py-28">
+          <div className="container grid md:grid-cols-2 gap-8 items-center">
+            <div className="text-center md:text-left">
+              <p className="text-sm font-semibold text-primary tracking-wider uppercase">Global People Platform</p>
+              <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mt-2">
+                Scale globally with velocity and ease
+              </h1>
+              <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-xl">
+                VerticalSync is built to scale with organizations of all sizes, from small teams to enterprises of thousands. Whether you want to hire worldwide without opening legal entities, streamline HR for your global team, or pay all types of workers anywhere with consolidated payroll—VerticalSync does it all with full compliance.
+              </p>
+              <div className="mt-8 flex justify-center md:justify-start">
+                <Button size="lg" asChild>
+                  <Link href="/signup">Get Started</Link>
+                </Button>
+              </div>
+            </div>
+             <div className="relative h-[300px] md:h-[450px]">
+                <Image
+                    src={PlaceHolderImages[1].imageUrl}
+                    alt={PlaceHolderImages[1].description}
+                    width={400}
+                    height={400}
+                    className="absolute top-0 right-0 w-3/4 rounded-lg shadow-lg"
+                    data-ai-hint={PlaceHolderImages[1].imageHint}
+                />
+                 <Image
+                    src={PlaceHolderImages[2].imageUrl}
+                    alt={PlaceHolderImages[2].description}
+                    width={300}
+                    height={300}
+                    className="absolute bottom-0 left-0 w-1/2 rounded-lg shadow-lg border-4 border-background"
+                     data-ai-hint={PlaceHolderImages[2].imageHint}
+                />
             </div>
           </div>
         </section>
-        
+
         <div className="relative my-16">
             {loadingHeroImages ? (
                  <div className="flex items-center justify-center h-[600px]">
