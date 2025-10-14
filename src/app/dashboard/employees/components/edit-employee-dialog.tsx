@@ -46,7 +46,7 @@ export function EditEmployeeDialog({
   const { toast } = useToast();
 
   // We remove password from the schema for editing
-  const editSchema = employeeFormSchema.extend({}).omit({ password: true });
+  const editSchema = employeeFormSchema.omit({ password: true });
 
   const form = useForm<Omit<EmployeeFormValues, 'password'>>({
     resolver: zodResolver(editSchema),
