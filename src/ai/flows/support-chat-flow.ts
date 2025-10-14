@@ -8,21 +8,20 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const SupportChatInputSchema = z.object({
-  question: z.string().describe('The user\'s question about the VerticalSync app.'),
+  question: z.string().describe("The user's question about the VerticalSync app."),
 });
 
 const SupportChatOutputSchema = z.object({
-  answer: z.string().describe('The AI\'s helpful response.'),
+  answer: z.string().describe("The AI's helpful response."),
 });
 
 export async function askVerticalSync(
   question: string
 ): Promise<z.infer<typeof SupportChatOutputSchema>> {
-  const { output } = await supportChatPrompt({ question });
-  return output!;
+  return supportChatFlow({ question });
 }
 
 const supportChatPrompt = ai.definePrompt({
@@ -97,3 +96,15 @@ const supportChatPrompt = ai.definePrompt({
   User Question: {{{question}}}
   `,
 });
+
+const supportChatFlow = ai.defineFlow(
+  {
+    name: 'supportChatFlow',
+    inputSchema: SupportChatInputSchema,
+    outputSchema: SupportChatOutputSchema,
+  },
+  async (input) => {
+    const { output } = await supportChatPrompt(input);
+    return output!;
+  }
+);
