@@ -48,7 +48,7 @@ export function GenerateContractDialog({
             employeeName: employee.name,
             jobTitle: employee.role,
             companyName: company.name,
-            salary: Number(employee.salary),
+            salary: Number(employee.salary) || 0,
             contractType: employee.contractType || 'Permanent',
             contractStartDate: employee.contractStartDate ? new Date(employee.contractStartDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A',
             contractEndDate: employee.contractEndDate ? new Date(employee.contractEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : undefined,
