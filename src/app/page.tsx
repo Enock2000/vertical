@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
 import { BarChart, CheckCircle, FileText, Briefcase, ShieldCheck, Trophy, Users, Zap, Menu, X } from 'lucide-react';
 import Image from 'next/image';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Carousel,
   CarouselContent,
