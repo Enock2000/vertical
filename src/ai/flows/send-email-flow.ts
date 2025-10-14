@@ -16,13 +16,21 @@ const EmailRecipientSchema = z.object({
 
 const EmailParamsSchema = z.record(z.union([z.string(), z.number()])).optional();
 
-const SendEmailInputSchema = z.object({
+// Define two separate schemas for the two types of emails
+const TemplateEmailSchema = z.object({
   to: z.array(EmailRecipientSchema),
+  templateId: z.number(),
   params: EmailParamsSchema,
-  templateId: z.number().optional(),
-  subject: z.string().optional(),
-  htmlContent: z.string().optional(),
 });
+
+const DirectEmailSchema = z.object({
+  to: z.array(EmailRecipientSchema),
+  subject: z.string(),
+  htmlContent: z.string(),
+});
+
+// Use a union of the two schemas
+const SendEmailInputSchema = z.union([TemplateEmailSchema, DirectEmailSchema]);
 
 const SendEmailOutputSchema = z.object({
   success: z.boolean(),
@@ -41,7 +49,7 @@ const sendEmailFlow = ai.defineFlow(
     inputSchema: SendEmailInputSchema,
     outputSchema: SendEmailOutputSchema,
   },
-  async ({ templateId, to, params, subject, htmlContent }) => {
+  async (input) => {
     try {
       const apiInstance = new Brevo.TransactionalEmailsApi();
       apiInstance.setApiKey(
@@ -51,19 +59,17 @@ const sendEmailFlow = ai.defineFlow(
 
       const sendSmtpEmail = new Brevo.SendSmtpEmail();
       
-      sendSmtpEmail.to = to;
+      sendSmtpEmail.to = input.to;
       
-      if (templateId) {
-        sendSmtpEmail.templateId = templateId;
-      }
-      if (subject) {
-        sendSmtpEmail.subject = subject;
-      }
-      if (htmlContent) {
-        sendSmtpEmail.htmlContent = htmlContent;
-      }
-      if (params) {
-        sendSmtpEmail.params = params;
+      // Check which type of email it is and set properties accordingly
+      if ('templateId' in input) {
+        sendSmtpEmail.templateId = input.templateId;
+        if (input.params) {
+            sendSmtpEmail.params = input.params;
+        }
+      } else {
+        sendSmtpEmail.subject = input.subject;
+        sendSmtpEmail.htmlContent = input.htmlContent;
       }
       
       sendSmtpEmail.sender = {
