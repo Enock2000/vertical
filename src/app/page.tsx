@@ -30,6 +30,13 @@ import {
   Scatter,
   ScatterChart,
   Cell,
+  Bar,
+  BarChart,
+  AreaChart,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -128,7 +135,7 @@ const mockEmployees = Array.from({ length: 50 }, (_, i) => ({
   annualLeaveBalance: 21,
   gender: i % 3 === 0 ? 'Male' : 'Female',
   contractType: i % 4 === 0 ? 'Fixed-Term' : 'Permanent',
-}));
+} as const));
 
 const mockDepartments = [
   { id: 'dept0', name: 'Engineering', companyId: 'comp1', minSalary: 60000, maxSalary: 120000 },
@@ -167,7 +174,22 @@ const mockPayrollRuns = Array.from({ length: 6 }, (_, i) => ({
     employeeCount: 45,
     totalAmount: 45 * 60000,
     achFileName: '',
-    employees: {}
+    employees: Object.fromEntries(
+        mockEmployees.slice(0,45).map(emp => [emp.id, {
+            employeeId: emp.id,
+            employeeName: emp.name,
+            basePay: emp.salary,
+            overtimePay: 0,
+            grossPay: emp.salary + emp.allowances,
+            employeeNapsaDeduction: emp.salary * 0.05,
+            employerNapsaContribution: emp.salary * 0.05,
+            employeeNhimaDeduction: emp.salary * 0.01,
+            employerNhimaContribution: emp.salary * 0.01,
+            taxDeduction: emp.salary * 0.20,
+            totalDeductions: emp.salary * (0.05 + 0.01 + 0.20),
+            netPay: (emp.salary + emp.allowances) - (emp.salary * (0.05 + 0.01 + 0.20))
+        }])
+    )
 }));
 
 const mockReviews = Array.from({ length: 30 }, (_, i) => ({
@@ -184,9 +206,30 @@ const mockReviews = Array.from({ length: 30 }, (_, i) => ({
 }) as any);
 
 const mockAllAttendance = {};
-const mockGoals = [];
-const mockEnrollments = [];
-const mockCourses = [];
+const mockGoals = Array.from({ length: 15 }, (_, i) => ({
+    id: `goal${i}`,
+    companyId: 'comp1',
+    employeeId: `emp${i}`,
+    title: `Goal ${i}`,
+    description: `Description for goal ${i}`,
+    status: 'On Track',
+    progress: (i % 10) * 10,
+    dueDate: new Date().toISOString(),
+}) as any);
+
+const mockCourses = [
+    { id: 'course1', category: 'Sales', duration: 2 },
+    { id: 'course2', category: 'Engineering', duration: 4 },
+    { id: 'course3', category: 'Marketing', duration: 3 },
+];
+
+const mockEnrollments = Array.from({ length: 15 }, (_, i) => ({
+    id: `enroll${i}`,
+    companyId: 'comp1',
+    employeeId: `emp${i}`,
+    courseId: `course${(i % 3) + 1}`,
+    status: 'Completed',
+}) as any);
 
 const mockPayrollConfig = {
     employeeNapsaRate: 5,
@@ -492,4 +535,5 @@ export default function HomePage() {
         </footer>
     </div>
   );
-}
+
+    
