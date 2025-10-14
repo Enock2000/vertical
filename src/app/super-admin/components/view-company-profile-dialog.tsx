@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 interface ViewCompanyProfileDialogProps {
   children: React.ReactNode;
@@ -42,6 +43,7 @@ export function ViewCompanyProfileDialog({ children, company }: ViewCompanyProfi
   const { toast } = useToast();
   const [logoUrl, setLogoUrl] = useState(company.logoUrl || '');
   const [enabledModules, setEnabledModules] = useState<Permission[]>(company.enabledModules || []);
+  const [portalDisabled, setPortalDisabled] = useState(company.employeePortalDisabled || false);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleModuleChange = (moduleId: Permission, checked: boolean) => {
@@ -55,7 +57,8 @@ export function ViewCompanyProfileDialog({ children, company }: ViewCompanyProfi
     try {
         await update(ref(db, `companies/${company.id}`), { 
             logoUrl: logoUrl,
-            enabledModules: enabledModules
+            enabledModules: enabledModules,
+            employeePortalDisabled: portalDisabled,
         });
         toast({ title: 'Company Profile Saved', description: `The details for ${company.name} have been updated.` });
     } catch (error) {
@@ -84,6 +87,20 @@ export function ViewCompanyProfileDialog({ children, company }: ViewCompanyProfi
                 <DetailItem label="Admin Email" value={company.adminEmail} />
                 <DetailItem label="Registration Date" value={format(new Date(company.createdAt), 'MMMM d, yyyy')} />
                 <DetailItem label="Status" value={company.status} />
+
+                <Separator />
+                 <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <Label>Disable Employee Portal</Label>
+                        <p className="text-xs text-muted-foreground">
+                            Prevent all employees of this company from logging in.
+                        </p>
+                    </div>
+                    <Switch
+                        checked={portalDisabled}
+                        onCheckedChange={setPortalDisabled}
+                    />
+                </div>
 
                 <Separator />
 

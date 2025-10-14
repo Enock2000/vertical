@@ -47,6 +47,26 @@ export default function GeneralLoginPage() {
             return;
         }
 
+        // Fetch company details for all roles except Super Admin
+        const companyRef = ref(db, 'companies/' + employee.companyId);
+        const companySnap = await get(companyRef);
+        
+        if (companySnap.exists()) {
+            const company: Company = companySnap.val();
+            if (company.status === 'Suspended' || company.employeePortalDisabled) {
+                await auth.signOut();
+                toast({
+                    variant: "destructive",
+                    title: "Access Denied",
+                    description: company.employeePortalDisabled 
+                        ? "Your company's employee portal is currently disabled. Please contact your administrator."
+                        : "Your company's account has been suspended. Please contact your administrator.",
+                });
+                setIsLoading(false);
+                return;
+            }
+        }
+
         if (employee.role === 'Applicant') {
             router.push('/applicant-portal');
             return;
@@ -57,21 +77,6 @@ export default function GeneralLoginPage() {
             return;
         }
         
-        const companyRef = ref(db, 'companies/' + employee.companyId);
-        const companySnap = await get(companyRef);
-        if(companySnap.exists()) {
-            const company: Company = companySnap.val();
-            if(company.status === 'Suspended') {
-                await auth.signOut();
-                toast({
-                    variant: "destructive",
-                    title: "Access Denied",
-                    description: "Your company's account has been suspended. Please contact your administrator.",
-                });
-                setIsLoading(false);
-                return;
-            }
-        }
         router.push('/employee-portal');
         return;
       }
