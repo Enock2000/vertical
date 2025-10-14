@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { add } from 'date-fns';
 import { TermsAgreementForm } from './components/terms-agreement';
+import { sendWelcomePendingEmail } from '@/lib/email';
 
 export default function SignUpPage() {
   const [companyName, setCompanyName] = useState('');
@@ -112,6 +113,9 @@ export default function SignUpPage() {
         ...newEmployee,
         id: user.uid,
       });
+
+      // 4. Send welcome email
+      await sendWelcomePendingEmail(newCompany);
       
       // Sign out the user immediately after signup, as they need to be approved
       await auth.signOut();

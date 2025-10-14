@@ -16,22 +16,25 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { db } from "@/lib/firebase"
-import { ref, update, remove } from "firebase/database"
+import { ref, update, remove, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { useState } from "react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { ViewCompanyProfileDialog } from "./view-company-profile-dialog"
 import { ChangeSubscriptionDialog } from "./change-subscription-dialog"
+import { sendCompanyApprovedEmail } from "@/lib/email"
 
 export type EnrichedCompany = Company & { employeeCount: number };
 
-const handleStatusUpdate = async (companyId: string, employeeId: string, status: Company['status'], toast: Function) => {
+const handleStatusUpdate = async (company: Company, status: Company['status'], toast: Function) => {
     try {
-        await update(ref(db, `companies/${companyId}`), { status });
+        await update(ref(db, `companies/${company.id}`), { status });
 
         // Also update the primary admin's status if they are being activated for the first time
         if (status === 'Active') {
-             await update(ref(db, `employees/${employeeId}`), { status: 'Active' });
+             await update(ref(db, `employees/${company.id}`), { status: 'Active' });
+             const companySnap = await get(ref(db, `companies/${company.id}`));
+             await sendCompanyApprovedEmail(companySnap.val());
         }
         
         toast({
@@ -169,21 +172,21 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
                 <DropdownMenuSeparator />
                 {company.status === 'Pending' && (
                     <>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(company.id, company.id, 'Active', toast)}>
+                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
                             Approve
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(company.id, company.id, 'Rejected', toast)}>
+                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Rejected', toast)}>
                             Reject
                         </DropdownMenuItem>
                     </>
                 )}
                  {company.status === 'Active' && (
-                    <DropdownMenuItem onClick={() => handleStatusUpdate(company.id, company.id, 'Suspended', toast)}>
+                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Suspended', toast)}>
                         Suspend
                     </DropdownMenuItem>
                 )}
                  {(company.status === 'Suspended' || company.status === 'Rejected') && (
-                    <DropdownMenuItem onClick={() => handleStatusUpdate(company.id, company.id, 'Active', toast)}>
+                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
                         Activate
                     </DropdownMenuItem>
                 )}

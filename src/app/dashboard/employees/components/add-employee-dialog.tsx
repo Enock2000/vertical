@@ -24,6 +24,7 @@ import { ref, set } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import { EmployeeForm, employeeFormSchema, type EmployeeFormValues } from './employee-form';
 import { format } from 'date-fns';
+import { sendNewEmployeeWelcomeEmail } from '@/lib/email';
 
 interface AddEmployeeDialogProps {
   children: React.ReactNode;
@@ -40,7 +41,8 @@ export function AddEmployeeDialog({
   banks,
   onEmployeeAdded,
 }: AddEmployeeDialogProps) {
-  const { companyId } = useAuth();
+  const { company } = useAuth();
+  const companyId = company?.id;
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -80,7 +82,7 @@ export function AddEmployeeDialog({
   });
 
   async function onSubmit(values: EmployeeFormValues) {
-    if (!companyId) {
+    if (!companyId || !company) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -99,8 +101,9 @@ export function AddEmployeeDialog({
       const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
       const branchName = branches.find(b => b.id === values.branchId)?.name || '';
       
-      const newEmployee: Omit<Employee, 'id'> = {
+      const newEmployee: Employee = {
           ...employeeData,
+          id: user.uid,
           companyId: companyId,
           departmentName,
           branchName: branchName || '',
@@ -114,10 +117,10 @@ export function AddEmployeeDialog({
       };
 
       // Save employee data to Realtime Database
-      await set(ref(db, 'employees/' + user.uid), {
-        ...newEmployee,
-        id: user.uid
-      });
+      await set(ref(db, 'employees/' + user.uid), newEmployee);
+      
+      // Send welcome email
+      await sendNewEmployeeWelcomeEmail(newEmployee, company.name);
       
       onEmployeeAdded();
       
