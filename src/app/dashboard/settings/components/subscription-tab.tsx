@@ -1,4 +1,3 @@
-
 // src/app/dashboard/settings/components/subscription-tab.tsx
 'use client';
 
@@ -36,6 +35,8 @@ export function SubscriptionTab({ plans }: SubscriptionTabProps) {
         nextBillingDate: add(new Date(), { months: 1 }).toISOString(),
       };
 
+      // In a real app, this would redirect to a payment provider (Stripe, etc.)
+      // For this simulation, we'll just update the plan directly.
       await update(companyRef, { subscription: newSubscription });
 
       toast({

@@ -137,10 +137,20 @@ export default function SuperAdminPage() {
                                     Platform Settings
                                 </span>
                             </Button>
+<<<<<<< HEAD
                              <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/testimonials')}>
+=======
+                            <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/email-templates')}>
+                                <Mail className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                                    Email Templates
+                                </span>
+                            </Button>
+                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/who-we-serve')}>
+>>>>>>> 631854e433f08ac611e2e5e612edfefb7069aeaf
                                 <MessageSquare className="h-3.5 w-3.5" />
                                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-                                    Testimonials
+                                    Who We Serve
                                 </span>
                             </Button>
                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/subscriptions')}>
