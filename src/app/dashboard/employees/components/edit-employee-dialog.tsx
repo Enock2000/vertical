@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { EmployeeForm, employeeFormSchema, type EmployeeFormValues } from './employee-form';
+import { format } from 'date-fns';
 
 interface EditEmployeeDialogProps {
   children: React.ReactNode;
@@ -45,7 +46,7 @@ export function EditEmployeeDialog({
   const { toast } = useToast();
 
   // We remove password from the schema for editing
-  const editSchema = employeeFormSchema.omit({ password: true });
+  const editSchema = employeeFormSchema.extend({}).omit({ password: true });
 
   const form = useForm<Omit<EmployeeFormValues, 'password'>>({
     resolver: zodResolver(editSchema),
