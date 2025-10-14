@@ -173,7 +173,7 @@ export default function HomePage() {
 
           <div className="hidden md:flex items-center justify-end space-x-4">
             <Button variant="ghost" asChild>
-                <Link href="/login">Admin Login</Link>
+                <Link href="/login">Login</Link>
             </Button>
             <Button asChild>
                 <Link href="/signup">Get Started</Link>
@@ -201,7 +201,7 @@ export default function HomePage() {
                                 <Link href="/post-a-job">Post a Job</Link>
                             </SheetClose>
                             <SheetClose asChild>
-                                <Link href="/login">Admin Login</Link>
+                                <Link href="/login">Login</Link>
                             </SheetClose>
                              <SheetClose asChild>
                                 <Button asChild>
