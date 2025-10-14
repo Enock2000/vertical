@@ -1,7 +1,8 @@
 
+// src/app/page.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Logo from '@/components/logo';
@@ -14,29 +15,6 @@ import {
   Trophy,
   Menu,
   CheckCircle,
-  Area,
-  Line,
-  Funnel,
-  FunnelChart,
-  LabelList,
-  Legend,
-  LineChart,
-  Pie,
-  PieChart,
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  Scatter,
-  ScatterChart,
-  Cell,
-  Bar,
-  AreaChart,
-  BarChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -62,13 +40,12 @@ import EmployeesTrainedChart from './dashboard/reporting/components/employees-tr
 import TrainingHoursChart from './dashboard/reporting/components/training-hours-chart';
 import TrainingImpactChart from './dashboard/reporting/components/training-impact-chart';
 import GenderDistributionChart from './dashboard/reporting/components/gender-distribution-chart';
-import { useState, useEffect, useMemo } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import type { SubscriptionPlan, DepartmentProductivityScore, Employee, Department, LeaveRequest, ResignationRequest, PayrollRun, PerformanceReview, Goal, TrainingCourse, Enrollment, AttendanceRecord } from '@/lib/data';
+import type { SubscriptionPlan, Employee, Department, LeaveRequest, ResignationRequest, PayrollRun, PerformanceReview, Goal, TrainingCourse, Enrollment, AttendanceRecord } from '@/lib/data';
 import { calculateProductivityScore } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
-import { addDays, subDays } from 'date-fns';
+import { subDays } from 'date-fns';
 
 
 const navLinks = [
@@ -113,6 +90,13 @@ const features = [
 ];
 
 // Mock data for charts
+const mockDepartments: Department[] = [
+  { id: 'dept0', name: 'Engineering', companyId: 'comp1', minSalary: 60000, maxSalary: 120000 },
+  { id: 'dept1', name: 'Product', companyId: 'comp1', minSalary: 70000, maxSalary: 130000 },
+  { id: 'dept2', name: 'Sales', companyId: 'comp1', minSalary: 50000, maxSalary: 100000 },
+  { id: 'dept3', name: 'Marketing', companyId: 'comp1', minSalary: 55000, maxSalary: 110000 },
+];
+
 const mockEmployees: Employee[] = Array.from({ length: 50 }, (_, i) => ({
   id: `emp${i}`,
   companyId: 'comp1',
@@ -123,7 +107,7 @@ const mockEmployees: Employee[] = Array.from({ length: 50 }, (_, i) => ({
   avatar: '',
   location: 'Lusaka',
   departmentId: `dept${i % 4}`,
-  departmentName: `Department ${i % 4}`,
+  departmentName: mockDepartments[i % 4].name,
   workerType: 'Salaried',
   salary: 50000 + Math.random() * 50000,
   hourlyRate: 0,
@@ -139,12 +123,6 @@ const mockEmployees: Employee[] = Array.from({ length: 50 }, (_, i) => ({
   contractType: i % 4 === 0 ? 'Fixed-Term' : 'Permanent',
 } as Employee));
 
-const mockDepartments: Department[] = [
-  { id: 'dept0', name: 'Engineering', companyId: 'comp1', minSalary: 60000, maxSalary: 120000 },
-  { id: 'dept1', name: 'Product', companyId: 'comp1', minSalary: 70000, maxSalary: 130000 },
-  { id: 'dept2', name: 'Sales', companyId: 'comp1', minSalary: 50000, maxSalary: 100000 },
-  { id: 'dept3', name: 'Marketing', companyId: 'comp1', minSalary: 55000, maxSalary: 110000 },
-];
 
 const mockLeaveRequests: LeaveRequest[] = Array.from({ length: 20 }, (_, i) => ({
     id: `leave${i}`,
@@ -216,28 +194,29 @@ mockEmployees.filter(e => e.status === 'Active').forEach(emp => {
             mockAllAttendance[dateString] = {};
         }
         const isAbsent = Math.random() < 0.1;
+        const baseRecord = {
+          id: `${dateString}-${emp.id}`,
+          companyId: 'comp1',
+          employeeId: emp.id,
+          employeeName: emp.name,
+          date: dateString,
+          departmentName: emp.departmentName, // Added department name
+        };
+
         if (!isAbsent) {
             const checkIn = new Date(date);
             checkIn.setHours(8, Math.floor(Math.random() * 30));
             const checkOut = new Date(date);
             checkOut.setHours(17, Math.floor(Math.random() * 30));
             mockAllAttendance[dateString][emp.id] = {
-                id: `${dateString}-${emp.id}`,
-                companyId: 'comp1',
-                employeeId: emp.id,
-                employeeName: emp.name,
-                date: dateString,
+                ...baseRecord,
                 checkInTime: checkIn.toISOString(),
                 checkOutTime: checkOut.toISOString(),
                 status: 'Present',
             };
         } else {
              mockAllAttendance[dateString][emp.id] = {
-                id: `${dateString}-${emp.id}`,
-                companyId: 'comp1',
-                employeeId: emp.id,
-                employeeName: emp.name,
-                date: dateString,
+                ...baseRecord,
                 checkInTime: new Date(date).toISOString(),
                 checkOutTime: null,
                 status: 'Absent',
@@ -580,6 +559,4 @@ export default function HomePage() {
         </footer>
     </div>
   );
-
-    
 }
