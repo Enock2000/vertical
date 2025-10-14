@@ -14,12 +14,14 @@ const EmailRecipientSchema = z.object({
   name: z.string(),
 });
 
-const EmailParamsSchema = z.record(z.union([z.string(), z.number()]));
+const EmailParamsSchema = z.record(z.union([z.string(), z.number()])).optional();
 
 const SendEmailInputSchema = z.object({
-  templateId: z.number(),
-  to: EmailRecipientSchema,
+  to: z.array(EmailRecipientSchema),
   params: EmailParamsSchema,
+  templateId: z.number().optional(),
+  subject: z.string().optional(),
+  htmlContent: z.string().optional(),
 });
 
 const SendEmailOutputSchema = z.object({
@@ -39,7 +41,7 @@ const sendEmailFlow = ai.defineFlow(
     inputSchema: SendEmailInputSchema,
     outputSchema: SendEmailOutputSchema,
   },
-  async ({ templateId, to, params }) => {
+  async ({ templateId, to, params, subject, htmlContent }) => {
     try {
       const apiInstance = new Brevo.TransactionalEmailsApi();
       apiInstance.setApiKey(
@@ -48,25 +50,35 @@ const sendEmailFlow = ai.defineFlow(
       );
 
       const sendSmtpEmail = new Brevo.SendSmtpEmail();
-      sendSmtpEmail.templateId = templateId;
-      sendSmtpEmail.to = [to];
-      sendSmtpEmail.params = params;
+      
+      sendSmtpEmail.to = to;
+      
+      if (templateId) {
+        sendSmtpEmail.templateId = templateId;
+      }
+      if (subject) {
+        sendSmtpEmail.subject = subject;
+      }
+      if (htmlContent) {
+        sendSmtpEmail.htmlContent = htmlContent;
+      }
+      if (params) {
+        sendSmtpEmail.params = params;
+      }
+      
       sendSmtpEmail.sender = {
         email: 'no-reply@verticalsync.com',
-        name: 'VerticalSync',
+        name: 'VerticalSync Platform',
       };
       
       const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
       
-      // Brevo API returns a messageId on success
       const messageId = (result.body as any)?.messageId;
 
       return { success: true, messageId: messageId || 'unknown' };
 
     } catch (error: any) {
       console.error('Error sending email via Brevo:', error.body || error.message);
-      // Re-throwing the error will cause the flow to fail, which is appropriate
-      // if email sending is critical. If not, you could return { success: false }.
       throw new Error('Failed to send transactional email.');
     }
   }

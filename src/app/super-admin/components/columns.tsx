@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Company, SubscriptionPlan } from "@/lib/data"
 import { format } from "date-fns"
@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ViewCompanyProfileDialog } from "./view-company-profile-dialog"
 import { ChangeSubscriptionDialog } from "./change-subscription-dialog"
 import { sendCompanyApprovedEmail } from "@/lib/email"
+import { SendEmailDialog } from "./send-email-dialog"
 
 export type EnrichedCompany = Company & { employeeCount: number };
 
@@ -168,6 +169,13 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
                     <ChangeSubscriptionDialog company={company} plans={subscriptionPlans}>
                         <div className="w-full text-left">Change Subscription</div>
                     </ChangeSubscriptionDialog>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <SendEmailDialog company={company}>
+                         <div className="w-full text-left flex items-center">
+                            <MessageSquare className="mr-2 h-4 w-4" /> Send Email
+                        </div>
+                    </SendEmailDialog>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {company.status === 'Pending' && (
