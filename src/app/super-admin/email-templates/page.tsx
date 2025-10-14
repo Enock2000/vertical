@@ -1,3 +1,4 @@
+
 // src/app/super-admin/email-templates/page.tsx
 'use client';
 
@@ -16,7 +17,7 @@ import { UserNav } from '@/components/user-nav';
 import Logo from '@/components/logo';
 import { useAuth } from '@/app/auth-provider';
 import { useToast } from '@/hooks/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
