@@ -7,7 +7,7 @@ import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, Building2, MapPin, Briefcase, DollarSign } from 'lucide-react';
+import { Loader2, Search, Building2, MapPin, Briefcase, DollarSign, X } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import { useAuth } from '@/app/auth-provider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ApplicantForm } from './components/applicant-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
@@ -24,11 +25,14 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
     const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
     const [departments, setDepartments] = useState<string[]>([]);
     const [locations, setLocations] = useState<string[]>([]);
+    const [jobTypes, setJobTypes] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedDept, setSelectedDept] = useState('all');
     const [selectedLocation, setSelectedLocation] = useState('all');
+    const [selectedJobType, setSelectedJobType] = useState('all');
     const [selectedJob, setSelectedJob] = useState<EnrichedJobVacancy | null>(null);
+    const [isJobListOpen, setIsJobListOpen] = useState(false);
 
     useEffect(() => {
         const fetchVacancies = async () => {
@@ -44,6 +48,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                 let allVacancies: EnrichedJobVacancy[] = [];
                 const allDepartments = new Set<string>();
                 const allLocations = new Set<string>();
+                const allJobTypes = new Set<string>();
 
                 for (const companyId in companiesData) {
                     const company = companiesData[companyId];
@@ -54,6 +59,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                                 allVacancies.push({ ...job, companyId, companyName: company.name });
                                 if (job.departmentName) allDepartments.add(job.departmentName);
                                 if (job.location) allLocations.add(job.location);
+                                if (job.jobType) allJobTypes.add(job.jobType);
                             }
                         });
                     }
@@ -63,6 +69,8 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                 setVacancies(allVacancies);
                 setDepartments(Array.from(allDepartments).sort());
                 setLocations(Array.from(allLocations).sort());
+                setJobTypes(Array.from(allJobTypes).sort());
+
             } catch (error) {
                 console.error("Firebase read failed:", error);
             } finally {
@@ -72,20 +80,22 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
 
         fetchVacancies();
     }, []);
-    
-    const handleScrollToJobs = () => {
-        const jobsSection = document.getElementById('job-listings');
-        jobsSection?.scrollIntoView({ behavior: 'smooth' });
-    };
 
     const filteredVacancies = vacancies.filter(job => 
         (job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
          job.companyName.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (selectedDept === 'all' || job.departmentName === selectedDept) &&
-        (selectedLocation === 'all' || job.location === selectedLocation)
+        (selectedLocation === 'all' || job.location === selectedLocation) &&
+        (selectedJobType === 'all' || job.jobType === selectedJobType)
     );
     
     const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', minimumFractionDigits: 0 });
+    
+    const clearFilters = () => {
+        setSelectedDept('all');
+        setSelectedLocation('all');
+        setSelectedJobType('all');
+    }
 
     return (
         <>
@@ -114,7 +124,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                                 />
                             </div>
                             <div className="open-roles-container text-center">
-                                <Button className="open-roles-button" onClick={handleScrollToJobs}>View Open Roles</Button>
+                                <Button className="open-roles-button" onClick={() => setIsJobListOpen(true)}>View Open Roles</Button>
                             </div>
                         </div>
                     </TabsContent>
@@ -129,54 +139,74 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                          <p className="font-semibold text-muted-foreground">Glassdoor</p>
                     </div>
                 </div>
-
-                <div id="job-listings" className="mx-auto max-w-5xl pt-12">
-                     {loading ? (
-                        <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : (
-                        <div className="mx-auto max-w-5xl grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredVacancies.length > 0 ? (
-                                filteredVacancies.map((job) => (
-                                    <Card key={job.id} className="flex flex-col">
-                                        <CardHeader>
-                                            <CardTitle>{job.title}</CardTitle>
-                                            <CardDescription className="flex items-center gap-2 pt-2">
-                                                <Building2 className="h-4 w-4" />
-                                                {job.companyName}
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="flex-grow space-y-2 text-sm text-muted-foreground">
-                                            <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {job.location || 'Not specified'}</p>
-                                            <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.jobType || 'Not specified'}</p>
-                                            {job.salary && <p className="flex items-center gap-2"><DollarSign className="h-4 w-4" /> {currencyFormatter.format(job.salary)}</p>}
-                                        </CardContent>
-                                        <CardFooter>
-                                            <Button className="w-full" onClick={() => setSelectedJob(job)}>Apply Now</Button>
-                                        </CardFooter>
-                                    </Card>
-                                ))
-                        ) : (
-                            <Card className="col-span-full">
-                                <CardContent className="py-12 text-center">
-                                    <h3 className="text-lg font-semibold">No Matching Positions</h3>
-                                    <p className="text-muted-foreground">
-                                        Your search returned no results. Try adjusting your filters.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        )}
-                        {!user && (
-                                <div className="col-span-full text-center text-sm text-muted-foreground pt-4">
-                                    <Link href="/applicant-signup" className="underline text-primary">
-                                        Create an applicant profile
-                                    </Link>
-                                    {' '}to apply easily.
-                                </div>
-                        )}
-                        </div>
-                    )}
-                </div>
             </div>
+
+            <Dialog open={isJobListOpen} onOpenChange={setIsJobListOpen}>
+                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
+                    <div className="bg-primary text-primary-foreground p-6 rounded-t-lg">
+                        <DialogTitle className="text-3xl">Find the role that's right for you</DialogTitle>
+                        <DialogDescription className="text-primary-foreground/80 mt-2">CAREERS AT VERTICALSYNC</DialogDescription>
+                    </div>
+                    <div className="p-6 flex flex-wrap items-center gap-4 border-b">
+                        <span className="text-sm font-medium">Filter by</span>
+                        <Select value={selectedDept} onValueChange={setSelectedDept}>
+                            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Team" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Teams</SelectItem>
+                                {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                         <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Location" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Locations</SelectItem>
+                                {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedJobType} onValueChange={setSelectedJobType}>
+                            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Employment Type" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Types</SelectItem>
+                                {jobTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Button variant="link" onClick={clearFilters} className="ml-auto">Clear all</Button>
+                    </div>
+                     <div className="p-6 flex-1 overflow-hidden">
+                        <h3 className="font-semibold mb-4">Open positions ({filteredVacancies.length})</h3>
+                         <ScrollArea className="h-full">
+                             {loading ? (
+                                <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                            ) : (
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {filteredVacancies.length > 0 ? (
+                                        filteredVacancies.map((job) => (
+                                            <Card key={job.id} className="flex flex-col">
+                                                <CardHeader>
+                                                    <CardTitle className="text-base">{job.title}</CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="flex-grow space-y-2 text-sm text-muted-foreground">
+                                                    <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {job.location || 'Not specified'}</p>
+                                                    <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.departmentName}</p>
+                                                    <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.jobType || 'Not specified'}</p>
+                                                </CardContent>
+                                                <CardFooter>
+                                                    <Button variant="outline" className="w-full" onClick={() => setSelectedJob(job)}>Apply Now</Button>
+                                                </CardFooter>
+                                            </Card>
+                                        ))
+                                ) : (
+                                    <div className="col-span-full py-12 text-center text-muted-foreground">
+                                        <p>No matching positions found.</p>
+                                    </div>
+                                )}
+                                </div>
+                            )}
+                         </ScrollArea>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
              <Dialog open={!!selectedJob} onOpenChange={(isOpen) => !isOpen && setSelectedJob(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
