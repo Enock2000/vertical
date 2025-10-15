@@ -163,41 +163,30 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-20 md:py-28">
-          <div className="container grid md:grid-cols-2 gap-8 items-center">
-            <div className="text-center md:text-left">
-              <p className="text-sm font-semibold text-primary tracking-wider uppercase">Global People Platform</p>
+        <section className="relative py-20 md:py-28 text-white flex items-center justify-center">
+           <Image
+              src="https://images.unsplash.com/photo-1579621970795-87f91d908377?q=80&w=2070&auto=format&fit=crop"
+              alt="People in a bank"
+              fill
+              className="object-cover"
+              priority
+              data-ai-hint="banking finance"
+            />
+            <div className="absolute inset-0 bg-black/60 z-10" />
+            <div className="relative z-20 container text-center">
+              <p className="text-sm font-semibold text-accent tracking-wider uppercase">Global People Platform</p>
               <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl mt-2">
                 Scale globally with velocity and ease
               </h1>
-              <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-xl">
+              <p className="mx-auto mt-4 max-w-[700px] text-white/80 md:text-xl">
                 VerticalSync is built to scale with organizations of all sizes, from small teams to enterprises of thousands. Whether you want to hire worldwide without opening legal entities, streamline HR for your global team, or pay all types of workers anywhere with consolidated payroll—VerticalSync does it all with full compliance.
               </p>
-              <div className="mt-8 flex justify-center md:justify-start">
+              <div className="mt-8">
                 <Button size="lg" asChild>
                   <Link href="/signup">Get Started</Link>
                 </Button>
               </div>
             </div>
-             <div className="relative h-[300px] md:h-[450px]">
-                <Image
-                    src={PlaceHolderImages[1].imageUrl}
-                    alt={PlaceHolderImages[1].description}
-                    width={400}
-                    height={400}
-                    className="absolute top-0 right-0 w-3/4 rounded-lg shadow-lg"
-                    data-ai-hint={PlaceHolderImages[1].imageHint}
-                />
-                 <Image
-                    src={PlaceHolderImages[2].imageUrl}
-                    alt={PlaceHolderImages[2].description}
-                    width={300}
-                    height={300}
-                    className="absolute bottom-0 left-0 w-1/2 rounded-lg shadow-lg border-4 border-background"
-                     data-ai-hint={PlaceHolderImages[2].imageHint}
-                />
-            </div>
-          </div>
         </section>
 
         <div className="relative my-16">
