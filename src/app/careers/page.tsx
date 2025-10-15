@@ -21,7 +21,7 @@ import Image from 'next/image';
 
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
-const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
+const CareersContent = () => {
     const { user } = useAuth();
     const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
     const [departments, setDepartments] = useState<string[]>([]);
@@ -100,7 +100,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
 
     return (
         <>
-            <section className="relative text-center text-white">
+            <section className="relative w-full text-center text-white py-20 md:py-28 flex items-center justify-center">
                 <div className="absolute inset-0">
                     <Image
                         src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
@@ -112,7 +112,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                     />
                     <div className="absolute inset-0 bg-black/60 z-10"></div>
                 </div>
-                 <div className="relative z-20 container py-20 px-4">
+                 <div className="relative z-20 container">
                     <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Connecting top talent with vertical opportunities</h1>
                     <Tabs defaultValue="find-jobs" className="w-full max-w-xl mx-auto mt-8">
                         <TabsList className="grid w-full grid-cols-2 bg-white/20 backdrop-blur-sm">
@@ -142,7 +142,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                  </div>
             </section>
             
-            <div ref={ref} className="container py-12 md:py-20 space-y-8">
+            <div className="container py-12 md:py-20 space-y-8">
                 <div className="trusted-by text-center space-y-4">
                     <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
                     <div className="flex justify-center items-center gap-8">
@@ -233,17 +233,12 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
             </Dialog>
         </>
     );
-});
-CareersContent.displayName = "CareersContent";
+};
 
 
 export default function CareersPage() {
     const { user } = useAuth();
-    const jobListingsRef = useRef<HTMLDivElement>(null);
-    const handleScrollToJobs = () => {
-        jobListingsRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
+    
      return (
         <div className="flex min-h-screen flex-col bg-background">
              <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -266,7 +261,7 @@ export default function CareersPage() {
             </header>
             <main className="flex-1">
                 <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-                    <CareersContent ref={jobListingsRef} />
+                    <CareersContent/>
                 </Suspense>
             </main>
         </div>
