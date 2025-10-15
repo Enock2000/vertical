@@ -170,7 +170,6 @@ export default function HomePage() {
               fill
               className="object-cover"
               priority
-              data-ai-hint="banking finance"
             />
             <div className="absolute inset-0 bg-black/60 z-10" />
             <div className="relative z-20 container text-center">
