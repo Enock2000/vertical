@@ -24,6 +24,7 @@ type EnrichedJobVacancy = JobVacancy & { companyName: string };
 const CareersContent = () => {
     const { user } = useAuth();
     const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
     const [departments, setDepartments] = useState<string[]>([]);
     const [locations, setLocations] = useState<string[]>([]);
     const [jobTypes, setJobTypes] = useState<string[]>([]);
@@ -43,8 +44,14 @@ const CareersContent = () => {
                 const companiesData: { [key: string]: Company } = companiesSnapshot.val();
 
                 if (!companiesData) {
-                    setVacancies([]); setLoading(false); return;
+                    setVacancies([]); 
+                    setCompanies([]);
+                    setLoading(false); 
+                    return;
                 }
+                
+                const allCompanies = Object.values(companiesData);
+                setCompanies(allCompanies.filter(c => c.status === 'Active'));
 
                 let allVacancies: EnrichedJobVacancy[] = [];
                 const allDepartments = new Set<string>();
@@ -142,13 +149,12 @@ const CareersContent = () => {
             
             <div className="bg-background">
                 <div className="container py-12 md:py-20 space-y-8">
-                    <div className="trusted-by text-center space-y-4">
+                     <div className="trusted-by text-center space-y-4">
                         <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
-                        <div className="flex justify-center items-center gap-8">
-                            <p className="font-semibold text-muted-foreground">Microsoft</p>
-                            <p className="font-semibold text-muted-foreground">Airbnb</p>
-                            <p className="font-semibold text-muted-foreground">Company</p>
-                            <p className="font-semibold text-muted-foreground">Glassdoor</p>
+                        <div className="flex justify-center items-center gap-8 flex-wrap">
+                            {companies.slice(0, 4).map(company => (
+                                <p key={company.id} className="font-semibold text-muted-foreground">{company.name}</p>
+                            ))}
                         </div>
                     </div>
                 </div>
