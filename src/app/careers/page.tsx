@@ -1,7 +1,7 @@
 // src/app/careers/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, forwardRef, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
@@ -101,17 +101,15 @@ const CareersContent = () => {
     return (
         <>
             <section className="relative w-full text-center text-white py-20 md:py-28 flex items-center justify-center">
-                <div className="absolute inset-0">
-                    <Image
-                        src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
-                        alt="Live music performance"
-                        fill
-                        className="object-cover"
-                        priority
-                        data-ai-hint="live music performance"
-                    />
-                    <div className="absolute inset-0 bg-black/60 z-10"></div>
-                </div>
+                 <Image
+                    src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
+                    alt="Live music performance"
+                    fill
+                    className="object-cover"
+                    priority
+                    data-ai-hint="live music performance"
+                />
+                <div className="absolute inset-0 bg-black/60 z-10"></div>
                  <div className="relative z-20 container">
                     <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Connecting top talent with vertical opportunities</h1>
                     <Tabs defaultValue="find-jobs" className="w-full max-w-xl mx-auto mt-8">
@@ -142,14 +140,16 @@ const CareersContent = () => {
                  </div>
             </section>
             
-            <div className="container py-12 md:py-20 space-y-8">
-                <div className="trusted-by text-center space-y-4">
-                    <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
-                    <div className="flex justify-center items-center gap-8">
-                         <p className="font-semibold text-muted-foreground">Microsoft</p>
-                         <p className="font-semibold text-muted-foreground">Airbnb</p>
-                         <p className="font-semibold text-muted-foreground">Company</p>
-                         <p className="font-semibold text-muted-foreground">Glassdoor</p>
+            <div className="bg-background">
+                <div className="container py-12 md:py-20 space-y-8">
+                    <div className="trusted-by text-center space-y-4">
+                        <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
+                        <div className="flex justify-center items-center gap-8">
+                            <p className="font-semibold text-muted-foreground">Microsoft</p>
+                            <p className="font-semibold text-muted-foreground">Airbnb</p>
+                            <p className="font-semibold text-muted-foreground">Company</p>
+                            <p className="font-semibold text-muted-foreground">Glassdoor</p>
+                        </div>
                     </div>
                 </div>
             </div>
