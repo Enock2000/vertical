@@ -84,14 +84,11 @@ export default function HomePage() {
         console.error(error);
         setLoadingTestimonials(false);
     });
-
-    const heroImagesRef = ref(db, 'platformSettings/heroImages');
-    const unsubscribeHeroImages = onValue(heroImagesRef, (snapshot) => {
-        const data = snapshot.val();
-        setHeroImages(data ? Object.values(data) : []);
-        setLoadingHeroImages(false);
-    });
     
+    // Use the imported placeholder data
+    setHeroImages(PlaceHolderImages);
+    setLoadingHeroImages(false);
+
     const plansRef = ref(db, 'subscriptionPlans');
     const unsubscribePlans = onValue(plansRef, (snapshot) => {
         const data = snapshot.val();
@@ -101,7 +98,6 @@ export default function HomePage() {
 
     return () => {
         unsubscribeTestimonials();
-        unsubscribeHeroImages();
         unsubscribePlans();
     };
   }, []);
@@ -164,13 +160,16 @@ export default function HomePage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative py-20 md:py-28 text-white flex items-center justify-center">
-           <Image
-              src="https://images.unsplash.com/photo-1579621970795-87f91d908377?q=80&w=2070&auto=format&fit=crop"
-              alt="People in a bank"
+           {heroImages.length > 0 && (
+             <Image
+              src={heroImages[0].imageUrl}
+              alt={heroImages[0].description}
               fill
               className="object-cover"
               priority
+              data-ai-hint={heroImages[0].imageHint}
             />
+           )}
             <div className="absolute inset-0 bg-black/60 z-10" />
             <div className="relative z-20 container text-center">
               <p className="text-sm font-semibold text-accent tracking-wider uppercase">Global People Platform</p>
