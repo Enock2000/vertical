@@ -100,15 +100,13 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
 
     return (
         <>
-            <div className="relative text-center bg-gray-900 text-white">
-                 <Image
-                    src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
-                    alt="Musicians performing"
-                    layout="fill"
-                    objectFit="cover"
-                    className="absolute inset-0 z-0"
-                    data-ai-hint="live music performance"
-                />
+            <div 
+                className="relative text-center bg-gray-900 text-white bg-cover bg-center"
+                style={{
+                    backgroundImage: `url('https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop')`
+                }}
+                data-ai-hint="live music performance"
+            >
                 <div className="absolute inset-0 bg-black/60 z-10"></div>
                  <div className="relative z-20 container py-20 px-4">
                     <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Connecting top talent with vertical opportunities</h1>
