@@ -163,6 +163,14 @@ export default function HomePage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative py-20 md:py-28 text-white flex items-center justify-center">
+             <Image
+                src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2070&auto=format&fit=crop"
+                alt="People working in an office"
+                fill
+                className="object-cover"
+                priority
+                data-ai-hint="office meeting"
+            />
             <div className="absolute inset-0 bg-black/60 z-10" />
             <div className="relative z-20 container text-center">
               <p className="text-sm font-semibold text-accent tracking-wider uppercase">Global People Platform</p>
