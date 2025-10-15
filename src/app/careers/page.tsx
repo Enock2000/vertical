@@ -109,12 +109,12 @@ const CareersContent = () => {
         <>
             <section className="relative w-full text-center text-white py-20 md:py-28 flex items-center justify-center">
                  <Image
-                    src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
-                    alt="Live music performance"
+                    src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?q=80&w=2070&auto=format&fit=crop"
+                    alt="People working in an office"
                     fill
                     className="object-cover"
                     priority
-                    data-ai-hint="live music performance"
+                    data-ai-hint="office meeting"
                 />
                 <div className="absolute inset-0 bg-black/60 z-10"></div>
                  <div className="relative z-20 container">
@@ -265,7 +265,7 @@ export default function CareersPage() {
                     </div>
                 </div>
             </header>
-            <main className="flex-1">
+            <main>
                 <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
                     <CareersContent/>
                 </Suspense>
