@@ -162,12 +162,12 @@ export default function HomePage() {
         <section className="relative py-20 md:py-28 text-white flex items-center justify-center">
            {heroImages.length > 0 && (
              <Image
-              src={heroImages[0].imageUrl}
-              alt={heroImages[0].description}
+              src={heroImages[5].imageUrl}
+              alt={heroImages[5].description}
               fill
               className="object-cover"
               priority
-              data-ai-hint={heroImages[0].imageHint}
+              data-ai-hint={heroImages[5].imageHint}
             />
            )}
             <div className="absolute inset-0 bg-black/60 z-10" />
