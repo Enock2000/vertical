@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ApplicantForm } from './components/applicant-form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Image from 'next/image';
 
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
@@ -100,35 +101,45 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
     return (
         <>
             <div ref={ref} className="space-y-8">
-                 <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Connecting top talent with vertical opportunities</h1>
+                 <div className="relative rounded-lg overflow-hidden text-center mb-12 bg-gray-900 text-white py-20 px-4">
+                     <Image
+                        src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
+                        alt="Musicians performing"
+                        layout="fill"
+                        objectFit="cover"
+                        className="absolute inset-0 z-0"
+                        data-ai-hint="live music performance"
+                    />
+                    <div className="absolute inset-0 bg-black/60 z-10"></div>
+                     <div className="relative z-20">
+                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Connecting top talent with vertical opportunities</h1>
+                        <Tabs defaultValue="find-jobs" className="w-full max-w-xl mx-auto mt-8">
+                            <TabsList className="grid w-full grid-cols-2 bg-white/20 backdrop-blur-sm">
+                                <TabsTrigger value="find-jobs" className="text-white data-[state=active]:bg-white/90 data-[state=active]:text-gray-900">Find jobs</TabsTrigger>
+                                <TabsTrigger value="post-job" asChild>
+                                    <Link href="/post-a-job" className="text-white">Post a job</Link>
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="find-jobs" className="pt-6">
+                                <div className="search-container space-y-4">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                        <Input 
+                                            type="text" 
+                                            placeholder="Search jobs by title, skills, or company" 
+                                            className="search-input w-full h-12 pl-12 bg-white text-gray-900"
+                                            value={searchTerm}
+                                            onChange={e => setSearchTerm(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="open-roles-container text-center">
+                                        <Button className="open-roles-button h-12" onClick={() => setIsJobListOpen(true)}>View Open Roles</Button>
+                                    </div>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+                     </div>
                  </div>
-                
-                 <Tabs defaultValue="find-jobs" className="w-full max-w-4xl mx-auto">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="find-jobs">Find jobs</TabsTrigger>
-                        <TabsTrigger value="post-job" asChild>
-                            <Link href="/post-a-job">Post a job</Link>
-                        </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="find-jobs" className="pt-6">
-                         <div className="search-container space-y-4">
-                            <div className="relative">
-                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <Input 
-                                    type="text" 
-                                    placeholder="Search jobs by title, skills, or company" 
-                                    className="search-input w-full h-12 pl-12"
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            <div className="open-roles-container text-center">
-                                <Button className="open-roles-button" onClick={() => setIsJobListOpen(true)}>View Open Roles</Button>
-                            </div>
-                        </div>
-                    </TabsContent>
-                </Tabs>
                 
                 <div className="trusted-by text-center space-y-4">
                     <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
@@ -249,8 +260,8 @@ export default function CareersPage() {
                     </div>
                 </div>
             </header>
-            <main className="flex-1 py-12 md:py-20">
-                <div className="container">
+            <main className="flex-1">
+                <div className="container py-12 md:py-20">
                     <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
                         <CareersContent ref={jobListingsRef} />
                     </Suspense>
