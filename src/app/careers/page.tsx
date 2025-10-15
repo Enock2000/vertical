@@ -148,8 +148,8 @@ const CareersContent = () => {
             </section>
             
             <section className="bg-background">
-                <div className="container py-8 md:py-12 space-y-4">
-                     <div className="trusted-by text-center space-y-4">
+                <div className="container py-4 md:py-6 space-y-4">
+                     <div className="trusted-by text-center space-y-2">
                         <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
                         <div className="flex justify-center items-center gap-8 flex-wrap">
                             {companies.slice(0, 4).map(company => (
@@ -265,7 +265,7 @@ export default function CareersPage() {
                     </div>
                 </div>
             </header>
-            <main className="flex-1">
+            <main>
                 <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
                     <CareersContent/>
                 </Suspense>
