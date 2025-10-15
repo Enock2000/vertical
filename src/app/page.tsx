@@ -1,5 +1,3 @@
-
-
 // src/app/page.tsx
 'use client';
 
@@ -22,7 +20,7 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import type { Testimonial, SubscriptionPlan } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
-import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
+import type { ImagePlaceholder } from '@/lib/placeholder-images';
 
 
 const featuresList = [
@@ -85,9 +83,12 @@ export default function HomePage() {
         setLoadingTestimonials(false);
     });
     
-    // Use the imported placeholder data
-    setHeroImages(PlaceHolderImages);
-    setLoadingHeroImages(false);
+    const heroImagesRef = ref(db, 'platformSettings/heroImages');
+    const unsubscribeHeroImages = onValue(heroImagesRef, (snapshot) => {
+        const data = snapshot.val();
+        setHeroImages(data ? Object.values(data) : []);
+        setLoadingHeroImages(false);
+    });
 
     const plansRef = ref(db, 'subscriptionPlans');
     const unsubscribePlans = onValue(plansRef, (snapshot) => {
@@ -98,6 +99,7 @@ export default function HomePage() {
 
     return () => {
         unsubscribeTestimonials();
+        unsubscribeHeroImages();
         unsubscribePlans();
     };
   }, []);
@@ -162,12 +164,12 @@ export default function HomePage() {
         <section className="relative py-20 md:py-28 text-white flex items-center justify-center">
            {heroImages.length > 0 && (
              <Image
-              src={heroImages[5].imageUrl}
-              alt={heroImages[5].description}
+              src={heroImages[0].imageUrl}
+              alt={heroImages[0].description}
               fill
               className="object-cover"
               priority
-              data-ai-hint={heroImages[5].imageHint}
+              data-ai-hint={heroImages[0].imageHint}
             />
            )}
             <div className="absolute inset-0 bg-black/60 z-10" />

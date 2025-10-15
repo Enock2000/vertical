@@ -1,4 +1,3 @@
-
 // src/app/super-admin/settings/page.tsx
 'use client';
 
@@ -86,8 +85,8 @@ export default function SuperAdminSettingsPage() {
         setHeroImages([...heroImages, newImage]);
     };
 
-    const handleRemoveImage = (index: number) => {
-        setHeroImages(heroImages.filter((_, i) => i !== index));
+    const handleRemoveImage = (idToRemove: string) => {
+        setHeroImages(heroImages.filter((img) => img.id !== idToRemove));
     };
 
 
@@ -149,8 +148,8 @@ export default function SuperAdminSettingsPage() {
                         <div className="space-y-4">
                             <h3 className="text-lg font-medium">Home Page Hero Images</h3>
                              {heroImages.map((image, index) => (
-                                <div key={index} className="p-4 border rounded-lg space-y-3 relative">
-                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveImage(index)}>
+                                <div key={image.id} className="p-4 border rounded-lg space-y-3 relative">
+                                    <Button variant="ghost" size="icon" className="absolute top-1 right-1" onClick={() => handleRemoveImage(image.id)}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                     <div className="space-y-2">
