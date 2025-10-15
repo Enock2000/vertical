@@ -148,7 +148,7 @@ const CareersContent = () => {
             </section>
             
             <div className="bg-background">
-                <div className="container py-12 md:py-20 space-y-8">
+                <div className="container py-8 md:py-12 space-y-4">
                      <div className="trusted-by text-center space-y-4">
                         <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
                         <div className="flex justify-center items-center gap-8 flex-wrap">
