@@ -147,7 +147,7 @@ const CareersContent = () => {
                  </div>
             </section>
             
-            <div className="bg-background">
+            <section className="bg-background">
                 <div className="container py-8 md:py-12 space-y-4">
                      <div className="trusted-by text-center space-y-4">
                         <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
@@ -158,7 +158,7 @@ const CareersContent = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <Dialog open={isJobListOpen} onOpenChange={setIsJobListOpen}>
                 <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
@@ -265,8 +265,8 @@ export default function CareersPage() {
                     </div>
                 </div>
             </header>
-            <main>
-                <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <main className="flex-1">
+                <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
                     <CareersContent/>
                 </Suspense>
             </main>
