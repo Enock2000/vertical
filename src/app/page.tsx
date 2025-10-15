@@ -20,7 +20,7 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import type { Testimonial, SubscriptionPlan } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
-import type { ImagePlaceholder } from '@/lib/placeholder-images';
+import { PlaceHolderImages, type ImagePlaceholder } from '@/lib/placeholder-images';
 
 
 const featuresList = [
@@ -83,12 +83,9 @@ export default function HomePage() {
         setLoadingTestimonials(false);
     });
     
-    const heroImagesRef = ref(db, 'platformSettings/heroImages');
-    const unsubscribeHeroImages = onValue(heroImagesRef, (snapshot) => {
-        const data = snapshot.val();
-        setHeroImages(data ? Object.values(data) : []);
-        setLoadingHeroImages(false);
-    });
+    // Using the local JSON data as a fallback
+    setHeroImages(PlaceHolderImages);
+    setLoadingHeroImages(false);
 
     const plansRef = ref(db, 'subscriptionPlans');
     const unsubscribePlans = onValue(plansRef, (snapshot) => {
@@ -99,7 +96,6 @@ export default function HomePage() {
 
     return () => {
         unsubscribeTestimonials();
-        unsubscribeHeroImages();
         unsubscribePlans();
     };
   }, []);
