@@ -1,13 +1,13 @@
 // src/app/careers/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, forwardRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, forwardRef, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, Building2, MapPin, Briefcase, DollarSign, X } from 'lucide-react';
+import { Loader2, Search, Building2, MapPin, Briefcase, DollarSign, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Input } from '@/components/ui/input';
@@ -100,7 +100,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
 
     return (
         <>
-            <div className="relative text-center text-white">
+            <section className="relative text-center text-white">
                 <div className="absolute inset-0">
                     <Image
                         src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=2070&auto=format&fit=crop"
@@ -140,7 +140,7 @@ const CareersContent = forwardRef<HTMLDivElement>((props, ref) => {
                         </TabsContent>
                     </Tabs>
                  </div>
-            </div>
+            </section>
             
             <div ref={ref} className="container py-12 md:py-20 space-y-8">
                 <div className="trusted-by text-center space-y-4">
@@ -239,11 +239,10 @@ CareersContent.displayName = "CareersContent";
 
 export default function CareersPage() {
     const { user } = useAuth();
-    const jobListingsRef = useCallback((node: HTMLDivElement) => {
-        if (node) {
-            // Optional: You could use this ref to auto-scroll if you want
-        }
-    }, []);
+    const jobListingsRef = useRef<HTMLDivElement>(null);
+    const handleScrollToJobs = () => {
+        jobListingsRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
 
      return (
         <div className="flex min-h-screen flex-col bg-background">
@@ -257,7 +256,10 @@ export default function CareersPage() {
                             </Link>
                         </Button>
                         <Button variant="ghost" asChild>
-                            <Link href="/">Back to Home</Link>
+                            <Link href="/">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                Back to Home
+                            </Link>
                         </Button>
                     </div>
                 </div>
