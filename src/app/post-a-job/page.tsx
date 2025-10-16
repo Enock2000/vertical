@@ -1,4 +1,3 @@
-
 // src/app/post-a-job/page.tsx
 'use client';
 
@@ -137,7 +136,7 @@ export default function PostAJobPage() {
                 </Button>
             </div>
         </header>
-        <main className="flex-1 py-12">
+        <main className="flex flex-1 items-center justify-center py-12">
             <div className="container max-w-2xl">
                  <Card>
                     <CardHeader>
