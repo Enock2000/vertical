@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Applicant, JobVacancy, Department, ApplicantStatus, OnboardingTask } from '@/lib/data';
+import type { Applicant, JobVacancy, Department, OnboardingTask, Employee } from '@/lib/data';
 import { defaultOnboardingTasks } from '@/lib/data';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,7 +13,7 @@ import { MoreHorizontal, XCircle, UserPlus, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { db, auth } from '@/lib/firebase';
-import { ref, update, push, get } from 'firebase/database';
+import { ref, update, push, get, set } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { RejectApplicantDialog } from './reject-applicant-dialog';
@@ -76,36 +76,49 @@ export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCard
     };
     
     const handleHire = async () => {
-        if (!companyId) return;
+        if (!companyId || !company) return;
         try {
-            const updates: { [key: string]: any } = { 
+            // 1. Update applicant status to "Hired"
+            await update(ref(db, `companies/${companyId}/applicants/${applicant.id}`), { 
                 status: 'Hired',
                 hiredAt: new Date().toISOString()
-            };
-
-            await update(ref(db, `companies/${companyId}/applicants/${applicant.id}`), updates);
+            });
             
+            // 2. Find or Create Employee Record
             const employeeRef = ref(db, `employees/${applicant.userId}`);
             const employeeSnap = await get(employeeRef);
             
-            if (employeeSnap.exists()) {
-                const employeeUpdates: Partial<any> = {
-                    role: vacancy.title,
-                    status: 'Active',
-                    departmentId: vacancy.departmentId,
-                    departmentName: vacancy.departmentName,
-                    joinDate: new Date().toISOString(),
-                };
-                await update(employeeRef, employeeUpdates);
-                await sendPasswordResetEmail(auth, applicant.email);
+            const employeeData: Partial<Employee> = {
+                id: applicant.userId,
+                name: applicant.name,
+                email: applicant.email,
+                phone: applicant.phone,
+                resumeUrl: applicant.resumeUrl,
+                companyId: companyId,
+                role: vacancy.title,
+                status: 'Active',
+                departmentId: vacancy.departmentId,
+                departmentName: vacancy.departmentName,
+                joinDate: new Date().toISOString(),
+                avatar: `https://avatar.vercel.sh/${applicant.email}.png`,
+            };
 
-                toast({
-                    title: "Applicant Hired!",
-                    description: `${applicant.name} is now an employee. An email has been sent for them to set their password and log in.`,
-                });
+            if (employeeSnap.exists()) {
+                // User already has a profile, just update it
+                await update(employeeRef, employeeData);
             } else {
-                 throw new Error("Could not find the original employee record for this applicant.");
+                // This is a new employee, create a full record
+                await set(employeeRef, employeeData);
             }
+
+            // 3. Send password reset/welcome email
+            await sendPasswordResetEmail(auth, applicant.email);
+
+            toast({
+                title: "Applicant Hired!",
+                description: `${applicant.name} is now an employee. An email has been sent for them to set their password and log in.`,
+            });
+
         } catch (error: any) {
             console.error(`Failed to hire applicant`, error);
             toast({
