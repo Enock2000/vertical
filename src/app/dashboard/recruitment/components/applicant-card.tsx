@@ -93,7 +93,6 @@ export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCard
                 name: applicant.name,
                 email: applicant.email,
                 phone: applicant.phone,
-                resumeUrl: applicant.resumeUrl,
                 companyId: companyId,
                 role: vacancy.title,
                 status: 'Active',
@@ -102,6 +101,11 @@ export function ApplicantCard({ applicant, vacancy, departments }: ApplicantCard
                 joinDate: new Date().toISOString(),
                 avatar: `https://avatar.vercel.sh/${applicant.email}.png`,
             };
+            
+            if (applicant.resumeUrl) {
+                employeeData.resumeUrl = applicant.resumeUrl;
+            }
+
 
             if (employeeSnap.exists()) {
                 // User already has a profile, just update it
