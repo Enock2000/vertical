@@ -21,13 +21,13 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { ApplicantForm } from '../careers/components/applicant-form';
+import { ApplicantForm } from '@/app/careers/components/applicant-form';
 
 
 function JobApplicationForm() {
     const params = useParams();
     const searchParams = useSearchParams();
-    router = useRouter();
+    const router = useRouter();
     const { user, employee } = useAuth();
     const jobId = params.jobId as string;
     const companyId = searchParams.get('companyId');
