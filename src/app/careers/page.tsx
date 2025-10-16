@@ -7,7 +7,7 @@ import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, Building2, MapPin, Briefcase, DollarSign, X, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, Building2, MapPin, Briefcase, DollarSign, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Input } from '@/components/ui/input';
@@ -33,7 +33,8 @@ const CareersContent = () => {
     const [selectedDept, setSelectedDept] = useState('all');
     const [selectedLocation, setSelectedLocation] = useState('all');
     const [selectedJobType, setSelectedJobType] = useState('all');
-    const [selectedJob, setSelectedJob] = useState<EnrichedJobVacancy | null>(null);
+    const [selectedJobForApply, setSelectedJobForApply] = useState<EnrichedJobVacancy | null>(null);
+    const [selectedJobForOverview, setSelectedJobForOverview] = useState<EnrichedJobVacancy | null>(null);
     const [isJobListOpen, setIsJobListOpen] = useState(false);
 
     useEffect(() => {
@@ -210,7 +211,10 @@ const CareersContent = () => {
                                                     <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.jobType || 'Not specified'}</p>
                                                 </CardContent>
                                                 <CardFooter>
-                                                    <Button variant="outline" className="w-full" onClick={() => setSelectedJob(job)}>Apply Now</Button>
+                                                    <Button variant="outline" className="w-full justify-between" onClick={() => setSelectedJobForOverview(job)}>
+                                                        View Overview
+                                                        <ArrowRight className="h-4 w-4" />
+                                                    </Button>
                                                 </CardFooter>
                                             </Card>
                                         ))
@@ -226,15 +230,37 @@ const CareersContent = () => {
                 </DialogContent>
             </Dialog>
 
-             <Dialog open={!!selectedJob} onOpenChange={(isOpen) => !isOpen && setSelectedJob(null)}>
+             <Dialog open={!!selectedJobForApply} onOpenChange={(isOpen) => !isOpen && setSelectedJobForApply(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Apply for {selectedJob?.title}</DialogTitle>
+                        <DialogTitle>Apply for {selectedJobForApply?.title}</DialogTitle>
                          <DialogDescription>
-                            Submit your application for the role at {selectedJob?.companyName}.
+                            Submit your application for the role at {selectedJobForApply?.companyName}.
                         </DialogDescription>
                     </DialogHeader>
-                    {selectedJob && <ApplicantForm job={selectedJob} onSubmitted={() => setSelectedJob(null)} />}
+                    {selectedJobForApply && <ApplicantForm job={selectedJobForApply} onSubmitted={() => setSelectedJobForApply(null)} />}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!selectedJobForOverview} onOpenChange={(isOpen) => !isOpen && setSelectedJobForOverview(null)}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{selectedJobForOverview?.title}</DialogTitle>
+                        <DialogDescription>
+                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+                                <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {selectedJobForOverview?.companyName}</span>
+                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {selectedJobForOverview?.location || 'Not specified'}</span>
+                                <span className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {selectedJobForOverview?.jobType || 'Not specified'}</span>
+                            </div>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className='text-sm text-muted-foreground whitespace-pre-wrap'>{selectedJobForOverview?.description}</p>
+                    </div>
+                    <Button onClick={() => {
+                        setSelectedJobForApply(selectedJobForOverview);
+                        setSelectedJobForOverview(null);
+                    }}>Apply Now</Button>
                 </DialogContent>
             </Dialog>
         </>
