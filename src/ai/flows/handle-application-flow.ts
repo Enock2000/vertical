@@ -112,26 +112,27 @@ const handleApplicationFlow = ai.defineFlow(
             const userSnapshot = await get(q);
 
             if (userSnapshot.exists()) {
-                // An account exists, but the user is not logged in.
-                return { success: false, message: 'An account with this email already exists. Please log in to apply.' };
+                // An account exists, link to it
+                const existingUserData = userSnapshot.val();
+                userId = Object.keys(existingUserData)[0];
+            } else {
+                 // Create a new applicant account
+                const newApplicantId = push(employeesRef).key!;
+                userId = newApplicantId;
+                const newUser: Partial<Employee> = {
+                    id: userId,
+                    name,
+                    email,
+                    role: 'Applicant',
+                    status: 'Active',
+                    joinDate: new Date().toISOString(),
+                    avatar: `https://avatar.vercel.sh/${email}.png`,
+                };
+                if (phone) {
+                newUser.phone = phone;
+                }
+                await set(ref(db, `employees/${userId}`), newUser);
             }
-
-            // Create a new applicant account
-            const newApplicantId = push(employeesRef).key!;
-            userId = newApplicantId;
-            const newUser: Partial<Employee> = {
-                id: userId,
-                name,
-                email,
-                role: 'Applicant',
-                status: 'Active',
-                joinDate: new Date().toISOString(),
-                avatar: `https://avatar.vercel.sh/${email}.png`,
-            };
-            if (phone) {
-              newUser.phone = phone;
-            }
-            await set(ref(db, `employees/${userId}`), newUser);
         }
         
         // --- Resume Handling ---
@@ -186,7 +187,7 @@ const handleApplicationFlow = ai.defineFlow(
 
         // --- Post-Application Actions ---
         if (!loggedInUserId) {
-            // Send a welcome/login email only to new guest applicants
+            // Send a welcome/login email only to guest applicants (new or existing)
             try {
                 const host = headers().get('host');
                 const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
