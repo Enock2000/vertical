@@ -1,3 +1,4 @@
+
 // src/app/jobs/[jobId]/page.tsx
 'use client';
 
