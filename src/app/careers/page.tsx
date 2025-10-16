@@ -162,8 +162,8 @@ const CareersContent = () => {
             </section>
 
             <Dialog open={isJobListOpen} onOpenChange={setIsJobListOpen}>
-                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-                    <div className="bg-primary text-primary-foreground p-6 rounded-t-lg">
+                <DialogContent className="w-screen h-screen max-w-full flex flex-col p-0 gap-0 sm:rounded-none">
+                    <div className="bg-primary text-primary-foreground p-6">
                         <DialogTitle className="text-3xl">Find the role that's right for you</DialogTitle>
                         <DialogDescription className="text-primary-foreground/80 mt-2">CAREERS AT VERTICALSYNC</DialogDescription>
                     </div>
@@ -246,10 +246,10 @@ const CareersContent = () => {
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>{selectedJobForOverview?.title}</DialogTitle>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {selectedJobForOverview?.companyName}</span>
-                            <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {selectedJobForOverview?.location || 'Not specified'}</span>
-                            <span className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {selectedJobForOverview?.jobType || 'Not specified'}</span>
+                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
+                            <span className="flex items-center gap-2 text-sm text-muted-foreground"><Building2 className="h-4 w-4" /> {selectedJobForOverview?.companyName}</span>
+                            <span className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" /> {selectedJobForOverview?.location || 'Not specified'}</span>
+                            <span className="flex items-center gap-2 text-sm text-muted-foreground"><Briefcase className="h-4 w-4" /> {selectedJobForOverview?.jobType || 'Not specified'}</span>
                         </div>
                     </DialogHeader>
                     <div className="py-4">
