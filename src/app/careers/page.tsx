@@ -246,13 +246,11 @@ const CareersContent = () => {
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>{selectedJobForOverview?.title}</DialogTitle>
-                        <DialogDescription>
-                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
-                                <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {selectedJobForOverview?.companyName}</span>
-                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {selectedJobForOverview?.location || 'Not specified'}</span>
-                                <span className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {selectedJobForOverview?.jobType || 'Not specified'}</span>
-                            </div>
-                        </DialogDescription>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {selectedJobForOverview?.companyName}</span>
+                            <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {selectedJobForOverview?.location || 'Not specified'}</span>
+                            <span className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {selectedJobForOverview?.jobType || 'Not specified'}</span>
+                        </div>
                     </DialogHeader>
                     <div className="py-4">
                         <p className='text-sm text-muted-foreground whitespace-pre-wrap'>{selectedJobForOverview?.description}</p>
