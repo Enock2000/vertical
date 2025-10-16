@@ -33,8 +33,6 @@ const CareersContent = () => {
     const [selectedDept, setSelectedDept] = useState('all');
     const [selectedLocation, setSelectedLocation] = useState('all');
     const [selectedJobType, setSelectedJobType] = useState('all');
-    const [selectedJobForApply, setSelectedJobForApply] = useState<EnrichedJobVacancy | null>(null);
-    const [selectedJobForOverview, setSelectedJobForOverview] = useState<EnrichedJobVacancy | null>(null);
     const [isJobListOpen, setIsJobListOpen] = useState(false);
 
     useEffect(() => {
@@ -97,8 +95,6 @@ const CareersContent = () => {
         (selectedLocation === 'all' || job.location === selectedLocation) &&
         (selectedJobType === 'all' || job.jobType === selectedJobType)
     );
-    
-    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW', minimumFractionDigits: 0 });
     
     const clearFilters = () => {
         setSelectedDept('all');
@@ -211,9 +207,11 @@ const CareersContent = () => {
                                                     <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.jobType || 'Not specified'}</p>
                                                 </CardContent>
                                                 <CardFooter>
-                                                    <Button variant="outline" className="w-full justify-between" onClick={() => setSelectedJobForOverview(job)}>
-                                                        View Overview
-                                                        <ArrowRight className="h-4 w-4" />
+                                                    <Button variant="outline" className="w-full justify-between" asChild>
+                                                        <Link href={`/jobs/${job.id}?companyId=${job.companyId}`}>
+                                                            View Overview
+                                                            <ArrowRight className="h-4 w-4" />
+                                                        </Link>
                                                     </Button>
                                                 </CardFooter>
                                             </Card>
@@ -227,38 +225,6 @@ const CareersContent = () => {
                             )}
                          </ScrollArea>
                     </div>
-                </DialogContent>
-            </Dialog>
-
-             <Dialog open={!!selectedJobForApply} onOpenChange={(isOpen) => !isOpen && setSelectedJobForApply(null)}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Apply for {selectedJobForApply?.title}</DialogTitle>
-                         <DialogDescription>
-                            Submit your application for the role at {selectedJobForApply?.companyName}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {selectedJobForApply && <ApplicantForm job={selectedJobForApply} onSubmitted={() => setSelectedJobForApply(null)} />}
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!selectedJobForOverview} onOpenChange={(isOpen) => !isOpen && setSelectedJobForOverview(null)}>
-                <DialogContent className="sm:max-w-lg">
-                    <DialogHeader>
-                        <DialogTitle>{selectedJobForOverview?.title}</DialogTitle>
-                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1">
-                            <span className="flex items-center gap-2 text-sm text-muted-foreground"><Building2 className="h-4 w-4" /> {selectedJobForOverview?.companyName}</span>
-                            <span className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4" /> {selectedJobForOverview?.location || 'Not specified'}</span>
-                            <span className="flex items-center gap-2 text-sm text-muted-foreground"><Briefcase className="h-4 w-4" /> {selectedJobForOverview?.jobType || 'Not specified'}</span>
-                        </div>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <p className='text-sm text-muted-foreground whitespace-pre-wrap'>{selectedJobForOverview?.description}</p>
-                    </div>
-                    <Button onClick={() => {
-                        setSelectedJobForApply(selectedJobForOverview);
-                        setSelectedJobForOverview(null);
-                    }}>Apply Now</Button>
                 </DialogContent>
             </Dialog>
         </>
