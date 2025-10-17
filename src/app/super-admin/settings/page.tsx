@@ -16,6 +16,7 @@ import { useAuth } from '@/app/auth-provider';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 interface HeroImage {
     id: string;
@@ -104,7 +105,9 @@ export default function SuperAdminSettingsPage() {
         <div className="flex min-h-screen w-full flex-col">
             <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
                 <div className="flex items-center gap-4">
-                    <Logo />
+                    <Link href="/">
+                      <Logo />
+                    </Link>
                     <h1 className="text-lg font-semibold">Super Admin Portal</h1>
                 </div>
                 <UserNav />

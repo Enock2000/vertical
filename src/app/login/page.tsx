@@ -109,7 +109,9 @@ export default function LoginPage() {
       <Card className="mx-auto w-full max-w-sm shadow-2xl">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center">
-            <Logo />
+            <Link href="/">
+              <Logo />
+            </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
           <CardDescription>

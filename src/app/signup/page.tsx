@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -143,7 +144,9 @@ export default function SignUpPage() {
       <Card className="mx-auto w-full max-w-md shadow-2xl">
         <CardHeader className="space-y-2 text-center">
           <div className="flex justify-center">
-            <Logo />
+            <Link href="/">
+              <Logo />
+            </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Create a Company Account</CardTitle>
           <CardDescription>

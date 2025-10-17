@@ -21,6 +21,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
 
 const templateSchema = z.object({
   subject: z.string().min(5, 'Subject is required.'),
@@ -128,7 +129,9 @@ export default function SuperAdminEmailTemplatesPage() {
         <div className="flex min-h-screen w-full flex-col">
             <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
                 <div className="flex items-center gap-4">
-                    <Logo />
+                    <Link href="/">
+                      <Logo />
+                    </Link>
                     <h1 className="text-lg font-semibold">Super Admin Portal</h1>
                 </div>
                 <UserNav />
