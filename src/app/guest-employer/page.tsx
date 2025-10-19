@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { AddGuestJobDialog } from './components/add-guest-job-dialog';
+import { UpgradeAccountDialog } from './components/upgrade-account-dialog';
 
 export default function GuestEmployerDashboard() {
     const { user, companyId, loading: authLoading } = useAuth();
@@ -168,11 +169,11 @@ export default function GuestEmployerDashboard() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Button variant="secondary" asChild>
-                        <Link href="/signup">
-                            Create Full Account
-                        </Link>
-                    </Button>
+                    <UpgradeAccountDialog>
+                        <Button variant="secondary">
+                            Upgrade Account
+                        </Button>
+                    </UpgradeAccountDialog>
                 </CardContent>
             </Card>
         </div>
