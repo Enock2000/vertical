@@ -21,3 +21,4 @@ import '@/ai/flows/send-email-flow.ts';
 import '@/ai/flows/create-campaign-flow.ts';
 import '@/ai/flows/logged-in-guest-job-flow.ts';
 import '@/ai/flows/upgrade-guest-account-flow.ts';
+import '@/ai/flows/import-employees-flow.ts';

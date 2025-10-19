@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,9 +18,10 @@ import { AddEmployeeDialog } from './components/add-employee-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
+import { ImportEmployeesDialog } from './components/import-employees-dialog';
 
 export default function EmployeesPage() {
-  const { companyId } = useAuth();
+  const { company, companyId } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -126,14 +127,17 @@ export default function EmployeesPage() {
             Manage your employees and their details.
           </CardDescription>
         </div>
-        <AddEmployeeDialog departments={departments} branches={branches} banks={banks} onEmployeeAdded={handleAction}>
-          <Button size="sm" className="gap-1">
-            <PlusCircle className="h-3.5 w-3.5" />
-            <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-              Add Employee
-            </span>
-          </Button>
-        </AddEmployeeDialog>
+        <div className="flex gap-2">
+            <ImportEmployeesDialog companyId={companyId!} companyName={company?.name || ''} onImportComplete={handleAction} />
+            <AddEmployeeDialog departments={departments} branches={branches} banks={banks} onEmployeeAdded={handleAction}>
+            <Button size="sm" className="gap-1">
+                <PlusCircle className="h-3.5 w-3.5" />
+                <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                Add Employee
+                </span>
+            </Button>
+            </AddEmployeeDialog>
+        </div>
       </CardHeader>
       <CardContent>
         {loading ? (

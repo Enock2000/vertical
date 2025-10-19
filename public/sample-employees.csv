@@ -1,0 +1,7 @@
+name,email,role,departmentName,salary,workerType,location,phone,annualLeaveBalance
+John Doe,john.doe@example.com,Software Engineer,Engineering,80000,Salaried,New York,123-456-7890,21
+Jane Smith,jane.smith@example.com,Product Manager,Product,95000,Salaried,San Francisco,098-765-4321,21
+Peter Jones,peter.jones@example.com,Sales Associate,Sales,60000,Salaried,London,,21
+Mary Garcia,mary.garcia@example.com,Designer,Design,75000,Salaried,Remote,,21
+David Miller,david.miller@example.com,QA Tester,Engineering,65.50,Hourly,"",,14
+Sarah Wilson,sarah.wilson@example.com,Marketing Lead,Marketing,90000,Salaried,"",,21
