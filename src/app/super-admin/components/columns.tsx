@@ -32,7 +32,14 @@ const handleStatusUpdate = async (company: Company, status: Company['status'], t
         await update(ref(db, `companies/${company.id}`), { status });
 
         if (status === 'Active') {
-             await update(ref(db, `employees/${company.id}`), { status: 'Active' });
+             // If the company was a guest, upgrade the admin's role
+            const employeeRef = ref(db, `employees/${company.id}`);
+            const employeeSnap = await get(employeeRef);
+            if (employeeSnap.exists() && employeeSnap.val().role === 'GuestAdmin') {
+                await update(employeeRef, { status: 'Active', role: 'Admin' });
+            } else {
+                await update(employeeRef, { status: 'Active' });
+            }
              await sendCompanyApprovedEmail(company);
         } else if (status === 'Suspended') {
             await sendCompanySuspendedEmail(company);
