@@ -1,4 +1,3 @@
-
 // src/app/guest-employer/page.tsx
 'use client';
 
@@ -8,11 +7,12 @@ import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo, runTransaction } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import type { JobVacancy, Applicant } from '@/lib/data';
-import { Loader2, Briefcase, ExternalLink, Users, Eye } from 'lucide-react';
+import { Loader2, Briefcase, ExternalLink, Users, Eye, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { AddGuestJobDialog } from './components/add-guest-job-dialog';
 
 export default function GuestEmployerDashboard() {
     const { user, companyId, loading: authLoading } = useAuth();
@@ -97,8 +97,17 @@ export default function GuestEmployerDashboard() {
             </Card>
             
             <Card>
-                <CardHeader>
-                    <CardTitle>My Job Postings</CardTitle>
+                <CardHeader className="flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>My Job Postings</CardTitle>
+                        <CardDescription>Manage your active and pending job posts.</CardDescription>
+                    </div>
+                     <AddGuestJobDialog>
+                        <Button size="sm">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Post New Job
+                        </Button>
+                    </AddGuestJobDialog>
                 </CardHeader>
                 <CardContent>
                     {jobsWithStats.length > 0 ? (
@@ -142,11 +151,11 @@ export default function GuestEmployerDashboard() {
                         <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed rounded-lg text-center">
                             <Briefcase className="h-10 w-10 text-muted-foreground mb-2" />
                             <p className="text-muted-foreground">You haven't posted any jobs yet.</p>
-                            <Button asChild variant="link">
-                                <Link href="/post-a-job">
+                             <AddGuestJobDialog>
+                                <Button variant="link">
                                     Post Your First Job
-                                </Link>
-                            </Button>
+                                </Button>
+                            </AddGuestJobDialog>
                         </div>
                     )}
                 </CardContent>
