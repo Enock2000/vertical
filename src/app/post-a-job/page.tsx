@@ -130,6 +130,12 @@ export default function PostAJobPage() {
                 <Link href="/">
                     <Logo />
                 </Link>
+                <Button variant="ghost" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Home
+                    </Link>
+                </Button>
             </div>
         </header>
         <main className="flex flex-1 items-center justify-center py-12">
