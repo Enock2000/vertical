@@ -47,33 +47,42 @@ export default function GeneralLoginPage() {
             return;
         }
 
-        // Fetch company details for all roles except Super Admin
+        if (employee.role === 'GuestAdmin') {
+            router.push('/guest-employer');
+            return;
+        }
+        
+        // Fetch company details for all other roles
         const companyRef = ref(db, 'companies/' + employee.companyId);
         const companySnap = await get(companyRef);
         
         if (companySnap.exists()) {
             const company: Company = companySnap.val();
-            if (company.status !== 'Active' || company.employeePortalDisabled) {
+             if (company.status !== 'Active' && company.status !== 'Guest') { // Allow guest company employees if any
                 await auth.signOut();
                 toast({
                     variant: "destructive",
                     title: "Access Denied",
-                    description: company.employeePortalDisabled 
-                        ? "Your company's employee portal is currently disabled. Please contact your administrator."
-                        : `Your company's account is currently ${company.status}. Please contact your administrator.`,
+                    description: `Your company's account is currently ${company.status}. Please contact your administrator.`,
+                });
+                setIsLoading(false);
+                return;
+            }
+            if (company.employeePortalDisabled) {
+                 await auth.signOut();
+                toast({
+                    variant: "destructive",
+                    title: "Access Denied",
+                    description: "Your company's employee portal is currently disabled. Please contact your administrator.",
                 });
                 setIsLoading(false);
                 return;
             }
         }
 
+
         if (employee.role === 'Applicant') {
             router.push('/applicant-portal');
-            return;
-        }
-
-        if (employee.role === 'GuestAdmin') {
-            router.push('/guest-employer');
             return;
         }
         
