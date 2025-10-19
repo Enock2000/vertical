@@ -30,19 +30,20 @@ export type EnrichedCompany = Company & { employeeCount: number };
 const handleStatusUpdate = async (company: Company, status: Company['status'], toast: Function) => {
     try {
         await update(ref(db, `companies/${company.id}`), { status });
+        const employeeRef = ref(db, `employees/${company.id}`);
+        const employeeSnap = await get(employeeRef);
 
         if (status === 'Active') {
-             // If the company was a guest, upgrade the admin's role
-            const employeeRef = ref(db, `employees/${company.id}`);
-            const employeeSnap = await get(employeeRef);
-            if (employeeSnap.exists() && employeeSnap.val().role === 'GuestAdmin') {
+            if (employeeSnap.exists() && (employeeSnap.val().role === 'GuestAdmin' || employeeSnap.val().status !== 'Active')) {
                 await update(employeeRef, { status: 'Active', role: 'Admin' });
-            } else {
-                await update(employeeRef, { status: 'Active' });
             }
              await sendCompanyApprovedEmail(company);
         } else if (status === 'Suspended') {
             await sendCompanySuspendedEmail(company);
+        } else if (status === 'Guest') {
+            if (employeeSnap.exists() && employeeSnap.val().role === 'Admin') {
+                await update(employeeRef, { role: 'GuestAdmin' });
+            }
         }
         
         toast({
@@ -196,11 +197,16 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
                     </>
                 )}
                  {company.status === 'Active' && (
-                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Suspended', toast)}>
-                        Suspend
-                    </DropdownMenuItem>
+                    <>
+                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Suspended', toast)}>
+                            Suspend
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Guest', toast)}>
+                            Downgrade to Guest
+                        </DropdownMenuItem>
+                    </>
                 )}
-                 {(company.status === 'Suspended' || company.status === 'Rejected') && (
+                 {(company.status === 'Suspended' || company.status === 'Rejected' || company.status === 'Guest') && (
                     <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
                         Activate
                     </DropdownMenuItem>
