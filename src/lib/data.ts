@@ -39,6 +39,7 @@ export type Company = {
     logoUrl?: string;
     enabledModules?: Permission[];
     employeePortalDisabled?: boolean;
+    apiKey?: string;
 };
 
 export type Branch = {
@@ -300,7 +301,7 @@ export type AttendanceRecord = {
     role?: string;
     avatar?: string;
     email?: string;
-}
+};
 
 export type Department = {
     id: string;
@@ -727,6 +728,7 @@ export const calculateProductivityScore = (
 
     }).filter(Boolean) as DepartmentProductivityScore[];
 };
+
 
 
 
