@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Logo from '@/components/logo';
 import { ArrowLeft } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 export default function ApiDocsPage() {
     const getEmployeesExample = `
@@ -35,6 +37,107 @@ export default function ApiDocsPage() {
   "departmentId": "dept_abcde",
   "salary": 85000,
   "workerType": "Salaried"
+}`;
+
+    const curlGetExample = `curl -X GET 'https://your-app-domain.com/api/v1/employees' \\
+-H 'Authorization: Bearer YOUR_API_KEY'`;
+
+    const nodeGetExample = `const apiKey = 'YOUR_API_KEY';
+const url = 'https://your-app-domain.com/api/v1/employees';
+
+fetch(url, {
+  method: 'GET',
+  headers: {
+    'Authorization': \`Bearer \${apiKey}\`
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));`;
+
+    const javaGetExample = `import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public class ApiClient {
+    public static void main(String[] args) throws Exception {
+        String apiKey = "YOUR_API_KEY";
+        String url = "https://your-app-domain.com/api/v1/employees";
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + apiKey)
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println(response.body());
+    }
+}`;
+
+    const curlPostExample = `curl -X POST 'https://your-app-domain.com/api/v1/employees' \\
+-H 'Authorization: Bearer YOUR_API_KEY' \\
+-H 'Content-Type: application/json' \\
+-d '${postEmployeeExample}'`;
+
+    const nodePostExample = `const apiKey = 'YOUR_API_KEY';
+const url = 'https://your-app-domain.com/api/v1/employees';
+const employeeData = {
+  name: "Richard Hendricks",
+  email: "richard.h@example.com",
+  role: "Software Engineer",
+  departmentId": "dept_abcde",
+  salary: 85000,
+  workerType: "Salaried"
+};
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Authorization': \`Bearer \${apiKey}\`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(employeeData)
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));`;
+
+    const javaPostExample = `import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+public class ApiClient {
+    public static void main(String[] args) throws Exception {
+        String apiKey = "YOUR_API_KEY";
+        String url = "https://your-app-domain.com/api/v1/employees";
+        String requestBody = """
+            {
+              "name": "Richard Hendricks",
+              "email": "richard.h@example.com",
+              "role": "Software Engineer",
+              "departmentId": "dept_abcde",
+              "salary": 85000,
+              "workerType": "Salaried"
+            }
+        """;
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        System.out.println(response.body());
+    }
 }`;
 
 
@@ -90,12 +193,22 @@ export default function ApiDocsPage() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        <h4 className="font-semibold mb-2">Example Request</h4>
-                                        <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto">
-                                            <code>
-                                                {`curl -X GET 'https://your-app-domain.com/api/v1/employees' \\\n-H 'Authorization: Bearer YOUR_API_KEY'`}
-                                            </code>
-                                        </pre>
+                                        <Tabs defaultValue="curl">
+                                            <TabsList>
+                                                <TabsTrigger value="curl">cURL</TabsTrigger>
+                                                <TabsTrigger value="node">Node.js</TabsTrigger>
+                                                <TabsTrigger value="java">Java</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="curl">
+                                                <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto"><code>{curlGetExample}</code></pre>
+                                            </TabsContent>
+                                            <TabsContent value="node">
+                                                <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto"><code>{nodeGetExample}</code></pre>
+                                            </TabsContent>
+                                            <TabsContent value="java">
+                                                 <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto"><code>{javaGetExample}</code></pre>
+                                            </TabsContent>
+                                        </Tabs>
                                         <h4 className="font-semibold mt-4 mb-2">Example Response (200 OK)</h4>
                                         <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto">
                                             <code>
@@ -125,11 +238,23 @@ export default function ApiDocsPage() {
                                              <li><code className="bg-muted px-1 rounded-sm">workerType</code> (string, required) - Must be 'Salaried', 'Hourly', or 'Contractor'.</li>
                                          </ul>
                                         <h4 className="font-semibold mt-4 mb-2">Example Request</h4>
-                                        <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto">
-                                            <code>
-                                                {`curl -X POST 'https://your-app-domain.com/api/v1/employees' \\\n-H 'Authorization: Bearer YOUR_API_KEY' \\\n-H 'Content-Type: application/json' \\\n-d '${postEmployeeExample}'`}
-                                            </code>
-                                        </pre>
+                                        <Tabs defaultValue="curl">
+                                            <TabsList>
+                                                <TabsTrigger value="curl">cURL</TabsTrigger>
+                                                <TabsTrigger value="node">Node.js</TabsTrigger>
+                                                <TabsTrigger value="java">Java</TabsTrigger>
+                                            </TabsList>
+                                            <TabsContent value="curl">
+                                                <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto"><code>{curlPostExample}</code></pre>
+                                            </TabsContent>
+                                            <TabsContent value="node">
+                                                <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto"><code>{nodePostExample}</code></pre>
+                                            </TabsContent>
+                                            <TabsContent value="java">
+                                                <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto"><code>{javaPostExample}</code></pre>
+                                            </TabsContent>
+                                        </Tabs>
+
                                         <h4 className="font-semibold mt-4 mb-2">Example Response (201 Created)</h4>
                                         <pre className="mt-2 bg-muted p-4 rounded-md text-sm overflow-x-auto">
                                             <code>
