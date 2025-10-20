@@ -1,4 +1,3 @@
-
 // src/app/documentation/page.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,7 +37,7 @@ const features = [
         title: "Attendance & Roster", 
         description: "Employees can clock in/out via their portal. The system intelligently checks the daily roster to mark employees as 'Absent' only if they are scheduled to work, otherwise showing 'Off Day' or 'On Leave'. Admins can manage shifts and view detailed attendance records."
     },
-    { 
+    { s
         icon: <Trophy />, 
         title: "Performance Management", 
         description: "Set and track individual employee goals, initiate performance reviews, and collect 360-degree feedback. Manage a training catalog with quiz-based courses and track employee certifications." 
