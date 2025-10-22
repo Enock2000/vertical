@@ -103,11 +103,18 @@ function JobDetailsPage() {
                                     <p className="font-semibold">{vacancy.jobType || 'Full-Time'}</p>
                                 </div>
                              </div>
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-4 mb-4">
                                 <MapPin className="h-5 w-5 text-muted-foreground" />
                                 <div>
                                     <p className="text-sm text-muted-foreground">Location</p>
                                     <p className="font-semibold">{vacancy.location}</p>
+                                </div>
+                             </div>
+                              <div className="flex items-center gap-4">
+                                <Building2 className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Company</p>
+                                    <p className="font-semibold">{company.name}</p>
                                 </div>
                              </div>
                         </div>
