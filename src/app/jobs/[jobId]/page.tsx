@@ -28,6 +28,7 @@ function JobDetailsPage() {
     const [company, setCompany] = useState<Company | { name: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const [activeTab, setActiveTab] = useState('overview');
     
     useEffect(() => {
         if (!jobId || !companyId) {
@@ -103,7 +104,7 @@ function JobDetailsPage() {
                         </div>
                     </aside>
                     <div className="md:col-span-2">
-                        <Tabs defaultValue="overview">
+                        <Tabs value={activeTab} onValueChange={setActiveTab}>
                             <TabsList>
                                 <TabsTrigger value="overview">Overview</TabsTrigger>
                                 <TabsTrigger value="application">Application</TabsTrigger>
@@ -119,7 +120,6 @@ function JobDetailsPage() {
                                         </>
                                     )}
                                 </div>
-                                <Button size="lg" className="mt-8" onClick={() => document.querySelector('[data-state="inactive"][data-radix-collection-item][role="tab"]')?.click()}>Apply for this job</Button>
                             </TabsContent>
                              <TabsContent value="application" className="mt-6">
                                 <ApplicantForm job={vacancy} onSubmitted={() => router.push('/applicant-portal')} />
@@ -128,6 +128,11 @@ function JobDetailsPage() {
                     </div>
                 </div>
             </div>
+             {activeTab === 'overview' && (
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t flex justify-center z-10">
+                    <Button size="lg" onClick={() => setActiveTab('application')}>Apply for this job</Button>
+                </div>
+             )}
         </div>
     )
 }
@@ -147,7 +152,7 @@ export default function JobPage() {
                     </div>
                 </div>
             </header>
-            <main className="flex-1">
+            <main className="flex-1 pb-24">
                 <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
                     <JobDetailsPage />
                 </Suspense>
