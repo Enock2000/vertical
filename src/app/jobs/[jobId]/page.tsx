@@ -1,3 +1,4 @@
+
 // src/app/jobs/[jobId]/page.tsx
 'use client';
 
@@ -7,7 +8,7 @@ import { db } from '@/lib/firebase';
 import { ref, get, runTransaction } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Building2, Briefcase, MapPin } from 'lucide-react';
+import { Loader2, ArrowLeft, Building2, Briefcase, MapPin, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import Logo from '@/components/logo';
