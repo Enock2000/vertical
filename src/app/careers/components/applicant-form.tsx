@@ -1,7 +1,7 @@
 // src/app/careers/components/applicant-form.tsx
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, forwardRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,13 +68,14 @@ type ApplicantFormValues = z.infer<typeof formSchema>;
 interface ApplicantFormProps {
   job: JobVacancy;
   onSubmitted: () => void;
+  isSubmitting: boolean;
+  setIsSubmitting: (isSubmitting: boolean) => void;
 }
 
-export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
+export const ApplicantForm = forwardRef<HTMLFormElement, ApplicantFormProps>(({ job, onSubmitted, isSubmitting, setIsSubmitting }, ref) => {
   const { user, employee } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileName, setFileName] = useState('');
   
   const form = useForm<ApplicantFormValues>({
@@ -127,7 +128,7 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
 
   return (
      <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form ref={ref} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField
             control={form.control}
             name="name"
@@ -213,11 +214,9 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
             </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-          Apply for this job
-        </Button>
       </form>
     </Form>
   );
-}
+});
+
+ApplicantForm.displayName = 'ApplicantForm';

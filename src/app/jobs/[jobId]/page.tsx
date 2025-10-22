@@ -1,8 +1,7 @@
-
 // src/app/jobs/[jobId]/page.tsx
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, get, runTransaction } from 'firebase/database';
@@ -29,6 +28,8 @@ function JobDetailsPage() {
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('overview');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
     
     useEffect(() => {
         if (!jobId || !companyId) {
@@ -66,6 +67,14 @@ function JobDetailsPage() {
         return <div className="flex h-screen items-center justify-center">Job vacancy not found.</div>;
     }
     
+    const handleApplyClick = () => {
+        if (activeTab === 'overview') {
+            setActiveTab('application');
+        } else {
+            formRef.current?.requestSubmit();
+        }
+    }
+
     return (
         <div className="container py-8">
             <div className="mx-auto max-w-5xl">
@@ -122,15 +131,28 @@ function JobDetailsPage() {
                                 </div>
                             </TabsContent>
                              <TabsContent value="application" className="mt-6">
-                                <ApplicantForm job={vacancy} onSubmitted={() => router.push('/applicant-portal')} />
+                                <ApplicantForm 
+                                    ref={formRef}
+                                    job={vacancy} 
+                                    onSubmitted={() => router.push('/applicant-portal')}
+                                    isSubmitting={isSubmitting}
+                                    setIsSubmitting={setIsSubmitting} 
+                                />
                             </TabsContent>
                         </Tabs>
                     </div>
                 </div>
             </div>
-             {activeTab === 'overview' && (
+             {(activeTab === 'overview' || activeTab === 'application') && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t flex justify-center z-10">
-                    <Button size="lg" onClick={() => setActiveTab('application')}>Apply for this job</Button>
+                    <Button size="lg" onClick={handleApplyClick} disabled={isSubmitting}>
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Submitting...
+                            </>
+                        ) : 'Apply for this job'}
+                    </Button>
                 </div>
              )}
         </div>
