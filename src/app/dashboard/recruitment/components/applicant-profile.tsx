@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mail, Phone, FileText, Calendar, Info, MessageSquare } from 'lucide-react';
+import { Mail, Phone, FileText, Calendar, Info, MessageSquare, Linkedin } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -40,6 +40,14 @@ export function ApplicantProfile({ applicant, vacancy, departments }: ApplicantP
                         <h3 className="font-semibold text-lg">Contact Information</h3>
                         <p className="flex items-center gap-2 text-sm"><Mail className="h-4 w-4 text-muted-foreground" /> {applicant.email}</p>
                         <p className="flex items-center gap-2 text-sm"><Phone className="h-4 w-4 text-muted-foreground" /> {applicant.phone || 'Not provided'}</p>
+                        {applicant.linkedinProfile && (
+                             <p className="flex items-center gap-2 text-sm">
+                                <Linkedin className="h-4 w-4 text-muted-foreground" /> 
+                                <a href={applicant.linkedinProfile} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                                    LinkedIn Profile
+                                </a>
+                            </p>
+                        )}
                     </div>
 
                     <Separator />
@@ -56,6 +64,16 @@ export function ApplicantProfile({ applicant, vacancy, departments }: ApplicantP
                             </Button>
                          )}
                     </div>
+                    
+                    {applicant.coverLetter && (
+                        <>
+                            <Separator />
+                            <div className="space-y-2">
+                                <h3 className="font-semibold text-lg">Cover Letter</h3>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{applicant.coverLetter}</p>
+                            </div>
+                        </>
+                    )}
                     
                     {applicant.answers && vacancy.customForm && vacancy.customForm.length > 0 && (
                         <>

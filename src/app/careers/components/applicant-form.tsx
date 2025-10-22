@@ -58,6 +58,8 @@ const formSchema = z.object({
   email: z.string().email("A valid email is required."),
   phone: z.string().optional(),
   resume: z.any().optional(),
+  coverLetter: z.string().optional(),
+  linkedinProfile: z.string().optional(),
   answers: z.record(z.string()).optional(),
 });
 
@@ -81,6 +83,8 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
       name: employee?.name || '',
       email: employee?.email || '',
       phone: employee?.phone || '',
+      coverLetter: '',
+      linkedinProfile: '',
       answers: {},
     },
   });
@@ -95,6 +99,8 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
     formData.append('name', values.name);
     formData.append('email', values.email);
     if(values.phone) formData.append('phone', values.phone);
+    if(values.coverLetter) formData.append('coverLetter', values.coverLetter);
+    if(values.linkedinProfile) formData.append('linkedinProfile', values.linkedinProfile);
     if(values.resume) formData.append('resume', values.resume);
     if(values.answers) {
         Object.entries(values.answers).forEach(([key, value]) => {
@@ -149,7 +155,7 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
             name="phone"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Phone (Optional)</FormLabel>
+                    <FormLabel>Phone Number</FormLabel>
                     <FormControl><Input type="tel" {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
@@ -160,7 +166,7 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
             name="resume"
             render={({ field: { onChange, ...fieldProps } }) => (
                  <FormItem>
-                    <FormLabel>Resume</FormLabel>
+                    <FormLabel>Resume/CV</FormLabel>
                     <FormControl>
                         <Input 
                             type="file" 
@@ -178,6 +184,28 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
                 </FormItem>
             )}
         />
+        <FormField
+            control={form.control}
+            name="coverLetter"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Cover Letter (Optional)</FormLabel>
+                    <FormControl><Textarea {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+        <FormField
+            control={form.control}
+            name="linkedinProfile"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>LinkedIn Profile (Optional)</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
         
         {job.customForm && job.customForm.length > 0 && (
             <div className="space-y-4 pt-4 border-t">
@@ -187,7 +215,7 @@ export function ApplicantForm({ job, onSubmitted }: ApplicantFormProps) {
 
         <Button type="submit" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : null}
-          Submit Application
+          Apply for this job
         </Button>
       </form>
     </Form>

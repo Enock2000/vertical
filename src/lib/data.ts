@@ -210,6 +210,8 @@ export type Applicant = {
   name: string;
   email: string;
   phone: string;
+  coverLetter?: string;
+  linkedinProfile?: string;
   resumeUrl: string | null; // URL to the resume file in storage
   status: ApplicantStatus;
   appliedAt: string; // ISO 8601 date string
@@ -728,8 +730,3 @@ export const calculateProductivityScore = (
 
     }).filter(Boolean) as DepartmentProductivityScore[];
 };
-
-
-
-
-

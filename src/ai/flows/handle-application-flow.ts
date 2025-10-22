@@ -24,6 +24,8 @@ const ApplicationInputSchema = z.object({
   name: z.string(),
   email: z.string().email(),
   phone: z.string().optional(),
+  coverLetter: z.string().optional(),
+  linkedinProfile: z.string().optional(),
   source: z.string().optional(),
   answers: z.record(z.string()).optional(),
 });
@@ -90,7 +92,7 @@ const handleApplicationFlow = ai.defineFlow(
     }),
     outputSchema: ApplicationOutputSchema,
   },
-  async ({ companyId, jobVacancyId, name, email, phone, source, resumeFile, vacancyTitle, loggedInUserId, answers }) => {
+  async ({ companyId, jobVacancyId, name, email, phone, coverLetter, linkedinProfile, source, resumeFile, vacancyTitle, loggedInUserId, answers }) => {
     try {
         let userId = loggedInUserId;
         let resumeUrl: string | null = null;
@@ -172,6 +174,8 @@ const handleApplicationFlow = ai.defineFlow(
             name,
             email,
             phone: phone || '',
+            coverLetter: coverLetter || '',
+            linkedinProfile: linkedinProfile || '',
             resumeUrl,
             status: 'New',
             appliedAt: new Date().toISOString(),
