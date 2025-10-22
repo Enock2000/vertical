@@ -1,34 +1,25 @@
 // src/app/jobs/[jobId]/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, get, runTransaction } from 'firebase/database';
-import type { JobVacancy, Company, ApplicationFormQuestion } from '@/lib/data';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import type { JobVacancy, Company } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Building2, Upload, CalendarClock, MapPin, Briefcase, DollarSign, Mail } from 'lucide-react';
+import { Loader2, ArrowLeft, Building2, Briefcase, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { handleApplication } from '@/ai/flows/handle-application-flow';
 import Link from 'next/link';
 import Logo from '@/components/logo';
-import { format } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Separator } from '@/components/ui/separator';
 import { ApplicantForm } from '@/app/careers/components/applicant-form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
-function JobApplicationForm() {
+function JobDetailsPage() {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user, employee } = useAuth();
     const jobId = params.jobId as string;
     const companyId = searchParams.get('companyId');
 
@@ -77,33 +68,62 @@ function JobApplicationForm() {
         <div className="container py-8">
             <div className="mx-auto max-w-5xl">
                  <div className="mb-8 p-6 bg-primary text-primary-foreground rounded-lg">
-                    <h1 className="text-3xl font-bold">{vacancy.title}</h1>
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-primary-foreground/80">
-                        <span className="flex items-center gap-2"><Building2 className="h-4 w-4" /> {company.name}</span>
-                        <span className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {vacancy.location || 'Not specified'}</span>
-                        <span className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {vacancy.jobType || 'Not specified'}</span>
-                    </div>
+                    <Button variant="ghost" className="mb-4 hover:bg-primary/20 text-primary-foreground" onClick={() => router.back()}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        All roles
+                    </Button>
+                    <h1 className="text-4xl font-bold">{vacancy.title} | {vacancy.location}</h1>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8">
+                    <aside className="md:col-span-1 space-y-6">
+                        <div className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
+                             <div className="flex items-center gap-4 mb-4">
+                                <Users className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Team</p>
+                                    <p className="font-semibold">{vacancy.departmentName}</p>
+                                </div>
+                             </div>
+                             <div className="flex items-center gap-4 mb-4">
+                                <Briefcase className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Employment type</p>
+                                    <p className="font-semibold">{vacancy.jobType || 'Full-Time'}</p>
+                                </div>
+                             </div>
+                              <div className="flex items-center gap-4">
+                                <MapPin className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Location</p>
+                                    <p className="font-semibold">{vacancy.location}</p>
+                                </div>
+                             </div>
+                        </div>
+                    </aside>
                     <div className="md:col-span-2">
-                        <Card>
-                             <CardContent className="p-6">
+                        <Tabs defaultValue="overview">
+                            <TabsList>
+                                <TabsTrigger value="overview">Overview</TabsTrigger>
+                                <TabsTrigger value="application">Application</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="overview" className="mt-6">
                                 <div className="prose dark:prose-invert max-w-none">
-                                   <h4 className="font-semibold">Job Description</h4>
+                                   <h2 className="font-semibold text-xl">Who we are is what we do.</h2>
                                     <p>{vacancy.description}</p>
                                     {vacancy.requirements && (
                                         <>
-                                            <h4 className="font-semibold">Requirements</h4>
+                                            <h3 className="font-semibold text-lg">Requirements</h3>
                                             <p>{vacancy.requirements}</p>
                                         </>
                                     )}
                                 </div>
-                             </CardContent>
-                        </Card>
-                    </div>
-                     <div className="md:col-span-1">
-                        <ApplicantForm job={vacancy} onSubmitted={() => router.push('/applicant-portal')} />
+                                <Button size="lg" className="mt-8" onClick={() => document.querySelector('[data-state="inactive"][data-radix-collection-item][role="tab"]')?.click()}>Apply for this job</Button>
+                            </TabsContent>
+                             <TabsContent value="application" className="mt-6">
+                                <ApplicantForm job={vacancy} onSubmitted={() => router.push('/applicant-portal')} />
+                            </TabsContent>
+                        </Tabs>
                     </div>
                 </div>
             </div>
@@ -114,23 +134,21 @@ function JobApplicationForm() {
 
 export default function JobPage() {
     return (
-        <div className="flex min-h-screen flex-col bg-muted/40">
+        <div className="flex min-h-screen flex-col bg-background">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container flex h-14 items-center justify-between">
                     <Link href="/">
                       <Logo />
                     </Link>
-                    <Button variant="ghost" asChild>
-                        <Link href="/careers">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Jobs Centre
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="text-sm font-medium hover:text-primary">Home</Link>
+                        <Link href="/careers" className="text-sm font-medium hover:text-primary">Jobs</Link>
+                    </div>
                 </div>
             </header>
             <main className="flex-1">
                 <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>}>
-                    <JobApplicationForm />
+                    <JobDetailsPage />
                 </Suspense>
             </main>
         </div>
