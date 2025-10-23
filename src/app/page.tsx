@@ -73,8 +73,6 @@ const navLinks = [
 export default function HomePage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
-  const [heroImages, setHeroImages] = useState<ImagePlaceholder[]>([]);
-  const [loadingHeroImages, setLoadingHeroImages] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loadingPlans, setLoadingPlans] = useState(true);
 
@@ -88,14 +86,6 @@ export default function HomePage() {
         console.error(error);
         setLoadingTestimonials(false);
     });
-    
-    const heroImagesRef = ref(db, 'platformSettings/heroImages');
-    const unsubscribeHeroImages = onValue(heroImagesRef, (snapshot) => {
-        const data = snapshot.val();
-        setHeroImages(data ? Object.values(data) : []);
-        setLoadingHeroImages(false);
-    });
-
 
     const plansRef = ref(db, 'subscriptionPlans');
     const unsubscribePlans = onValue(plansRef, (snapshot) => {
@@ -106,7 +96,6 @@ export default function HomePage() {
 
     return () => {
         unsubscribeTestimonials();
-        unsubscribeHeroImages();
         unsubscribePlans();
     };
   }, []);
@@ -195,42 +184,6 @@ export default function HomePage() {
               </div>
             </div>
         </section>
-
-        <div className="relative my-16">
-            {loadingHeroImages ? (
-                 <div className="flex items-center justify-center h-[600px]">
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-            ) : (
-                <Carousel
-                    className="w-full"
-                    opts={{ loop: true, }}
-                    plugins={[ require('embla-carousel-autoplay')({ delay: 5000, stopOnInteraction: true }), ]}
-                    >
-                    <CarouselContent>
-                        {heroImages.map((image) => (
-                        <CarouselItem key={image.id}>
-                            <Card className="overflow-hidden border-0 rounded-none">
-                                <CardContent className="p-0">
-                                    <Image
-                                        src={image.imageUrl}
-                                        alt={image.description}
-                                        width={1600}
-                                        height={800}
-                                        className="w-full max-h-[600px] aspect-video object-cover"
-                                        data-ai-hint={image.imageHint}
-                                        priority
-                                    />
-                                </CardContent>
-                            </Card>
-                        </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
-                    <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
-                </Carousel>
-            )}
-        </div>
 
         {/* Features Section */}
         <section id="features" className="py-20 md:py-28">
