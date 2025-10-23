@@ -98,30 +98,32 @@ const JobListContent = () => {
                 <h1 className="text-3xl font-bold">Find the role that's right for you</h1>
                 <p className="text-primary-foreground/80 mt-2">CAREERS AT VERTICALSYNC</p>
             </div>
-            <div className="p-6 flex flex-wrap items-center gap-4 border-b">
+            <div className="p-6 flex flex-col md:flex-row md:items-center gap-4 border-b">
                 <span className="text-sm font-medium">Filter by</span>
-                <Select value={selectedDept} onValueChange={setSelectedDept}>
-                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Team" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Teams</SelectItem>
-                        {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <Select value={selectedDept} onValueChange={setSelectedDept}>
+                        <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Team" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Teams</SelectItem>
+                            {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
                     <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Location" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Locations</SelectItem>
-                        {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <Select value={selectedJobType} onValueChange={setSelectedJobType}>
-                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Employment Type" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        {jobTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <Button variant="link" onClick={clearFilters} className="ml-auto">Clear all</Button>
+                        <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Location" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Locations</SelectItem>
+                            {locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select value={selectedJobType} onValueChange={setSelectedJobType}>
+                        <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Employment Type" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            {jobTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <Button variant="link" onClick={clearFilters} className="md:ml-auto mt-2 md:mt-0">Clear all</Button>
             </div>
             <div className="p-6 flex-1 overflow-hidden">
                 <h3 className="font-semibold mb-4">Open positions ({filteredVacancies.length})</h3>
