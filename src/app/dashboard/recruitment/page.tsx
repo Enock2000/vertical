@@ -10,13 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { JobVacancy, Department, Applicant } from '@/lib/data';
-import { AddJobDialog } from './components/add-job-dialog';
 import { AddApplicantDialog } from './components/add-applicant-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { ApplicantKanbanBoard } from './components/applicant-kanban-board';
 import { ReportingTab } from './components/reporting-tab';
 import { OnboardingTab } from './components/onboarding-tab';
+import Link from 'next/link';
 
 export default function RecruitmentPage() {
   const { company, companyId } = useAuth();
@@ -102,14 +102,14 @@ export default function RecruitmentPage() {
                         </span>
                     </Button>
                 </AddApplicantDialog>
-                <AddJobDialog departments={departments} onJobAdded={handleAction}>
-                    <Button size="sm" className="gap-1" disabled={(company?.subscription?.jobPostingsRemaining || 0) <= 0}>
+                <Button asChild size="sm" className="gap-1" disabled={(company?.subscription?.jobPostingsRemaining || 0) <= 0}>
+                    <Link href="/dashboard/recruitment/new">
                         <PlusCircle className="h-3.5 w-3.5" />
                         <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                         Post Job Vacancy
                         </span>
-                    </Button>
-                </AddJobDialog>
+                    </Link>
+                </Button>
             </div>
         </div>
         <TabsContent value="vacancies" className="flex-grow mt-0">
@@ -132,8 +132,8 @@ export default function RecruitmentPage() {
                         <ScrollArea className="h-full">
                         <div className="space-y-2">
                             {jobVacancies.map((job) => (
+                                <div key={job.id}>
                                 <Button
-                                    key={job.id}
                                     variant={selectedVacancy?.id === job.id ? 'secondary' : 'ghost'}
                                     className="w-full h-auto justify-start p-3"
                                     onClick={() => setSelectedVacancy(job)}
@@ -148,6 +148,7 @@ export default function RecruitmentPage() {
                                         )}
                                     </div>
                                 </Button>
+                                </div>
                             ))}
                         </div>
                         </ScrollArea>

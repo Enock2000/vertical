@@ -1,23 +1,14 @@
-
-// src/app/dashboard/recruitment/components/add-job-dialog.tsx
+// src/app/dashboard/recruitment/new/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref, push, set, runTransaction } from 'firebase/database';
+import { ref, push, set, runTransaction, onValue } from 'firebase/database';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -29,7 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, ArrowLeft } from 'lucide-react';
 import type { Department, JobVacancy, ApplicationFormQuestion } from '@/lib/data';
 import { useAuth } from '@/app/auth-provider';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -41,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const customQuestionSchema = z.object({
   id: z.string().optional(),
@@ -71,20 +63,12 @@ const formSchema = z.object({
 
 type AddJobFormValues = z.infer<typeof formSchema>;
 
-interface AddJobDialogProps {
-  children: React.ReactNode;
-  departments: Department[];
-  onJobAdded: () => void;
-}
-
-export function AddJobDialog({
-  children,
-  departments,
-  onJobAdded,
-}: AddJobDialogProps) {
+export default function NewJobVacancyPage() {
   const { company } = useAuth();
   const companyId = company?.id;
-  const [open, setOpen] = useState(false);
+  const router = useRouter();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -108,6 +92,18 @@ export function AddJobDialog({
   });
   
   const applicationMethod = form.watch('applicationMethod');
+
+  useEffect(() => {
+    if (companyId) {
+        const deptsRef = ref(db, `companies/${companyId}/departments`);
+        const unsubscribe = onValue(deptsRef, (snapshot) => {
+            setDepartments(snapshot.val() ? Object.values(snapshot.val()) : []);
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }
+  }, [companyId]);
+
 
   async function onSubmit(values: AddJobFormValues) {
     if (!companyId || !company?.subscription) return;
@@ -148,13 +144,12 @@ export function AddJobDialog({
       
       await set(newJobRef, { ...newJob, id: newJobRef.key, companyId });
 
-      onJobAdded();
-      setOpen(false);
-      form.reset();
       toast({
         title: 'Job Vacancy Posted',
         description: `The "${values.title}" position has been successfully posted.`,
       });
+      router.push('/dashboard/recruitment');
+
     } catch (error: any) {
       console.error('Error adding job:', error);
       toast({
@@ -167,18 +162,28 @@ export function AddJobDialog({
     }
   }
 
+  if (loading) {
+    return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin" /></div>;
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Post New Job Vacancy</DialogTitle>
-          <DialogDescription>
-            You have {company?.subscription?.jobPostingsRemaining || 0} job postings remaining.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="max-h-[70vh] pr-4">
-        <Form {...form}>
+    <div className="max-w-2xl mx-auto">
+    <Card>
+        <CardHeader>
+             <div className='flex items-center gap-4'>
+                <Button variant="outline" size="icon" onClick={() => router.back()}>
+                    <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                    <CardTitle>Post New Job Vacancy</CardTitle>
+                    <CardDescription>
+                        You have {company?.subscription?.jobPostingsRemaining || 0} job postings remaining.
+                    </CardDescription>
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent>
+             <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
@@ -401,8 +406,7 @@ export function AddJobDialog({
                 </>
             )}
 
-
-            <DialogFooter className="sticky bottom-0 bg-background py-4">
+            <div className="pt-4">
               <Button type="submit" disabled={isLoading || (company?.subscription?.jobPostingsRemaining || 0) <= 0}>
                 {isLoading ? (
                   <>
@@ -413,11 +417,11 @@ export function AddJobDialog({
                   'Post Job'
                 )}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+        </CardContent>
+    </Card>
+    </div>
   );
 }
