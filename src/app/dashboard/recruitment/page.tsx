@@ -132,22 +132,22 @@ export default function RecruitmentPage() {
                         <ScrollArea className="h-full">
                         <div className="space-y-2">
                             {jobVacancies.map((job) => (
-                            <Button
-                                key={job.id}
-                                variant={selectedVacancy?.id === job.id ? 'secondary' : 'ghost'}
-                                className="w-full h-auto justify-start p-3"
-                                onClick={() => setSelectedVacancy(job)}
-                            >
-                                <div className="text-left">
-                                    <p className="font-semibold">{job.title}</p>
-                                    <p className="text-sm text-muted-foreground">{job.departmentName}</p>
-                                    {job.createdAt && (
-                                        <p className="text-xs text-muted-foreground">
-                                            Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
-                                        </p>
-                                    )}
-                                </div>
-                            </Button>
+                                <Button
+                                    key={job.id}
+                                    variant={selectedVacancy?.id === job.id ? 'secondary' : 'ghost'}
+                                    className="w-full h-auto justify-start p-3"
+                                    onClick={() => setSelectedVacancy(job)}
+                                >
+                                    <div className="text-left">
+                                        <p className="font-semibold">{job.title}</p>
+                                        <p className="text-sm text-muted-foreground">{job.departmentName}</p>
+                                        {job.createdAt && (
+                                            <p className="text-xs text-muted-foreground">
+                                                Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                                            </p>
+                                        )}
+                                    </div>
+                                </Button>
                             ))}
                         </div>
                         </ScrollArea>
