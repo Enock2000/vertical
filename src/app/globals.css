@@ -20,8 +20,8 @@ body {
     --secondary-foreground: 24 9.8% 10%;
     --muted: 40 20% 93%;
     --muted-foreground: 25 5.3% 44.7%;
-    --accent: 60 100% 50%; /* yellow */
-    --accent-foreground: 60 100% 5%;
+    --accent: 275 86% 36%; /* purple */
+    --accent-foreground: 275 86% 96%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 40 20% 89%;
@@ -55,8 +55,8 @@ body {
     --secondary-foreground: 210 20% 98%;
     --muted: 215 27.9% 16.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 60 100% 50%; /* Vibrant Yellow */
-    --accent-foreground: 60 100% 5%;
+    --accent: 275 86% 66%; /* purple */
+    --accent-foreground: 275 86% 10%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 20% 98%;
     --border: 215 27.9% 16.9%;
