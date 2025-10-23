@@ -129,7 +129,7 @@ function JobDetailsPage() {
                                 <TabsTrigger value="application">Application</TabsTrigger>
                             </TabsList>
                             <TabsContent value="overview" className="mt-6">
-                                <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: vacancy.description }} />
+                                <div className="prose dark:prose-invert max-w-none job-description-content" dangerouslySetInnerHTML={{ __html: vacancy.description }} />
                             </TabsContent>
                              <TabsContent value="application" className="mt-6">
                                 <ApplicantForm 

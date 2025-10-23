@@ -101,3 +101,32 @@ body {
         }
     }
 }
+
+/* Custom styles for job description lists */
+.job-description-content ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.job-description-content ul li {
+    position: relative;
+    padding-left: 1.75rem; /* space for the icon */
+    margin-bottom: 0.5rem;
+}
+
+.job-description-content ul li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    font-weight: bold;
+    font-size: 0.75rem;
+}
