@@ -2,11 +2,12 @@
 // src/app/auth-provider.tsx
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { ref, onValue, get } from 'firebase/database';
 import { auth, db } from '@/lib/firebase';
 import type { Employee, Company } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +31,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const handleSignOut = useCallback(() => {
+    signOut(auth).then(() => {
+        toast({
+            title: "Session Expired",
+            description: "You have been logged out due to inactivity.",
+        });
+    });
+  }, [toast]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -75,6 +86,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    let activityTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(activityTimer);
+      activityTimer = setTimeout(handleSignOut, 10 * 60 * 1000); // 10 minutes
+    };
+
+    if (user) {
+        window.addEventListener('mousemove', resetTimer);
+        window.addEventListener('keydown', resetTimer);
+        resetTimer(); // Start the timer on initial load
+    }
+
+    return () => {
+        clearTimeout(activityTimer);
+        window.removeEventListener('mousemove', resetTimer);
+        window.removeEventListener('keydown', resetTimer);
+    };
+  }, [user, handleSignOut]);
+
 
   return (
     <AuthContext.Provider value={{ user, employee, companyId, company, loading }}>

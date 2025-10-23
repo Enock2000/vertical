@@ -1,7 +1,7 @@
 // src/lib/firebase.ts
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import { getAuth, initializeAuth, browserSessionPersistence, type Auth } from "firebase/auth";
 import { getDatabase, type Database } from "firebase/database";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
@@ -27,7 +27,18 @@ const actionCodeSettings = {
 
 // Initialize Firebase
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth: Auth = getAuth(app);
+
+let auth: Auth;
+// Check if running in a browser environment before using browser-specific persistence
+if (typeof window !== 'undefined') {
+  auth = initializeAuth(app, {
+    persistence: browserSessionPersistence
+  });
+} else {
+  // Fallback for server-side rendering
+  auth = getAuth(app);
+}
+
 const db: Database = getDatabase(app);
 const storage: FirebaseStorage = getStorage(app);
 
