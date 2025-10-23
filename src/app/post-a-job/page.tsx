@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 const customQuestionSchema = z.object({
   id: z.string().optional(),
@@ -301,7 +301,7 @@ export default function PostAJobPage() {
                                         <FormItem>
                                             <FormLabel>Job Description</FormLabel>
                                             <FormControl>
-                                                <Textarea placeholder="Describe the role and responsibilities..." rows={6} {...field} />
+                                                <RichTextEditor placeholder="Describe the role and responsibilities..." {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Calendar as CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -25,6 +24,7 @@ import { handleLoggedInGuestJobPosting } from '@/ai/flows/logged-in-guest-job-fl
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/app/auth-provider';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 const customQuestionSchema = z.object({
   id: z.string().optional(),
@@ -248,7 +248,7 @@ export function AddGuestJobDialog({ children }: { children: React.ReactNode }) {
                                 <FormItem>
                                     <FormLabel>Job Description</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Describe the role and responsibilities..." rows={6} {...field} />
+                                        <RichTextEditor placeholder="Describe the role and responsibilities..." {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

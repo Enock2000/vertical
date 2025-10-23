@@ -24,7 +24,7 @@ function JobDetailsPage() {
     const companyId = searchParams.get('companyId');
 
     const [vacancy, setVacancy] = useState<JobVacancy | null>(null);
-    const [company, setCompany] = useState<Company | { name: string } | null>(null);
+    const [company, setCompany] = useState<Company | { name: string, logoUrl?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('overview');
@@ -89,6 +89,9 @@ function JobDetailsPage() {
                 <div className="grid md:grid-cols-3 gap-8">
                     <aside className="md:col-span-1 space-y-6">
                         <div className="p-6 rounded-lg border bg-card text-card-foreground shadow-sm">
+                              <div className="flex items-center gap-4 mb-4">
+                                <Logo companyName={company.name} logoUrl={company.logoUrl} />
+                             </div>
                              <div className="flex items-center gap-4 mb-4">
                                 <Users className="h-5 w-5 text-muted-foreground" />
                                 <div>
@@ -126,16 +129,7 @@ function JobDetailsPage() {
                                 <TabsTrigger value="application">Application</TabsTrigger>
                             </TabsList>
                             <TabsContent value="overview" className="mt-6">
-                                <div className="prose dark:prose-invert max-w-none">
-                                   <h2 className="font-semibold text-xl">Who we are is what we do.</h2>
-                                    <p>{vacancy.description}</p>
-                                    {vacancy.requirements && (
-                                        <>
-                                            <h3 className="font-semibold text-lg">Requirements</h3>
-                                            <p>{vacancy.requirements}</p>
-                                        </>
-                                    )}
-                                </div>
+                                <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: vacancy.description }} />
                             </TabsContent>
                              <TabsContent value="application" className="mt-6">
                                 <ApplicantForm 

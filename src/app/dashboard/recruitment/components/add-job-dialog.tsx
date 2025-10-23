@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import type { Department, JobVacancy, ApplicationFormQuestion } from '@/lib/data';
@@ -41,6 +40,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 const customQuestionSchema = z.object({
   id: z.string().optional(),
@@ -284,7 +284,10 @@ export function AddJobDialog({
                 <FormItem>
                   <FormLabel>Job Description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Describe the role and responsibilities..." rows={6} {...field} />
+                    <RichTextEditor
+                      placeholder="Describe the role and responsibilities..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
