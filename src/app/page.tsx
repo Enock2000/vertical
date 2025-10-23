@@ -28,31 +28,37 @@ const featuresList = [
       icon: <FileText />,
       title: 'Automated Payroll',
       description: 'Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically.',
+      href: '/features/automated-payroll',
     },
     {
       icon: <ShieldCheck />,
       title: 'Compliance Management',
       description: 'Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine.',
+      href: '/features/compliance-management',
     },
     {
       icon: <Briefcase />,
       title: 'Recruitment & Onboarding',
       description: 'From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place.',
+      href: '/features/recruitment-onboarding',
     },
     {
       icon: <Trophy />,
       title: 'Performance & Training',
       description: 'Set goals, track performance with 360-degree feedback, and manage employee training programs.',
+      href: '/features/performance-training',
     },
     {
       icon: <Users />,
       title: 'Employee Self-Service',
       description: 'Empower your employees with a portal to manage their attendance, leave, and view payslips.',
+      href: '/features/employee-self-service',
     },
     {
       icon: <BarChart3 />,
       title: 'Insightful Reporting',
       description: 'Get real-time insights into your workforce with comprehensive reports on headcount, turnover, and diversity.',
+      href: '/features/insightful-reporting',
     },
 ];
 
@@ -239,17 +245,19 @@ export default function HomePage() {
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {featuresList.map((feature, index) => (
-                <Card key={index} className="bg-card">
-                  <CardHeader className="flex flex-row items-center gap-4">
-                    <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
-                        {React.cloneElement(feature.icon, { className: 'h-6 w-6 text-primary' })}
-                    </div>
-                    <CardTitle className="text-lg">{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
+                <Link key={index} href={feature.href} className="block">
+                  <Card className="bg-card h-full hover:bg-muted/50 transition-colors">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                      <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
+                          {React.cloneElement(feature.icon, { className: 'h-6 w-6 text-primary' })}
+                      </div>
+                      <CardTitle className="text-lg">{feature.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </div>
