@@ -95,7 +95,9 @@ const CareersContent = () => {
                         <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
                         <div className="flex justify-center items-center gap-8 flex-wrap">
                             {companies.slice(0, 4).map(company => (
-                                <p key={company.id} className="font-semibold text-muted-foreground">{company.name}</p>
+                                <div key={company.id} className="grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
+                                    <Logo companyName={company.name} logoUrl={company.logoUrl} />
+                                </div>
                             ))}
                         </div>
                     </div>
