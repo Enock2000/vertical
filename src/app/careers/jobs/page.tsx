@@ -132,7 +132,7 @@ const JobListContent = () => {
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {filteredVacancies.length > 0 ? (
                                 filteredVacancies.map((job) => (
-                                    <Card key={job.id} className="flex flex-col transition-transform duration-300 ease-in-out hover:scale-105">
+                                    <Card key={job.id} className="flex flex-col transition-transform duration-300 ease-in-out hover:scale-105 border-t-4 border-primary">
                                         <CardHeader>
                                             <CardTitle className="text-base">{job.title}</CardTitle>
                                         </CardHeader>
