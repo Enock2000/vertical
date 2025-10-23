@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import type { Company } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Logo from '@/components/logo';
 import { Input } from '@/components/ui/input';
