@@ -245,8 +245,8 @@ export default function HomePage() {
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {featuresList.map((feature, index) => (
-                <Link key={index} href={feature.href} className="block">
-                  <Card className="bg-card h-full hover:bg-muted/50 transition-colors">
+                <Link key={index} href={feature.href} className="block group">
+                  <Card className="bg-card h-full transition-colors group-hover:bg-muted/50 group-hover:animate-shake">
                     <CardHeader className="flex flex-row items-center gap-4">
                       <div className="flex size-12 items-center justify-center rounded-lg bg-primary/10">
                           {React.cloneElement(feature.icon, { className: 'h-6 w-6 text-primary' })}
