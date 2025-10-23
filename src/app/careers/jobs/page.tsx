@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import type { JobVacancy, Company } from '@/lib/data';
@@ -22,11 +23,15 @@ import Image from 'next/image';
 type EnrichedJobVacancy = JobVacancy & { companyName: string };
 
 const JobListContent = () => {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [vacancies, setVacancies] = useState<EnrichedJobVacancy[]>([]);
     const [departments, setDepartments] = useState<string[]>([]);
     const [locations, setLocations] = useState<string[]>([]);
     const [jobTypes, setJobTypes] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
     const [selectedDept, setSelectedDept] = useState('all');
     const [selectedLocation, setSelectedLocation] = useState('all');
     const [selectedJobType, setSelectedJobType] = useState('all');
@@ -83,13 +88,21 @@ const JobListContent = () => {
     const filteredVacancies = vacancies.filter(job => 
         (selectedDept === 'all' || job.departmentName === selectedDept) &&
         (selectedLocation === 'all' || job.location === selectedLocation) &&
-        (selectedJobType === 'all' || job.jobType === selectedJobType)
+        (selectedJobType === 'all' || job.jobType === selectedJobType) &&
+        (searchTerm === '' || 
+            job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.departmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            job.description.toLowerCase().includes(searchTerm.toLowerCase())
+        )
     );
     
     const clearFilters = () => {
+        setSearchTerm('');
         setSelectedDept('all');
         setSelectedLocation('all');
         setSelectedJobType('all');
+        router.replace('/careers/jobs');
     }
 
     return (
@@ -99,6 +112,16 @@ const JobListContent = () => {
                 <p className="text-primary-foreground/80 mt-2">CAREERS AT VERTICALSYNC</p>
             </div>
             <div className="p-6 flex flex-col md:flex-row md:items-center gap-4 border-b">
+                 <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                        type="text" 
+                        placeholder="Search jobs by title, skills, or company" 
+                        className="search-input w-full h-10 pl-10"
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                </div>
                 <span className="text-sm font-medium">Filter by</span>
                 <div className="flex flex-col sm:flex-row gap-4">
                     <Select value={selectedDept} onValueChange={setSelectedDept}>

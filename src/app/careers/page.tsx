@@ -82,7 +82,7 @@ const CareersContent = () => {
                                 </div>
                                 <div className="open-roles-container text-center">
                                     <Button className="open-roles-button h-12" asChild>
-                                        <Link href="/careers/jobs">View Open Roles</Link>
+                                        <Link href={`/careers/jobs?q=${encodeURIComponent(searchTerm)}`}>View Open Roles</Link>
                                     </Button>
                                 </div>
                             </div>
