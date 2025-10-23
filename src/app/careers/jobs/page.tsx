@@ -133,18 +133,18 @@ const JobListContent = () => {
                         {filteredVacancies.length > 0 ? (
                                 filteredVacancies.map((job) => (
                                     <Card key={job.id} className="flex flex-col transition-transform duration-300 ease-in-out hover:scale-105 border-t-4 border-primary">
-                                        <CardHeader>
+                                        <CardHeader className="py-4">
                                             <CardTitle className="text-base">{job.title}</CardTitle>
                                         </CardHeader>
-                                        <CardContent className="flex-grow space-y-2 text-sm text-muted-foreground">
+                                        <CardContent className="flex-grow space-y-2 text-sm text-muted-foreground pt-0">
                                             <p className="flex items-center gap-2"><MapPin className="h-4 w-4" /> {job.location || 'Not specified'}</p>
                                             <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.departmentName}</p>
                                             <p className="flex items-center gap-2"><Briefcase className="h-4 w-4" /> {job.jobType || 'Not specified'}</p>
                                         </CardContent>
-                                        <CardFooter>
+                                        <CardFooter className="pt-2">
                                             <Button variant="outline" className="w-full justify-between" asChild>
                                                 <Link href={`/jobs/${job.id}?companyId=${job.companyId}`}>
-                                                    View Overview
+                                                    Overview
                                                     <ArrowRight className="h-4 w-4" />
                                                 </Link>
                                             </Button>
