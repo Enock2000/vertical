@@ -33,7 +33,7 @@ const CareersContent = () => {
                 }
                 
                 const allCompanies = Object.values(companiesData);
-                setCompanies(allCompanies.filter(c => c.status === 'Active'));
+                setCompanies(allCompanies.filter(c => c.status === 'Active' && c.logoUrl));
 
             } catch (error) {
                 console.error("Firebase read failed:", error);
@@ -44,6 +44,8 @@ const CareersContent = () => {
 
         fetchCompanies();
     }, []);
+
+    const repeatedCompanies = companies.length > 0 ? [...companies, ...companies] : [];
 
     return (
         <>
@@ -93,13 +95,24 @@ const CareersContent = () => {
                 <div className="container py-4 md:py-6 space-y-4">
                      <div className="trusted-by text-center space-y-2">
                         <p className="trusted-text text-sm text-muted-foreground">Trusted by leading companies</p>
-                        <div className="flex justify-center items-center gap-8 flex-wrap">
-                            {companies.slice(0, 4).map(company => (
-                                <div key={company.id} className="grayscale hover:grayscale-0 transition-all opacity-60 hover:opacity-100">
-                                    <Logo companyName={company.name} logoUrl={company.logoUrl} />
-                                </div>
-                            ))}
-                        </div>
+                        {loading ? <Loader2 className="mx-auto h-6 w-6 animate-spin" /> : (
+                             <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
+                                <ul className="flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none animate-scroll">
+                                    {repeatedCompanies.map((company, index) => (
+                                        <li key={`${company.id}-${index}`}>
+                                            <Logo companyName={company.name} logoUrl={company.logoUrl} />
+                                        </li>
+                                    ))}
+                                </ul>
+                                <ul className="flex items-center justify-center md:justify-start [&_li]:mx-8 [&_img]:max-w-none animate-scroll" aria-hidden="true">
+                                     {repeatedCompanies.map((company, index) => (
+                                        <li key={`${company.id}-${index}-clone`}>
+                                            <Logo companyName={company.name} logoUrl={company.logoUrl} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
