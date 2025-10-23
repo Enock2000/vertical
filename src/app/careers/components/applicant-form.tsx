@@ -81,9 +81,9 @@ export const ApplicantForm = forwardRef<HTMLFormElement, ApplicantFormProps>(({ 
   const form = useForm<ApplicantFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: employee?.name || '',
-      email: employee?.email || '',
-      phone: employee?.phone || '',
+      name: '',
+      email: '',
+      phone: '',
       coverLetter: '',
       linkedinProfile: '',
       answers: {},
@@ -135,7 +135,7 @@ export const ApplicantForm = forwardRef<HTMLFormElement, ApplicantFormProps>(({ 
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>Full Name</FormLabel>
-                    <FormControl><Input {...field} disabled={!!user} /></FormControl>
+                    <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
             )}
@@ -146,7 +146,7 @@ export const ApplicantForm = forwardRef<HTMLFormElement, ApplicantFormProps>(({ 
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" {...field} disabled={!!user} /></FormControl>
+                    <FormControl><Input type="email" {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
             )}
@@ -180,7 +180,7 @@ export const ApplicantForm = forwardRef<HTMLFormElement, ApplicantFormProps>(({ 
                             {...fieldProps}
                          />
                     </FormControl>
-                    <FormDescription>{employee?.resumeUrl ? 'You have a resume on file. Uploading a new one will replace it for this application.' : 'Please upload your resume.'}</FormDescription>
+                    <FormDescription>Please upload your resume for this application.</FormDescription>
                     <FormMessage />
                 </FormItem>
             )}
