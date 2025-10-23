@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import { Textarea } from '@/components/ui/textarea';
 
 const customQuestionSchema = z.object({
   id: z.string().optional(),
