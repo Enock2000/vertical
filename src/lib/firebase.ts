@@ -1,3 +1,4 @@
+
 // src/lib/firebase.ts
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
@@ -7,13 +8,13 @@ import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyD1CiCpAzjmnTvFQhcEv_FRk0HljOQD2N0",
-  authDomain: "studio-4048203700-4cec7.firebaseapp.com",
-  projectId: "studio-4048203700-4cec7",
-  storageBucket: "studio-4048203700-4cec7.appspot.com",
-  messagingSenderId: "461026091475",
-  appId: "1:461026091475:web:9ea8ef2ff29a72f3c8cf26",
-  databaseURL: "https://studio-4048203700-4cec7-default-rtdb.firebaseio.com/"
+  apiKey: "AIzaSyAzQTXfph0F_0Kz0TcqwBRABuPkUxSLpHE",
+  authDomain: "studio-1128359683-584e7.firebaseapp.com",
+  databaseURL: "https://studio-1128359683-584e7-default-rtdb.firebaseio.com",
+  projectId: "studio-1128359683-584e7",
+  storageBucket: "studio-1128359683-584e7.appspot.com",
+  messagingSenderId: "259318221895",
+  appId: "1:259318221895:web:266ba401a76ed86e10f562"
 };
 
 // Configuration for email link sign-in
