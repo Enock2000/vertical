@@ -21,7 +21,7 @@ interface Message {
 export function SupportChat() {
     const [user, loadingAuth] = useAuthState(auth);
     const [messages, setMessages] = useState<Message[]>([
-        { sender: 'ai', text: "Hi! I'm VerticalSync, your AI support assistant. How can I help you today?" }
+        { sender: 'ai', text: "Hi! I'm PayTrack, your AI support assistant. How can I help you today?" }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +65,7 @@ export function SupportChat() {
             if (open && !user && !isRegistered) {
                 setMessages([{ sender: 'ai', text: "Welcome! To get started, please tell me your name and email." }]);
             } else if (open) {
-                 setMessages([{ sender: 'ai', text: "Hi! I'm VerticalSync, your AI support assistant. How can I help you today?" }]);
+                 setMessages([{ sender: 'ai', text: "Hi! I'm PayTrack, your AI support assistant. How can I help you today?" }]);
             }
         }}>
             <PopoverTrigger asChild>
@@ -83,7 +83,7 @@ export function SupportChat() {
                             <Sparkles className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                            <p className="font-semibold">VerticalSync Support</p>
+                            <p className="font-semibold">PayTrack Support</p>
                             <p className="text-xs text-muted-foreground">AI Assistant</p>
                         </div>
                     </div>

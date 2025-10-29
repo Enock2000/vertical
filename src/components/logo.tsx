@@ -26,7 +26,7 @@ export default function Logo({ companyName, logoUrl }: LogoProps) {
   }, [logoUrl]);
   
   const finalLogoUrl = logoUrl === undefined ? platformLogoUrl : logoUrl;
-  const finalCompanyName = companyName === undefined ? 'VerticalSync' : companyName;
+  const finalCompanyName = companyName === undefined ? 'PayTrack' : companyName;
 
   return (
     <div className="flex items-center gap-2">
@@ -55,15 +55,14 @@ export default function Logo({ companyName, logoUrl }: LogoProps) {
                             fontSize="14"
                             fontWeight="bold"
                         >
-                            <tspan x="50" dy="-1.5em">VERTICAL</tspan>
-                            <tspan x="50" dy="1.2em">SYNC</tspan>
-                            <tspan fontSize="8" transform="translate(0.5 -0.2)">360°</tspan>
+                            <tspan x="50" dy="-0.6em">PAY</tspan>
+                            <tspan x="50" dy="1.2em">TRACK</tspan>
                         </text>
                     </g>
                 </svg>
             )}
        </div>
-       <span className="text-xl font-bold text-foreground">{finalCompanyName || 'VerticalSync'}</span>
+       <span className="text-xl font-bold text-foreground">{finalCompanyName || 'PayTrack'}</span>
     </div>
   );
 }

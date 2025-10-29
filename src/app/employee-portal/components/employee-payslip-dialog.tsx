@@ -157,7 +157,7 @@ export function EmployeePayslipDialog({ employee, payrollDetails, companyName, p
             </div>
              <Separator />
             <div className="text-center text-xs text-muted-foreground pt-2">
-                <p>VerticalSync powered by Oran Investment</p>
+                <p>PayTrack powered by Clock Tick Investplus Limited</p>
             </div>
           </div>
         ) : (
