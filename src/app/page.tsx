@@ -196,7 +196,7 @@ export default function HomePage() {
                     Discover a full suite of HR tools designed to streamline your operations and empower your team.
                 </p>
             </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
               {featuresList.map((feature, index) => (
                 <Link key={index} href={feature.href} className="block group">
                   <Card className="bg-card h-full transition-colors group-hover:bg-muted/50 group-hover:animate-shake">
