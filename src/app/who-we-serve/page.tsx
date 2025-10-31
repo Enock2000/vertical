@@ -5,12 +5,41 @@ import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import type { Testimonial } from '@/lib/data';
-import { Loader2, ArrowLeft } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, ArrowLeft, Building2, Users2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Logo from '@/components/logo';
-import Image from 'next/image';
+
+const businessSizes = [
+    {
+        title: 'Startups',
+        description: 'Expand globally with streamlined operations',
+    },
+    {
+        title: 'Mid-Market',
+        description: 'Automate payroll as your company scales',
+    },
+    {
+        title: 'Enterprise',
+        description: 'Tools to grow and manage global teams',
+    },
+];
+
+const teams = [
+    {
+        title: 'HR teams',
+        description: 'Onboard and manage global teams easily',
+    },
+    {
+        title: 'Finance teams',
+        description: 'Save costs on global payroll and tools',
+    },
+    {
+        title: 'Legal teams',
+        description: 'Ensure compliance for global hiring',
+    },
+];
 
 export default function WhoWeServePage() {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -47,8 +76,39 @@ export default function WhoWeServePage() {
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Who We Serve</h1>
                         <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-xl">
-                            Hear from some of the amazing companies that trust VerticalSync to manage their HR needs.
+                            From scaling startups to global enterprises, VerticalSync is built for teams of all sizes.
                         </p>
+                    </div>
+
+                    <div className="mx-auto max-w-4xl grid md:grid-cols-2 gap-10 mb-20">
+                        <div className="space-y-8">
+                            <div className="flex items-center gap-3">
+                                <Building2 className="h-6 w-6 text-primary" />
+                                <h2 className="text-2xl font-semibold">By business size</h2>
+                            </div>
+                             <div className="space-y-6">
+                                {businessSizes.map((item) => (
+                                    <div key={item.title}>
+                                        <h3 className="font-semibold text-lg">{item.title}</h3>
+                                        <p className="text-muted-foreground">{item.description}</p>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
+                         <div className="space-y-8">
+                            <div className="flex items-center gap-3">
+                                <Users2 className="h-6 w-6 text-primary" />
+                                <h2 className="text-2xl font-semibold">By teams</h2>
+                            </div>
+                             <div className="space-y-6">
+                                {teams.map((item) => (
+                                    <div key={item.title}>
+                                        <h3 className="font-semibold text-lg">{item.title}</h3>
+                                        <p className="text-muted-foreground">{item.description}</p>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
                     </div>
 
                     {loading ? (
@@ -57,6 +117,7 @@ export default function WhoWeServePage() {
                         </div>
                     ) : testimonials.length > 0 ? (
                         <div className="mx-auto max-w-4xl grid gap-8">
+                            <h2 className="text-3xl font-bold text-center">Trusted by Companies Worldwide</h2>
                             {testimonials.map((testimonial) => (
                                 <Card key={testimonial.id} className="overflow-hidden">
                                     <CardContent className="p-6">
