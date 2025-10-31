@@ -18,7 +18,7 @@ const allFeatures = [
     details:
       "Say goodbye to manual calculations and spreadsheets. VerticalSync's payroll system is designed to be fast, accurate, and fully compliant with Zambian regulations.",
     imageUrl:
-      'https://images.unsplash.com/photo-1579621970795-87f91d908377?q=80&w=2070&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1565372918674-b4b6fe3eb8c7?q=80&w=2070&auto=format&fit=crop', // Reliable finance/payroll image
     bullets: [
       'Automated tax calculations for PAYE',
       'NAPSA and NHIMA deductions',
@@ -36,7 +36,7 @@ const allFeatures = [
     details:
       'VerticalSync helps you navigate complex Zambian HR laws. Automate deductions, generate contracts, and keep your records audit-ready.',
     imageUrl:
-      'https://images.unsplash.com/photo-1556761175-577380e2595b?q=80&w=2070&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1521790361509-ff8e1e6b88b3?q=80&w=2070&auto=format&fit=crop', // Reliable compliance/legal image
     bullets: [
       'AI-powered legal recommendations',
       'Automated statutory deductions',
@@ -165,12 +165,12 @@ export default function FeaturesPage() {
                   )}
                 >
                   {/* Image */}
-                  <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-sm">
+                  <div className="relative w-full h-[340px] md:h-[400px] overflow-hidden rounded-xl shadow-md">
                     <Image
                       src={feature.imageUrl}
                       alt={feature.title}
                       fill
-                      className="object-cover transition-transform hover:scale-105"
+                      className="object-cover transition-transform duration-500 hover:scale-105"
                     />
                   </div>
 
