@@ -4,6 +4,7 @@ import { CheckCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Logo from '@/components/logo';
+import { cn } from '@/lib/utils';
 
 const teamsData = [
   {
@@ -74,8 +75,8 @@ export default function ForTeamsPage() {
                 </div>
 
                 {teamsData.map((team, index) => (
-                    <div key={team.title} className={`grid items-center gap-10 md:grid-cols-2 ${index % 2 !== 0 ? 'md:grid-flow-row-dense' : ''}`}>
-                        <div className={`relative aspect-video w-full overflow-hidden rounded-xl shadow-md ${index % 2 !== 0 ? 'md:col-start-2' : ''}`}>
+                    <div key={team.title} className={cn("grid items-center gap-10 md:grid-cols-2", index % 2 !== 0 ? 'md:grid-flow-row-dense' : '')}>
+                        <div className={cn("relative aspect-video w-full overflow-hidden rounded-xl shadow-md", index % 2 !== 0 ? 'md:col-start-2' : '')}>
                             <Image
                                 src={team.imageUrl}
                                 alt={team.title}
@@ -100,7 +101,6 @@ export default function ForTeamsPage() {
                     </div>
                 ))}
             </div>
-        </section>
         </main>
     </div>
   );
