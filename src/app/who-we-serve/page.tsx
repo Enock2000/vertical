@@ -15,14 +15,17 @@ const businessSizes = [
   {
     title: 'Startups',
     description: 'Expand globally with streamlined operations',
+    href: '/who-we-serve/startups'
   },
   {
     title: 'Mid-Market',
     description: 'Automate payroll as your company scales',
+    href: '/who-we-serve/mid-market'
   },
   {
     title: 'Enterprise',
     description: 'Tools to grow and manage global teams',
+    href: '/who-we-serve/enterprise'
   },
 ];
 
@@ -30,14 +33,17 @@ const teams = [
   {
     title: 'HR teams',
     description: 'Onboard and manage global teams easily',
+    href: '/who-we-serve/for-teams'
   },
   {
     title: 'Finance teams',
     description: 'Save costs on global payroll and tools',
+    href: '/who-we-serve/for-teams'
   },
   {
     title: 'Legal teams',
     description: 'Ensure compliance for global hiring',
+    href: '/who-we-serve/for-teams'
   },
 ];
 
@@ -100,10 +106,10 @@ export default function WhoWeServePage() {
               </div>
               <div className="space-y-5">
                 {businessSizes.map((item) => (
-                  <div key={item.title}>
-                    <h3 className="font-semibold text-lg">{item.title}</h3>
-                    <p className="text-muted-foreground">{item.description}</p>
-                  </div>
+                    <Link href={item.href} key={item.title} className="block group">
+                        <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{item.title}</h3>
+                        <p className="text-muted-foreground">{item.description}</p>
+                    </Link>
                 ))}
               </div>
             </div>
@@ -116,10 +122,10 @@ export default function WhoWeServePage() {
               </div>
               <div className="space-y-5">
                 {teams.map((item) => (
-                  <div key={item.title}>
-                    <h3 className="font-semibold text-lg">{item.title}</h3>
+                  <Link href={item.href} key={item.title} className="block group">
+                    <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">{item.title}</h3>
                     <p className="text-muted-foreground">{item.description}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
