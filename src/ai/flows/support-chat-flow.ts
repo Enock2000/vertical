@@ -2,16 +2,16 @@
 'use server';
 
 /**
- * @fileOverview Provides AI-driven support chat for the VerticalSync application.
+ * @fileOverview Provides AI-driven support chat for the PayTrack application.
  *
- * - askVerticalSync - A function that takes a user's question and returns a helpful answer.
+ * - askPayTrack - A function that takes a user's question and returns a helpful answer.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const SupportChatInputSchema = z.object({
-  question: z.string().describe("The user's question about the VerticalSync app."),
+  question: z.string().describe("The user's question about the PayTrack app."),
 });
 
 const SupportChatOutputSchema = z.object({
@@ -28,9 +28,9 @@ const supportChatPrompt = ai.definePrompt({
   name: 'supportChatPrompt',
   input: { schema: SupportChatInputSchema },
   output: { schema: SupportChatOutputSchema },
-  prompt: `You are VerticalSync, a friendly and knowledgeable AI support agent for the VerticalSync HR platform. Your goal is to answer user questions clearly and concisely based ONLY on the information provided below. Do not make up features.
+  prompt: `You are PayTrack, a friendly and knowledgeable AI support agent for the PayTrack HR platform. Your goal is to answer user questions clearly and concisely based ONLY on the information provided below. Do not make up features.
 
-  **VerticalSync Application Knowledge Base:**
+  **PayTrack Application Knowledge Base:**
 
   *   **Dashboard Overview**: The main dashboard shows key metrics like Total Payroll, Active Employees, and Recent Signups. It provides a high-level overview of the organization's HR status.
 

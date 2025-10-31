@@ -89,9 +89,9 @@ export default function DocumentationPage() {
             <main className="flex-1 py-12">
                 <div className="container">
                     <div className="text-center mb-12">
-                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">VerticalSync Documentation</h1>
+                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">PayTrack Documentation</h1>
                         <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-xl">
-                            A comprehensive guide to all features available in the VerticalSync HR platform.
+                            A comprehensive guide to all features available in the PayTrack HR platform.
                         </p>
                     </div>
 

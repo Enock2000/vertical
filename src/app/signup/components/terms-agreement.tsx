@@ -13,7 +13,7 @@ interface TermsAgreementFormProps {
 const contractText = `
 Last Updated: ${new Date().toLocaleDateString()}
 
-This Software as a Service (SaaS) Agreement ("Agreement") is a binding legal agreement between you and VerticalSync ("Company"), governing your use of the VerticalSync HR Platform ("Service").
+This Software as a Service (SaaS) Agreement ("Agreement") is a binding legal agreement between you and PayTrack ("Company"), governing your use of the PayTrack HR Platform ("Service").
 
 1. Acceptance of Terms
 By checking the "I Agree" box and creating an account, you represent that you have the authority to bind your company to these terms and that you agree to be bound by this Agreement.

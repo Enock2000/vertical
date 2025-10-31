@@ -175,7 +175,7 @@ export default function HomePage() {
                 Scale globally with velocity and ease
               </h1>
               <p className="mx-auto mt-4 max-w-[700px] text-white/80 md:text-xl">
-                VerticalSync is built to scale with organizations of all sizes, from small teams to enterprises of thousands. Whether you want to hire worldwide without opening legal entities, streamline HR for your global team, or pay all types of workers anywhere with consolidated payroll—VerticalSync does it all with full compliance.
+                PayTrack is built to scale with organizations of all sizes, from small teams to enterprises of thousands. Whether you want to hire worldwide without opening legal entities, streamline HR for your global team, or pay all types of workers anywhere with consolidated payroll—PayTrack does it all with full compliance.
               </p>
               <div className="mt-8">
                 <Button size="lg" asChild>
@@ -273,7 +273,7 @@ export default function HomePage() {
               Ready to Simplify Your HR?
             </h2>
             <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-              Join dozens of companies streamlining their operations with VerticalSync. Get started today.
+              Join dozens of companies streamlining their operations with PayTrack. Get started today.
             </p>
             <div className="mt-8">
               <Button size="lg" asChild>
@@ -287,7 +287,7 @@ export default function HomePage() {
       {/* Footer */}
         <footer className="border-t">
             <div className="container py-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.</p>
+                <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} PayTrack powered by Clock Tick Investplus Limited. All rights reserved.</p>
                  <nav className="flex items-center space-x-6 text-sm font-medium">
                     <Link href="/documentation">Documentation</Link>
                     <Link href="/docs/api">API Docs</Link>

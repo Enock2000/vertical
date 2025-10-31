@@ -161,7 +161,7 @@ public class ApiClient {
                     <div className="mb-12">
                         <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">API Documentation</h1>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Integrate your existing systems with VerticalSync using our powerful and simple REST API.
+                            Integrate your existing systems with PayTrack using our powerful and simple REST API.
                         </p>
                     </div>
                     
