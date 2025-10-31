@@ -64,7 +64,7 @@ const featuresList = [
 ];
 
 const navLinks = [
-  { href: "#features", label: "Features" },
+  { href: "/features", label: "Features" },
   { href: "/careers", label: "Jobs Centre" },
   { href: "/who-we-serve", label: "Who We Serve" },
   { href: "/pricing", label: "Pricing" },
