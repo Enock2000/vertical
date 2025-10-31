@@ -80,7 +80,7 @@ export default function WhoWeServePage() {
                         </p>
                     </div>
 
-                    <div className="mx-auto max-w-4xl grid md:grid-cols-2 gap-10 mb-20">
+                    <div className="mx-auto max-w-4xl grid md:grid-cols-2 gap-10 mb-20 justify-center">
                         <div className="space-y-8">
                             <div className="flex items-center gap-3">
                                 <Building2 className="h-6 w-6 text-primary" />
