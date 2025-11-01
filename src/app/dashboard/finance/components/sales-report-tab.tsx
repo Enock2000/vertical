@@ -1,4 +1,3 @@
-
 // src/app/dashboard/finance/components/sales-report-tab.tsx
 'use client';
 
@@ -21,22 +20,127 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { SalesDailyReport, SalesReportTransaction, Branch } from '@/lib/data';
 import { submitSalesReport } from '@/ai/flows/submit-sales-report-flow';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'ZMW',
 });
 
+const transactionSchema = z.object({
+  description: z.string().min(1, "Description is required"),
+  amount: z.coerce.number().min(0.01, "Amount must be positive"),
+  paymentMethod: z.enum(['Cash', 'Card', 'Transfer', 'Other']),
+});
+
 const salesReportFormSchema = z.object({
   reportDate: z.date(),
-  transactions: z.array(z.object({
-    description: z.string().min(1, "Description is required"),
-    amount: z.coerce.number().min(0.01, "Amount must be positive"),
-    paymentMethod: z.enum(['Cash', 'Card', 'Transfer', 'Other']),
-  })).min(1, "At least one transaction is required."),
+  transactions: z.array(transactionSchema).min(1, "At least one transaction is required."),
 });
 
 type SalesReportFormValues = z.infer<typeof salesReportFormSchema>;
+type SingleTransactionFormValues = z.infer<typeof transactionSchema>;
+
+function AddTransactionDialog({ onAddTransaction }: { onAddTransaction: (data: SingleTransactionFormValues) => void }) {
+  const [open, setOpen] = useState(false);
+  const form = useForm<SingleTransactionFormValues>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: {
+        description: '',
+        amount: 0,
+        paymentMethod: 'Cash',
+    },
+  });
+
+  const onSubmit = (values: SingleTransactionFormValues) => {
+    onAddTransaction(values);
+    form.reset();
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline">
+          <PlusCircle className="mr-2 h-4 w-4" /> Add Manual Transaction
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Record a Transaction</DialogTitle>
+          <DialogDescription>
+            Add a single sales transaction to the current report.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Item/Service sold" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Method" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                      <SelectItem value="Transfer">Transfer</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button type="submit">Add to Report</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], onReportSubmitted: () => void }) {
   const { employee, companyId } = useAuth();
@@ -47,7 +151,7 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
     resolver: zodResolver(salesReportFormSchema),
     defaultValues: {
       reportDate: new Date(),
-      transactions: [{ description: '', amount: 0, paymentMethod: 'Cash' }],
+      transactions: [],
     },
   });
 
@@ -84,7 +188,7 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
 
       if (result.success) {
         toast({ title: "Report Submitted", description: result.message });
-        form.reset();
+        form.reset({ reportDate: new Date(), transactions: [] });
         onReportSubmitted();
       } else {
         toast({ variant: 'destructive', title: "Submission Failed", description: result.message });
@@ -124,23 +228,29 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
             
             <div className="space-y-2">
               <FormLabel>Transactions</FormLabel>
-              {fields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <FormField control={form.control} name={`transactions.${index}.description`} render={({ field }) => <FormItem className="flex-1"><FormControl><Input placeholder="Item/Service sold" {...field} /></FormControl></FormItem>} />
-                  <FormField control={form.control} name={`transactions.${index}.amount`} render={({ field }) => <FormItem><FormControl><Input type="number" placeholder="Amount" {...field} className="w-28" /></FormControl></FormItem>} />
-                  <FormField control={form.control} name={`transactions.${index}.paymentMethod`} render={({ field }) => <FormItem><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="w-32"><SelectValue placeholder="Method" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Card">Card</SelectItem><SelectItem value="Transfer">Transfer</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></FormItem>} />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-              ))}
-               <Button type="button" variant="outline" size="sm" onClick={() => append({ description: '', amount: 0, paymentMethod: 'Cash' })}><PlusCircle className="mr-2 h-4 w-4" />Add Transaction</Button>
-               <FormMessage>{form.formState.errors.transactions?.root?.message}</FormMessage>
+              <div className="border rounded-lg p-2 space-y-2">
+                 {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+                      <div className="flex-1">
+                        <p className="font-medium">{field.description}</p>
+                        <p className="text-sm text-muted-foreground">{currencyFormatter.format(field.amount)} - {field.paymentMethod}</p>
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    </div>
+                ))}
+                {fields.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center p-4">No transactions added yet.</p>
+                )}
+              </div>
+              <AddTransactionDialog onAddTransaction={(data) => append(data)} />
+              <FormMessage>{form.formState.errors.transactions?.root?.message}</FormMessage>
             </div>
 
             <div className="text-right text-lg font-bold">
                 Total Sales: {currencyFormatter.format(totalSales)}
             </div>
 
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || fields.length === 0}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                 Submit Report
             </Button>
@@ -157,7 +267,7 @@ export function SalesReportTab({ salesReports }: { salesReports: SalesDailyRepor
     // In a real app with many branches, we'd fetch these. For now, assume it's available.
     const userBranches: Branch[] = employee?.branchId ? [{id: employee.branchId, name: employee.branchName || 'My Branch', companyId: employee.companyId, location: ''}] : [];
 
-    const isFinanceManager = employee?.role === 'Admin' || employee?.permissions?.includes('finance');
+    const isFinanceManager = employee?.role === 'Admin' && employee.permissions?.includes('finance');
 
     const reportsToShow = isFinanceManager
         ? salesReports
@@ -176,9 +286,10 @@ export function SalesReportTab({ salesReports }: { salesReports: SalesDailyRepor
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Report Date</TableHead>
-                                <TableHead>Branch</TableHead>
+                                {isFinanceManager && <TableHead>Branch</TableHead>}
                                 <TableHead>Submitted By</TableHead>
                                 <TableHead>Total Sales</TableHead>
+                                <TableHead># of Transactions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -186,14 +297,15 @@ export function SalesReportTab({ salesReports }: { salesReports: SalesDailyRepor
                                 reportsToShow.map(report => (
                                     <TableRow key={report.id}>
                                         <TableCell>{format(new Date(report.reportDate), 'PPP')}</TableCell>
-                                        <TableCell>{report.branchName}</TableCell>
+                                        {isFinanceManager && <TableCell>{report.branchName}</TableCell>}
                                         <TableCell>{report.submittedByEmployeeName}</TableCell>
                                         <TableCell>{currencyFormatter.format(report.totalSales)}</TableCell>
+                                        <TableCell>{report.transactions.length}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center h-24">No sales reports found.</TableCell>
+                                    <TableCell colSpan={isFinanceManager ? 5 : 4} className="text-center h-24">No sales reports found.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
