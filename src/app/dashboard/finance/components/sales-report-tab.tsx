@@ -1,7 +1,7 @@
 // src/app/dashboard/finance/components/sales-report-tab.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,11 +15,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, CalendarIcon, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, CalendarIcon, Loader2, Upload, Download, FileText } from 'lucide-react';
 import { format, isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { SalesDailyReport, SalesReportTransaction, Branch } from '@/lib/data';
 import { submitSalesReport } from '@/ai/flows/submit-sales-report-flow';
+import { uploadSalesReport } from '@/ai/flows/upload-sales-report-flow';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import type { DateRange } from "react-day-picker";
+import { parse } from 'papaparse';
 
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -263,14 +265,99 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
   )
 }
 
+function UploadReportDialog({ onReportUploaded, branches }: { onReportUploaded: () => void, branches: Branch[] }) {
+    const { employee, companyId } = useAuth();
+    const { toast } = useToast();
+    const [open, setOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleUpload = async () => {
+        if (!file || !companyId || !employee?.branchId) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a file and ensure you are assigned to a branch.' });
+            return;
+        }
+
+        const branch = branches.find(b => b.id === employee.branchId);
+        if (!branch) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not find your assigned branch." });
+            return;
+        }
+
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('reportFile', file);
+        formData.append('companyId', companyId);
+        formData.append('branchId', employee.branchId);
+        formData.append('branchName', branch.name);
+        formData.append('reportDate', new Date().toISOString());
+        formData.append('submittedByEmployeeId', employee.id);
+        formData.append('submittedByEmployeeName', employee.name);
+
+        try {
+            const result = await uploadSalesReport(formData);
+            if (result.success) {
+                toast({ title: 'Upload Successful', description: result.message });
+                onReportUploaded();
+                setFile(null);
+                setOpen(false);
+            } else {
+                toast({ variant: 'destructive', title: 'Upload Failed', description: result.message });
+            }
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message || 'An unexpected error occurred.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline">
+                    <Upload className="mr-2 h-4 w-4" /> Upload Report File
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Upload Sales Report</DialogTitle>
+                    <DialogDescription>
+                        Upload a CSV, Excel, or PDF file for today's sales report.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                     <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {file ? `Selected: ${file.name}` : 'Choose a File'}
+                    </Button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept=".csv,.xlsx,.xls,.pdf"
+                        onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    />
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleUpload} disabled={isLoading || !file}>
+                        {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</> : 'Upload'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export function SalesReportTab({ salesReports, branches, onAction }: { salesReports: SalesDailyReport[], branches: Branch[], onAction: () => void }) {
     const { employee } = useAuth();
     const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'this_week' | 'this_month' | 'this_year' | 'custom'>('all');
     const [branchFilter, setBranchFilter] = useState<'all' | string>('all');
-    const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>({
-        from: new Date(),
-        to: addDays(new Date(), 7),
-    });
+    const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>();
 
     const filteredReports = useMemo(() => {
         let reports = salesReports;
@@ -311,18 +398,52 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
             return { name: branch.name, totalSales: branchSales };
         }).filter(b => b.totalSales > 0);
     }, [filteredReports, branches]);
+    
+    const handleExport = () => {
+        const headers = ['Report Date', 'Branch', 'Submitted By', 'Total Sales', '# of Transactions', 'File Upload'];
+        const rows = filteredReports.map(report => [
+            format(new Date(report.reportDate), 'PPP'),
+            report.branchName,
+            report.submittedByEmployeeName,
+            report.totalSales,
+            report.transactions?.length || 0,
+            report.fileUrl || 'N/A'
+        ].join(','));
+        const csvContent = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `sales-report-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
     const userBranches: Branch[] = employee?.branchId ? branches.filter(b => b.id === employee.branchId) : [];
-
     const isFinanceManager = employee?.role === 'Admin' && (employee.permissions?.includes('finance') || !employee.adminRoleId);
-
     const reportsToShow = isFinanceManager
         ? filteredReports
         : filteredReports.filter(r => r.branchId === employee?.branchId);
 
     return (
         <div className="space-y-6">
-            {!isFinanceManager && <SalesReportForm branches={userBranches} onReportSubmitted={onAction} />}
+            {!isFinanceManager && (
+                 <div className="grid md:grid-cols-2 gap-4">
+                    <SalesReportForm branches={userBranches} onReportSubmitted={onAction} />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Or Upload Report File</CardTitle>
+                            <CardDescription>If you have a pre-generated report (e.g., from a POS system), you can upload it directly.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <UploadReportDialog onReportUploaded={onAction} branches={userBranches} />
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
             
             {isFinanceManager && (
                 <div className="space-y-4">
@@ -415,6 +536,9 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                 <Button onClick={handleExport} variant="outline">
+                                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                                </Button>
                             </div>
                         </CardHeader>
                         <CardContent>
@@ -426,6 +550,7 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                         <TableHead>Submitted By</TableHead>
                                         <TableHead>Total Sales</TableHead>
                                         <TableHead># of Transactions</TableHead>
+                                        <TableHead>File</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -435,13 +560,22 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                                 <TableCell>{format(new Date(report.reportDate), 'PPP')}</TableCell>
                                                 {isFinanceManager && <TableCell>{report.branchName}</TableCell>}
                                                 <TableCell>{report.submittedByEmployeeName}</TableCell>
-                                                <TableCell>{currencyFormatter.format(report.totalSales)}</TableCell>
-                                                <TableCell>{report.transactions.length}</TableCell>
+                                                <TableCell>{report.isFileUpload ? '-' : currencyFormatter.format(report.totalSales)}</TableCell>
+                                                <TableCell>{report.isFileUpload ? '-' : report.transactions.length}</TableCell>
+                                                <TableCell>
+                                                    {report.fileUrl && (
+                                                        <Button variant="ghost" size="sm" asChild>
+                                                            <a href={report.fileUrl} target="_blank" rel="noopener noreferrer">
+                                                                <FileText className="mr-2 h-4 w-4" /> View
+                                                            </a>
+                                                        </Button>
+                                                    )}
+                                                </TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={isFinanceManager ? 5 : 4} className="text-center h-24">No sales reports found for the selected filters.</TableCell>
+                                            <TableCell colSpan={isFinanceManager ? 6 : 5} className="text-center h-24">No sales reports found for the selected filters.</TableCell>
                                         </TableRow>
                                     )}
                                 </TableBody>
@@ -465,6 +599,7 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                     <TableHead>Submitted By</TableHead>
                                     <TableHead>Total Sales</TableHead>
                                     <TableHead># of Transactions</TableHead>
+                                    <TableHead>File</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -473,13 +608,22 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                         <TableRow key={report.id}>
                                             <TableCell>{format(new Date(report.reportDate), 'PPP')}</TableCell>
                                             <TableCell>{report.submittedByEmployeeName}</TableCell>
-                                            <TableCell>{currencyFormatter.format(report.totalSales)}</TableCell>
-                                            <TableCell>{report.transactions.length}</TableCell>
+                                            <TableCell>{report.isFileUpload ? '-' : currencyFormatter.format(report.totalSales)}</TableCell>
+                                            <TableCell>{report.isFileUpload ? '-' : report.transactions.length}</TableCell>
+                                             <TableCell>
+                                                {report.fileUrl && (
+                                                    <Button variant="ghost" size="sm" asChild>
+                                                        <a href={report.fileUrl} target="_blank" rel="noopener noreferrer">
+                                                            <FileText className="mr-2 h-4 w-4" /> View
+                                                        </a>
+                                                    </Button>
+                                                )}
+                                            </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24">No sales reports found.</TableCell>
+                                        <TableCell colSpan={5} className="text-center h-24">No sales reports found.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

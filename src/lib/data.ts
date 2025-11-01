@@ -126,6 +126,7 @@ export type Employee = {
   education?: EducationEntry[];
   workExperience?: WorkExperienceEntry[];
   resumeUrl?: string;
+  permissions?: Permission[];
 };
 
 export type ApplicationFormQuestion = {
@@ -579,6 +580,8 @@ export type SalesDailyReport = {
     submittedByEmployeeId: string;
     submittedByEmployeeName: string;
     createdAt: string; // ISO 8601
+    fileUrl?: string;
+    isFileUpload?: boolean;
 };
 
 

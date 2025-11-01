@@ -24,3 +24,4 @@ import '@/ai/flows/upgrade-guest-account-flow.ts';
 import '@/ai/flows/import-employees-flow.ts';
 import '@/ai/flows/manage-api-key-flow.ts';
 import '@/ai/flows/submit-sales-report-flow.ts';
+import '@/ai/flows/upload-sales-report-flow.ts';
