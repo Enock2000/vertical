@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, CalendarIcon, Loader2 } from 'lucide-react';
-import { format, isToday, isThisWeek, isThisMonth, isThisYear } from 'date-fns';
+import { format, isToday, isThisWeek, isThisMonth, isThisYear, isWithinInterval, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { SalesDailyReport, SalesReportTransaction, Branch } from '@/lib/data';
 import { submitSalesReport } from '@/ai/flows/submit-sales-report-flow';
@@ -29,6 +29,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import type { DateRange } from "react-day-picker";
+
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -263,8 +265,12 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
 
 export function SalesReportTab({ salesReports, branches, onAction }: { salesReports: SalesDailyReport[], branches: Branch[], onAction: () => void }) {
     const { employee } = useAuth();
-    const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'this_week' | 'this_month' | 'this_year'>('all');
+    const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'this_week' | 'this_month' | 'this_year' | 'custom'>('all');
     const [branchFilter, setBranchFilter] = useState<'all' | string>('all');
+    const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>({
+        from: new Date(),
+        to: addDays(new Date(), 7),
+    });
 
     const filteredReports = useMemo(() => {
         let reports = salesReports;
@@ -279,6 +285,10 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
             reports = reports.filter(r => isThisMonth(new Date(r.reportDate)));
         } else if (dateFilter === 'this_year') {
             reports = reports.filter(r => isThisYear(new Date(r.reportDate)));
+        } else if (dateFilter === 'custom' && customDateRange?.from && customDateRange?.to) {
+            reports = reports.filter(r => 
+                isWithinInterval(new Date(r.reportDate), { start: customDateRange.from!, end: customDateRange.to! })
+            );
         }
 
         // Branch filtering
@@ -287,7 +297,7 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
         }
 
         return reports;
-    }, [salesReports, dateFilter, branchFilter]);
+    }, [salesReports, dateFilter, branchFilter, customDateRange]);
 
     const totalSales = useMemo(() => {
         return filteredReports.reduce((sum, report) => sum + report.totalSales, 0);
@@ -342,7 +352,7 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                 <CardTitle>Submitted Sales Reports</CardTitle>
                                 <CardDescription>All submitted reports from all branches.</CardDescription>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 items-center">
                                 <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Filter by date" />
@@ -353,8 +363,47 @@ export function SalesReportTab({ salesReports, branches, onAction }: { salesRepo
                                         <SelectItem value="this_week">This Week</SelectItem>
                                         <SelectItem value="this_month">This Month</SelectItem>
                                         <SelectItem value="this_year">This Year</SelectItem>
+                                        <SelectItem value="custom">Custom Range</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                {dateFilter === 'custom' && (
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                        <Button
+                                            id="date"
+                                            variant={"outline"}
+                                            className={cn(
+                                            "w-[300px] justify-start text-left font-normal",
+                                            !customDateRange && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {customDateRange?.from ? (
+                                            customDateRange.to ? (
+                                                <>
+                                                {format(customDateRange.from, "LLL dd, y")} -{" "}
+                                                {format(customDateRange.to, "LLL dd, y")}
+                                                </>
+                                            ) : (
+                                                format(customDateRange.from, "LLL dd, y")
+                                            )
+                                            ) : (
+                                            <span>Pick a date range</span>
+                                            )}
+                                        </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            initialFocus
+                                            mode="range"
+                                            defaultMonth={customDateRange?.from}
+                                            selected={customDateRange}
+                                            onSelect={setCustomDateRange}
+                                            numberOfMonths={2}
+                                        />
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
                                 <Select value={branchFilter} onValueChange={setBranchFilter}>
                                     <SelectTrigger className="w-[180px]">
                                         <SelectValue placeholder="Filter by branch" />
