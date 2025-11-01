@@ -244,9 +244,9 @@ export default function HomePage() {
             >
               {featuresList.map((f, i) => (
                 <motion.div key={i} variants={fadeUp}>
-                  <Link href={f.href} className="block">
+                  <Link href={f.href} className="block h-full">
                     <Tilt
-                      className="w-full"
+                      className="w-full h-full"
                       tiltMaxAngleX={10}
                       tiltMaxAngleY={10}
                       perspective={1000}
@@ -259,10 +259,10 @@ export default function HomePage() {
                           <div className="flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-purple-500 text-white shadow-lg">
                             {React.cloneElement(f.icon, { className: 'h-7 w-7' })}
                           </div>
-                          <CardTitle className="text-xl font-bold text-white">{f.title}</CardTitle>
+                          <CardTitle className="text-xl font-bold text-white text-left">{f.title}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-white/80 leading-relaxed">{f.description}</p>
+                          <p className="text-white/80 leading-relaxed text-left">{f.description}</p>
                         </CardContent>
                       </Card>
                     </Tilt>
