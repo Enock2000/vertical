@@ -562,6 +562,25 @@ export type Transaction = {
     invoiceId?: string;
 };
 
+export type SalesReportTransaction = {
+    description: string;
+    amount: number;
+    paymentMethod: 'Cash' | 'Card' | 'Transfer' | 'Other';
+};
+
+export type SalesDailyReport = {
+    id: string;
+    companyId: string;
+    branchId: string;
+    branchName: string;
+    reportDate: string; // YYYY-MM-DD
+    transactions: SalesReportTransaction[];
+    totalSales: number;
+    submittedByEmployeeId: string;
+    submittedByEmployeeName: string;
+    createdAt: string; // ISO 8601
+};
+
 
 // Helper function to create a notification
 export const createNotification = async (companyId: string, notification: Omit<Notification, 'id' | 'isRead' | 'timestamp'>) => {
