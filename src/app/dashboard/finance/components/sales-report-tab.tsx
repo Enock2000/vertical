@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, CalendarIcon, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isToday, isThisWeek, isThisMonth, isThisYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { SalesDailyReport, SalesReportTransaction, Branch } from '@/lib/data';
 import { submitSalesReport } from '@/ai/flows/submit-sales-report-flow';
@@ -263,55 +263,181 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
 
 export function SalesReportTab({ salesReports, branches, onAction }: { salesReports: SalesDailyReport[], branches: Branch[], onAction: () => void }) {
     const { employee } = useAuth();
-    
-    // In a real app with many branches, we'd fetch these. For now, assume it's available.
+    const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'this_week' | 'this_month' | 'this_year'>('all');
+    const [branchFilter, setBranchFilter] = useState<'all' | string>('all');
+
+    const filteredReports = useMemo(() => {
+        let reports = salesReports;
+        const now = new Date();
+
+        // Date filtering
+        if (dateFilter === 'today') {
+            reports = reports.filter(r => isToday(new Date(r.reportDate)));
+        } else if (dateFilter === 'this_week') {
+            reports = reports.filter(r => isThisWeek(new Date(r.reportDate), { weekStartsOn: 1 }));
+        } else if (dateFilter === 'this_month') {
+            reports = reports.filter(r => isThisMonth(new Date(r.reportDate)));
+        } else if (dateFilter === 'this_year') {
+            reports = reports.filter(r => isThisYear(new Date(r.reportDate)));
+        }
+
+        // Branch filtering
+        if (branchFilter !== 'all') {
+            reports = reports.filter(r => r.branchId === branchFilter);
+        }
+
+        return reports;
+    }, [salesReports, dateFilter, branchFilter]);
+
+    const totalSales = useMemo(() => {
+        return filteredReports.reduce((sum, report) => sum + report.totalSales, 0);
+    }, [filteredReports]);
+
+    const salesByBranch = useMemo(() => {
+        return branches.map(branch => {
+            const branchSales = filteredReports
+                .filter(report => report.branchId === branch.id)
+                .reduce((sum, report) => sum + report.totalSales, 0);
+            return { name: branch.name, totalSales: branchSales };
+        }).filter(b => b.totalSales > 0);
+    }, [filteredReports, branches]);
+
     const userBranches: Branch[] = employee?.branchId ? branches.filter(b => b.id === employee.branchId) : [];
 
     const isFinanceManager = employee?.role === 'Admin' && (employee.permissions?.includes('finance') || !employee.adminRoleId);
 
     const reportsToShow = isFinanceManager
-        ? salesReports
-        : salesReports.filter(r => r.branchId === employee?.branchId);
+        ? filteredReports
+        : filteredReports.filter(r => r.branchId === employee?.branchId);
 
     return (
         <div className="space-y-6">
             {!isFinanceManager && <SalesReportForm branches={userBranches} onReportSubmitted={onAction} />}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Submitted Sales Reports</CardTitle>
-                    <CardDescription>{isFinanceManager ? "All submitted reports from all branches." : "Your branch's submitted reports."}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Report Date</TableHead>
-                                {isFinanceManager && <TableHead>Branch</TableHead>}
-                                <TableHead>Submitted By</TableHead>
-                                <TableHead>Total Sales</TableHead>
-                                <TableHead># of Transactions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {reportsToShow.length > 0 ? (
-                                reportsToShow.map(report => (
-                                    <TableRow key={report.id}>
-                                        <TableCell>{format(new Date(report.reportDate), 'PPP')}</TableCell>
-                                        {isFinanceManager && <TableCell>{report.branchName}</TableCell>}
-                                        <TableCell>{report.submittedByEmployeeName}</TableCell>
-                                        <TableCell>{currencyFormatter.format(report.totalSales)}</TableCell>
-                                        <TableCell>{report.transactions.length}</TableCell>
+            
+            {isFinanceManager && (
+                <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{currencyFormatter.format(totalSales)}</div>
+                            </CardContent>
+                        </Card>
+                        {salesByBranch.map(branch => (
+                            <Card key={branch.name}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">{branch.name} Sales</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{currencyFormatter.format(branch.totalSales)}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                     <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Submitted Sales Reports</CardTitle>
+                                <CardDescription>All submitted reports from all branches.</CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                                <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Filter by date" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Time</SelectItem>
+                                        <SelectItem value="today">Today</SelectItem>
+                                        <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="this_year">This Year</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Select value={branchFilter} onValueChange={setBranchFilter}>
+                                    <SelectTrigger className="w-[180px]">
+                                        <SelectValue placeholder="Filter by branch" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Branches</SelectItem>
+                                        {branches.map(branch => (
+                                            <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Report Date</TableHead>
+                                        {isFinanceManager && <TableHead>Branch</TableHead>}
+                                        <TableHead>Submitted By</TableHead>
+                                        <TableHead>Total Sales</TableHead>
+                                        <TableHead># of Transactions</TableHead>
                                     </TableRow>
-                                ))
-                            ) : (
+                                </TableHeader>
+                                <TableBody>
+                                    {reportsToShow.length > 0 ? (
+                                        reportsToShow.map(report => (
+                                            <TableRow key={report.id}>
+                                                <TableCell>{format(new Date(report.reportDate), 'PPP')}</TableCell>
+                                                {isFinanceManager && <TableCell>{report.branchName}</TableCell>}
+                                                <TableCell>{report.submittedByEmployeeName}</TableCell>
+                                                <TableCell>{currencyFormatter.format(report.totalSales)}</TableCell>
+                                                <TableCell>{report.transactions.length}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={isFinanceManager ? 5 : 4} className="text-center h-24">No sales reports found for the selected filters.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+
+            {!isFinanceManager && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Submitted Sales Reports</CardTitle>
+                        <CardDescription>Your branch's submitted reports.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={isFinanceManager ? 5 : 4} className="text-center h-24">No sales reports found.</TableCell>
+                                    <TableHead>Report Date</TableHead>
+                                    <TableHead>Submitted By</TableHead>
+                                    <TableHead>Total Sales</TableHead>
+                                    <TableHead># of Transactions</TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {reportsToShow.length > 0 ? (
+                                    reportsToShow.map(report => (
+                                        <TableRow key={report.id}>
+                                            <TableCell>{format(new Date(report.reportDate), 'PPP')}</TableCell>
+                                            <TableCell>{report.submittedByEmployeeName}</TableCell>
+                                            <TableCell>{currencyFormatter.format(report.totalSales)}</TableCell>
+                                            <TableCell>{report.transactions.length}</TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24">No sales reports found.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     )
 }
