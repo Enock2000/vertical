@@ -46,16 +46,10 @@ export default function EmployeePortalLayout({
   const { user, employee, company, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/employee-login');
-      } else if (employee?.role === 'Admin' || employee?.role === 'Super Admin') {
-        router.push('/dashboard');
-      } else if (employee?.role === 'GuestAdmin') {
-        router.push('/guest-employer');
-      }
+    if (!loading && !user) {
+      router.push('/employee-login');
     }
-  }, [user, employee, loading, router]);
+  }, [user, loading, router]);
 
 
   if (loading || !employee) {
