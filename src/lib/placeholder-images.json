@@ -35,6 +35,12 @@
       "description": "A band playing music on an outdoor stage.",
       "imageUrl": "https://i.postimg.cc/9F0M7y6p/pexels-pixabay-210922.jpg",
       "imageHint": "band music"
+    },
+    {
+      "id": "hero-7",
+      "description": "A group of professionals in a modern office.",
+      "imageUrl": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80",
+      "imageHint": "office teamwork"
     }
   ]
 }

@@ -100,7 +100,7 @@ export default function HomePage() {
   });
 
   return (
-    <div className="relative flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="relative flex flex-col min-h-screen">
       {/* ---- GLOBAL BACKGROUND IMAGE ---- */}
 <div className="absolute inset-0 -z-10">
   <Image
@@ -109,6 +109,7 @@ export default function HomePage() {
     fill
     className="object-cover object-center brightness-100 contrast-105"
     priority
+    data-ai-hint="office teamwork"
   />
   {/* Light overlay to improve text readability */}
   <div className="absolute inset-0 bg-white/60" />
