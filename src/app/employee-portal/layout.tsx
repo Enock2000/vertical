@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from "next/link";
@@ -45,10 +43,11 @@ export default function EmployeePortalLayout({
   const router = useRouter();
   const { user, employee, company, loading } = useAuth();
 
+  // 🔹 Redirect removed — restricted instead of pushing
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/employee-login');
-    }
+    // if (!loading && !user) {
+    //   router.push('/employee-login');
+    // }
   }, [user, loading, router]);
 
 
