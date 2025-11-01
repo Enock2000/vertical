@@ -33,21 +33,16 @@ export default function ApplicantPortalLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, employee, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/employee-login');
-      } else if (employee && employee.role !== 'Applicant') {
-        // If logged in but not an applicant, redirect them appropriately
-        router.push(employee.role === 'Admin' || employee.role === 'Super Admin' ? '/dashboard' : '/employee-portal');
-      }
+    if (!loading && !user) {
+      router.push('/employee-login');
     }
-  }, [user, employee, loading, router]);
+  }, [user, loading, router]);
 
 
-  if (loading || !employee) {
+  if (loading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />

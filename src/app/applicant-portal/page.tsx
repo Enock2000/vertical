@@ -107,13 +107,13 @@ export default function ApplicantPortalPage() {
         );
     }
     
-     if (!employee) return null;
+     if (!user) return null;
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome, {employee.name}</CardTitle>
+                    <CardTitle>Welcome, {employee?.name || user.email}</CardTitle>
                     <CardDescription>
                         Here you can track your job applications and explore new opportunities.
                     </CardDescription>
