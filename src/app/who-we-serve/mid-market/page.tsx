@@ -1,74 +1,120 @@
-// src/app/who-we-serve/mid-market/page.tsx
-import Image from 'next/image';
-import { CheckCircle, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import Logo from '@/components/logo';
+// src/app/page.tsx   (or any route you prefer)
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import Logo from "@/components/logo";
+import { ThumbsUp, Lock, Star } from "lucide-react";
 
-const features = [
-    'Scale payroll and HR processes across multiple countries.',
-    'Consolidate global payroll into a single, manageable platform.',
-    'Advanced reporting and analytics to track workforce trends.',
-    'Integrate with your existing finance and accounting software.',
-    'Dedicated support to help you manage your growing complexity.'
-];
-
-export default function MidMarketPage() {
+export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-muted/40">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 items-center justify-between">
-            <Link href="/">
-                <Logo />
-            </Link>
-            <Button variant="ghost" asChild>
-                <Link href="/who-we-serve">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Who We Serve
-                </Link>
-            </Button>
+    <div className="flex min-h-screen flex-col bg-purple-50">
+      {/* ---------- Top bar ---------- */}
+      <header className="bg-[#4B2A7F] text-white">
+        <div className="container mx-auto flex items-center justify-between px-4 py-2 text-sm">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <ThumbsUp className="h-4 w-4" />
+              <span>Trusted by companies</span>
             </div>
-        </header>
+            <div className="flex items-center gap-1">
+              <Star className="h-4 w-4 text-yellow-400" />
+              <Star className="h-4 w-4 text-yellow-400" />
+              <Star className="h-4 w-4 text-yellow-400" />
+              <Star className="h-4 w-4 text-yellow-400" />
+              <Star className="h-4 w-4 text-yellow-400" />
+              <span className="ml-1">10,000+ reviews</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            <span>Advanced data security</span>
+          </div>
+        </div>
+      </header>
 
-        <main className="flex-1">
-            <section className="relative w-full py-20 md:py-28 text-white flex items-center justify-center">
-                <Image
-                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop"
-                    alt="Mid-Market Business"
-                    fill
-                    className="object-cover"
-                    priority
-                    data-ai-hint="growing business team"
-                />
-                <div className="absolute inset-0 bg-black/60 z-10"></div>
-                <div className="relative z-20 container text-center">
-                <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">For Mid-Market Companies</h1>
-                <p className="mx-auto mt-4 max-w-[700px] text-white/80 md:text-xl">
-                    As you scale, your HR needs become more complex. VerticalSync provides the robust tools you need to manage a growing international team efficiently.
-                </p>
-                </div>
-            </section>
+      {/* ---------- Hero ---------- */}
+      <section className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-purple-100 to-purple-200 py-20 md:py-28">
+        {/* Background image (replace with your own or keep the Unsplash one) */}
+        <Image
+          src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+          alt="Team meeting"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-purple-900/30" />
 
-             <section className="container py-16 md:py-24">
-                <div className="mx-auto max-w-4xl space-y-8">
-                    <div className="text-center">
-                        <h2 className="text-3xl font-bold">Streamline and Scale</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            Your business is expanding, and your HR platform should too. Move beyond basic tools and consolidate your global operations onto a single platform built for scale.
-                        </p>
+        <div className="relative z-10 container mx-auto px-4">
+          <div className="grid gap-12 md:grid-cols-2 md:items-center">
+            {/* Left column – copy */}
+            <div className="max-w-lg">
+              <h1 className="text-5xl font-black leading-tight text-gray-900 md:text-6xl">
+                The ultimate people platform for scaling companies
+              </h1>
+              <p className="mt-6 text-lg text-gray-700">
+                Unlock efficiency with global reach using <strong>Deel</strong> to streamline{" "}
+                <span className="underline decoration-purple-600">payroll</span> for your workforce. With our owned,
+                full-scale infrastructure, built for hiring, managing, and paying global talent, you can save on
+                software costs and accelerate your market entry with full compliance.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <Button
+                  size="lg"
+                  className="rounded-full bg-gray-900 px-8 text-white hover:bg-gray-800"
+                >
+                  Get a free demo
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-100"
+                >
+                  Speak to sales
+                </Button>
+              </div>
+            </div>
+
+            {/* Right column – floating stats */}
+            <div className="relative flex justify-center">
+              <div className="space-y-8">
+                {/* Total Payments */}
+                <div className="relative -mr-12 w-64 rounded-2xl bg-white p-6 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">TOTAL PAYMENTS</p>
+                      <p className="mt-1 text-3xl font-bold text-gray-900">ZMW340,800</p>
                     </div>
-
-                    <ul className="space-y-4 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-4">
-                        {features.map((feature, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                                <CheckCircle className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
-                                <span>{feature}</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <div className="flex -space-x-2">
+                      {/* replace with real brand logos if you have them */}
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-400 to-blue-500" />
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500" />
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-yellow-400 to-red-500" />
+                    </div>
+                  </div>
                 </div>
-            </section>
-        </main>
+
+                {/* New Joiners */}
+                <div className="relative -ml-12 w-64 rounded-2xl bg-white p-6 shadow-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">New joiners</p>
+                      <p className="mt-1 text-3xl font-bold text-gray-900">2,648</p>
+                    </div>
+                    <div className="flex items-end gap-1">
+                      <div className="h-6 w-6 rounded-sm bg-yellow-200" />
+                      <div className="h-8 w-6 rounded-sm bg-yellow-300" />
+                      <div className="h-10 w-6 rounded-sm bg-yellow-400" />
+                      <div className="h-12 w-6 rounded-sm bg-yellow-500" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">Last 4 months</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

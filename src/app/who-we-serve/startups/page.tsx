@@ -20,7 +20,7 @@ export default function StartupsPage() {
         <div className="bg-purple-900 text-white py-3">
             <div className="container flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded font-semibold text-sm">LIVE WEBINAR</span>
+                    <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded font-semibold text-sm">JOIN FREE</span>
                     <span className="text-sm">Scattered reviews waste time. Learn how better performance management drives business ROI.</span>
                 </div>
                 <Button variant="ghost" className="bg-white text-purple-900 hover:bg-gray-100 text-sm px-4 py-1 h-auto rounded">
@@ -53,11 +53,11 @@ export default function StartupsPage() {
             <div className="container flex items-center justify-center gap-12 text-sm">
                 <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5" />
-                    <span>Trusted by 35,000+ companies</span>
+                    <span>Trusted by companies</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-yellow-400">★★★★★</span>
-                    <span>10,000+ reviews</span>
+                    <span className="text-yellow-400"> </span>
+                    <span> </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <span className="text-lg">🔒</span>
@@ -83,7 +83,7 @@ export default function StartupsPage() {
                         </p>
                         <div className="flex gap-4 pt-4">
                             <Button size="lg" className="bg-purple-900 hover:bg-purple-800 text-white px-8">
-                                Get a free 30 minute demo
+                                Get a free demo
                             </Button>
                             <Button size="lg" variant="outline" className="border-purple-900 text-purple-900 hover:bg-purple-50">
                                 Speak to sales
@@ -114,7 +114,7 @@ export default function StartupsPage() {
                         </div>
                         <div className="absolute bottom-8 left-8 bg-white rounded-lg shadow-xl p-4">
                             <div className="text-xs text-gray-600 mb-2">TOTAL PAYMENTS</div>
-                            <div className="text-3xl font-bold">$340,800</div>
+                            <div className="text-3xl font-bold">ZMW340,800</div>
                         </div>
                     </div>
                 </div>
