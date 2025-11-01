@@ -261,7 +261,7 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
   )
 }
 
-export function SalesReportTab({ salesReports, branches }: { salesReports: SalesDailyReport[], branches: Branch[] }) {
+export function SalesReportTab({ salesReports, branches, onAction }: { salesReports: SalesDailyReport[], branches: Branch[], onAction: () => void }) {
     const { employee } = useAuth();
     
     // In a real app with many branches, we'd fetch these. For now, assume it's available.
@@ -275,7 +275,7 @@ export function SalesReportTab({ salesReports, branches }: { salesReports: Sales
 
     return (
         <div className="space-y-6">
-            {!isFinanceManager && <SalesReportForm branches={userBranches} onReportSubmitted={() => {}} />}
+            {!isFinanceManager && <SalesReportForm branches={userBranches} onReportSubmitted={onAction} />}
             <Card>
                 <CardHeader>
                     <CardTitle>Submitted Sales Reports</CardTitle>

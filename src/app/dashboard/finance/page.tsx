@@ -104,7 +104,7 @@ export default function FinancePage() {
                 <OverviewTab invoices={invoices} transactions={transactions} />
             </TabsContent>
              <TabsContent value="sales-reports">
-                <SalesReportTab salesReports={salesReports} branches={branches} />
+                <SalesReportTab salesReports={salesReports} branches={branches} onAction={handleAction}/>
             </TabsContent>
             {isFinanceManager && <TabsContent value="invoices">
                 <InvoicesTab invoices={invoices} customers={customers} products={products} onAction={handleAction} />
