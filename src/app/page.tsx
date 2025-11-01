@@ -96,21 +96,21 @@ export default function HomePage() {
   const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' });
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
 
       {/* ---------------------------------------------------- HEADER ---------------------------------------------------- */}
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6 }}
-        className="sticky top-0 z-50 w-full border-b border-purple-100 bg-white/80 backdrop-blur-xl"
+        className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/50 backdrop-blur-xl"
       >
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center">
             <Logo />
           </Link>
 
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-gray-700">
+          <nav className="hidden md:flex items-center space-x-8 text-sm font-semibold text-white">
             {navLinks.map(l => (
               <Link key={l.href} href={l.href} className="transition-all hover:text-primary hover:scale-105">
                 {l.label}
@@ -120,9 +120,9 @@ export default function HomePage() {
 
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/login" className="text-primary hover:text-primary">Login</Link>
+              <Link href="/login" className="text-white hover:text-white">Login</Link>
             </Button>
-            <Button asChild className="bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-purple-700 text-white shadow-lg hover:shadow-primary/25 transition-all hover:scale-105">
+            <Button asChild className="bg-gradient-to-r from-primary to-purple-500 text-white shadow-lg hover:shadow-primary/25 transition-all hover:scale-105">
               <Link href="/signup">Get Started</Link>
             </Button>
           </div>
@@ -132,20 +132,20 @@ export default function HomePage() {
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="Open menu">
-                  <Menu className="h-5 w-5 text-primary" />
+                  <Menu className="h-5 w-5 text-white" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="bg-white/95 backdrop-blur-xl border-l border-purple-100">
+              <SheetContent side="right" className="bg-black/80 backdrop-blur-xl border-l border-white/10 text-white">
                 <nav className="flex flex-col gap-6 text-lg font-medium mt-8">
                   {navLinks.map(l => (
                     <SheetClose asChild key={l.href}>
-                      <Link href={l.href} className="text-gray-700 hover:text-primary">{l.label}</Link>
+                      <Link href={l.href} className="hover:text-primary">{l.label}</Link>
                     </SheetClose>
                   ))}
-                  <SheetClose asChild><Link href="/post-a-job" className="text-gray-700 hover:text-primary">Post a Job</Link></SheetClose>
+                  <SheetClose asChild><Link href="/post-a-job" className="hover:text-primary">Post a Job</Link></SheetClose>
                   <SheetClose asChild><Link href="/login" className="text-primary">Login</Link></SheetClose>
                   <SheetClose asChild>
-                    <Button className="w-full bg-gradient-to-r from-primary to-primary text-white">
+                    <Button className="w-full bg-gradient-to-r from-primary to-purple-500 text-white">
                       <Link href="/signup">Get Started</Link>
                     </Button>
                   </SheetClose>
@@ -169,7 +169,7 @@ export default function HomePage() {
         />
 
         {/* Purple tint overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10" />
 
         {/* ---------- HERO (Animated) ---------- */}
         <motion.section
@@ -178,7 +178,7 @@ export default function HomePage() {
           transition={{ duration: 1 }}
           className="relative min-h-[90vh] flex items-center justify-center overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-purple-900/40 via-purple-900/20 to-transparent z-10" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent z-10" />
           <div className="relative z-20 max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
             <motion.p {...fadeUp} className="text-sm font-bold tracking-widest uppercase text-purple-300">
               Global People Platform
@@ -203,7 +203,7 @@ export default function HomePage() {
               transition={{ delay: 0.6 }}
               className="mt-10"
             >
-              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-purple-700 text-white font-bold text-lg px-8 py-6 rounded-full shadow-xl hover:shadow-primary/50 transform hover:scale-105 transition-all duration-300 animate-pulse">
+              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-purple-500 text-white font-bold text-lg px-8 py-6 rounded-full shadow-xl hover:shadow-primary/50 transform hover:scale-105 transition-all duration-300 animate-pulse">
                 <Link href="/signup">Get Started Free</Link>
               </Button>
             </motion.div>
@@ -221,7 +221,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-4xl sm:text-5xl font-extrabold text-gray-900"
+              className="text-4xl sm:text-5xl font-extrabold text-white"
             >
               Everything you need. Nothing you don't.
             </motion.h2>
@@ -230,7 +230,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               viewport={{ once: true }}
-              className="mx-auto mt-4 max-w-2xl text-lg text-gray-600"
+              className="mx-auto mt-4 max-w-2xl text-lg text-white/80"
             >
               Discover a full suite of HR tools designed to streamline your operations and empower your team.
             </motion.p>
@@ -254,15 +254,15 @@ export default function HomePage() {
                       transitionSpeed={1500}
                       gyroscope={true}
                     >
-                      <Card className="bg-white/10 backdrop-blur-lg border border-primary/30 rounded-2xl p-6 h-full shadow-xl transition-all duration-300 hover:shadow-primary/30 hover:border-primary">
+                      <Card className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-2xl p-6 h-full shadow-xl transition-all duration-300 hover:shadow-primary/30 hover:border-primary">
                         <CardHeader className="flex flex-row items-center gap-4">
-                          <div className="flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary text-white shadow-lg">
+                          <div className="flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-purple-500 text-white shadow-lg">
                             {React.cloneElement(f.icon, { className: 'h-7 w-7' })}
                           </div>
-                          <CardTitle className="text-xl font-bold text-gray-800">{f.title}</CardTitle>
+                          <CardTitle className="text-xl font-bold text-white">{f.title}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-gray-600 leading-relaxed">{f.description}</p>
+                          <p className="text-white/80 leading-relaxed">{f.description}</p>
                         </CardContent>
                       </Card>
                     </Tilt>
@@ -277,14 +277,14 @@ export default function HomePage() {
         <motion.section
           {...fadeUp}
           id="pricing"
-          className="relative py-24 md:py-32 bg-gradient-to-b from-transparent to-purple-50/50"
+          className="relative py-24 md:py-32 bg-gradient-to-b from-transparent to-black/20"
         >
           <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <motion.h2
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-4xl sm:text-5xl font-extrabold text-gray-900"
+              className="text-4xl sm:text-5xl font-extrabold text-white"
             >
               Find the Perfect Plan
             </motion.h2>
@@ -293,7 +293,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               viewport={{ once: true }}
-              className="mx-auto mt-4 max-w-2xl text-lg text-gray-600"
+              className="mx-auto mt-4 max-w-2xl text-lg text-white/80"
             >
               Simple, transparent pricing that scales with your business.
             </motion.p>
@@ -319,17 +319,17 @@ export default function HomePage() {
                       scale={1.03}
                       transitionSpeed={1200}
                     >
-                      <Card className="flex flex-col bg-white/10 backdrop-blur-lg border border-primary/30 rounded-2xl p-6 transition-all hover:shadow-2xl hover:shadow-primary/30 hover:border-primary">
+                      <Card className="flex flex-col bg-white/5 backdrop-blur-lg border border-white/20 rounded-2xl p-6 transition-all hover:shadow-2xl hover:shadow-primary/30 hover:border-primary">
                         <CardHeader>
-                          <CardTitle className="text-2xl font-bold text-gray-800">{p.name}</CardTitle>
+                          <CardTitle className="text-2xl font-bold text-white">{p.name}</CardTitle>
                           <CardContent className="p-0 pt-4">
                             <span className="text-5xl font-extrabold text-primary">{currencyFormatter.format(p.price)}</span>
-                            <span className="text-gray-600">/month</span>
+                            <span className="text-white/80">/month</span>
                           </CardContent>
                         </CardHeader>
                         <CardContent className="flex-1 space-y-5 mt-4">
-                          <p className="font-semibold text-gray-700">{p.jobPostings} job postings included</p>
-                          <ul className="space-y-3 text-sm text-gray-600">
+                          <p className="font-semibold text-white">{p.jobPostings} job postings included</p>
+                          <ul className="space-y-3 text-sm text-white/80">
                             {p.features.map((f, i) => (
                               <li key={i} className="flex items-center gap-3">
                                 <CheckCircle className="h-5 w-5 text-primary" />
@@ -339,7 +339,7 @@ export default function HomePage() {
                           </ul>
                         </CardContent>
                         <CardContent className="pt-6">
-                          <Button className="w-full bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-purple-700 text-white font-bold rounded-xl shadow-md hover:shadow-primary/40 transition-all hover:scale-105">
+                          <Button className="w-full bg-gradient-to-r from-primary to-purple-500 text-white font-bold rounded-xl shadow-md hover:shadow-primary/40 transition-all hover:scale-105">
                             <Link href="/signup">Choose Plan</Link>
                           </Button>
                         </CardContent>
@@ -371,7 +371,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-4xl sm:text-5xl font-extrabold text-gray-900"
+              className="text-4xl sm:text-5xl font-extrabold text-white"
             >
               Ready to Simplify Your HR?
             </motion.h2>
@@ -380,7 +380,7 @@ export default function HomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               viewport={{ once: true }}
-              className="mx-auto mt-4 max-w-2xl text-lg text-gray-600"
+              className="mx-auto mt-4 max-w-2xl text-lg text-white/80"
             >
               Join dozens of companies streamlining their operations with VerticalSync. Get started today.
             </motion.p>
@@ -390,7 +390,7 @@ export default function HomePage() {
               transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
               className="mt-10"
             >
-              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-primary hover:from-primary hover:to-purple-700 text-white font-bold text-lg px-10 py-7 rounded-full shadow-xl hover:shadow-primary/50 transform hover:scale-110 transition-all duration-300">
+              <Button size="lg" asChild className="bg-gradient-to-r from-primary to-purple-500 text-white font-bold text-lg px-10 py-7 rounded-full shadow-xl hover:shadow-primary/50 transform hover:scale-110 transition-all duration-300">
                 <Link href="/signup">Sign Up for Free</Link>
               </Button>
             </motion.div>
@@ -403,13 +403,13 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
-        className="relative border-t border-purple-100 bg-white/80 backdrop-blur-xl"
+        className="relative border-t border-white/10 bg-black/50 backdrop-blur-xl"
       >
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-white/60">
             © {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.
           </p>
-          <nav className="flex items-center space-x-6 text-sm font-medium text-gray-700">
+          <nav className="flex items-center space-x-6 text-sm font-medium text-white">
             <Link href="/documentation" className="hover:text-primary transition-colors">Documentation</Link>
             <Link href="/docs/api" className="hover:text-primary transition-colors">API Docs</Link>
             <Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link>
