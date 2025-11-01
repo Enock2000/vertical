@@ -261,13 +261,13 @@ function SalesReportForm({ branches, onReportSubmitted }: { branches: Branch[], 
   )
 }
 
-export function SalesReportTab({ salesReports }: { salesReports: SalesDailyReport[] }) {
+export function SalesReportTab({ salesReports, branches }: { salesReports: SalesDailyReport[], branches: Branch[] }) {
     const { employee } = useAuth();
     
     // In a real app with many branches, we'd fetch these. For now, assume it's available.
-    const userBranches: Branch[] = employee?.branchId ? [{id: employee.branchId, name: employee.branchName || 'My Branch', companyId: employee.companyId, location: ''}] : [];
+    const userBranches: Branch[] = employee?.branchId ? branches.filter(b => b.id === employee.branchId) : [];
 
-    const isFinanceManager = employee?.role === 'Admin' && employee.permissions?.includes('finance');
+    const isFinanceManager = employee?.role === 'Admin' && (employee.permissions?.includes('finance') || !employee.adminRoleId);
 
     const reportsToShow = isFinanceManager
         ? salesReports

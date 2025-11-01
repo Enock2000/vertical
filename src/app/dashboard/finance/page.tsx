@@ -80,7 +80,7 @@ export default function FinancePage() {
 
     }, [companyId]);
 
-    const isFinanceManager = employee?.role === 'Admin' && employee.permissions?.includes('finance');
+    const isFinanceManager = employee?.role === 'Admin' && (employee.permissions?.includes('finance') || !employee.adminRoleId);
 
      if (loading) {
         return (
@@ -104,7 +104,7 @@ export default function FinancePage() {
                 <OverviewTab invoices={invoices} transactions={transactions} />
             </TabsContent>
              <TabsContent value="sales-reports">
-                <SalesReportTab salesReports={salesReports} />
+                <SalesReportTab salesReports={salesReports} branches={branches} />
             </TabsContent>
             {isFinanceManager && <TabsContent value="invoices">
                 <InvoicesTab invoices={invoices} customers={customers} products={products} onAction={handleAction} />
