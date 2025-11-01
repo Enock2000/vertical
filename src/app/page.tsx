@@ -244,7 +244,6 @@ export default function HomePage() {
             >
               {featuresList.map((f, i) => (
                 <motion.div key={i} variants={fadeUp}>
-                  <Link href={f.href} className="block h-full">
                     <Tilt
                       className="w-full h-full"
                       tiltMaxAngleX={10}
@@ -254,19 +253,20 @@ export default function HomePage() {
                       transitionSpeed={1500}
                       gyroscope={true}
                     >
-                      <Card className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-2xl p-6 h-full shadow-xl transition-all duration-300 hover:shadow-primary/30 hover:border-primary">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                          <div className="flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-purple-500 text-white shadow-lg">
-                            {React.cloneElement(f.icon, { className: 'h-7 w-7' })}
-                          </div>
-                          <CardTitle className="text-xl font-bold text-white text-left">{f.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-white/80 leading-relaxed text-left">{f.description}</p>
-                        </CardContent>
-                      </Card>
+                        <Link href={f.href} className="block h-full">
+                            <Card className="bg-white/5 backdrop-blur-lg border border-white/20 rounded-2xl p-6 h-full shadow-xl transition-all duration-300 hover:shadow-primary/30 hover:border-primary">
+                                <CardHeader className="flex flex-row items-center gap-4">
+                                <div className="flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-purple-500 text-white shadow-lg">
+                                    {React.cloneElement(f.icon, { className: 'h-7 w-7' })}
+                                </div>
+                                <CardTitle className="text-xl font-bold text-white text-left">{f.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                <p className="text-white/80 leading-relaxed text-left">{f.description}</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
                     </Tilt>
-                  </Link>
                 </motion.div>
               ))}
             </motion.div>
