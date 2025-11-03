@@ -101,19 +101,7 @@ export default function HomePage() {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      {/* ---- GLOBAL BACKGROUND IMAGE ---- */}
-<div className="absolute inset-0 -z-10">
-  <Image
-    src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80" // Office people background
-    alt="Office teamwork background"
-    fill
-    className="object-cover object-center brightness-100 contrast-105"
-    priority
-    data-ai-hint="office teamwork"
-  />
-  {/* Light overlay to improve text readability */}
-  <div className="absolute inset-0 bg-white/60" />
-</div>
+      
 
       {/* ---- HEADER ---- */}
       <motion.header
