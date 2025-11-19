@@ -15,19 +15,10 @@ const selfServiceFeatures = [
 export default function EmployeeSelfServicePage() {
   return (
     <div>
-      <section className="relative w-full py-20 md:py-28 text-white flex items-center justify-center">
-        <Image
-          src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
-          alt="Employee Self-Service"
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="team empowerment"
-        />
-        <div className="absolute inset-0 bg-black/60 z-10"></div>
-        <div className="relative z-20 container text-center">
+      <section className="w-full py-20 md:py-28 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 text-gray-900 flex items-center justify-center">
+        <div className="container text-center">
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Employee Self-Service</h1>
-          <p className="mx-auto mt-4 max-w-[700px] text-white/80 md:text-xl">
+          <p className="mx-auto mt-4 max-w-[700px] text-gray-700/80 md:text-xl">
             Empower your employees with a portal to manage their attendance, leave, and view payslips.
           </p>
         </div>

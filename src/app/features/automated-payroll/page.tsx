@@ -15,19 +15,10 @@ const payrollFeatures = [
 export default function AutomatedPayrollPage() {
   return (
     <div>
-      <section className="relative w-full py-20 md:py-28 text-white flex items-center justify-center">
-        <Image
-          src="https://images.unsplash.com/photo-1579621970795-87f91d908377?q=80&w=2070&auto=format&fit=crop"
-          alt="Automated Payroll"
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="money currency"
-        />
-        <div className="absolute inset-0 bg-black/60 z-10"></div>
-        <div className="relative z-20 container text-center">
+      <section className="w-full py-20 md:py-28 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 text-gray-900 flex items-center justify-center">
+        <div className="container text-center">
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Automated Payroll</h1>
-          <p className="mx-auto mt-4 max-w-[700px] text-white/80 md:text-xl">
+          <p className="mx-auto mt-4 max-w-[700px] text-gray-700/80 md:text-xl">
             Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically.
           </p>
         </div>

@@ -15,19 +15,10 @@ const recruitmentFeatures = [
 export default function RecruitmentOnboardingPage() {
   return (
     <div>
-      <section className="relative w-full py-20 md:py-28 text-white flex items-center justify-center">
-        <Image
-          src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop"
-          alt="Recruitment & Onboarding"
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="hiring team"
-        />
-        <div className="absolute inset-0 bg-black/60 z-10"></div>
-        <div className="relative z-20 container text-center">
+      <section className="w-full py-20 md:py-28 bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-100 text-gray-900 flex items-center justify-center">
+        <div className="container text-center">
           <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl">Recruitment & Onboarding</h1>
-          <p className="mx-auto mt-4 max-w-[700px] text-white/80 md:text-xl">
+          <p className="mx-auto mt-4 max-w-[700px] text-gray-700/80 md:text-xl">
             From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place.
           </p>
         </div>
