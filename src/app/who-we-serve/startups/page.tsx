@@ -23,9 +23,9 @@ export default function StartupsPage() {
             <Logo />
           </Link>
           <Button variant="ghost" asChild>
-            <Link href="/">
+            <Link href="/who-we-serve">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
+              Back to Who We Serve
             </Link>
           </Button>
         </div>

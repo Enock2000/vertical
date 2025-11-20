@@ -1,112 +1,121 @@
-// src/app/page.tsx   (or any route you prefer)
-import Image from "next/image";
+import { ThumbsUp, Lock, Star, ArrowLeft, Zap, Globe, DollarSign, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import Logo from "@/components/logo";
-import { ThumbsUp, Lock, Star, ArrowLeft } from "lucide-react";
+
+// Mock replacements for assumed external components
+const MockLogo = () => (
+  <div className="text-xl font-bold text-purple-900 flex items-center gap-1">
+    <Zap className="h-5 w-5 text-purple-600 fill-purple-200" />
+    VerticalSync
+  </div>
+);
+
+const MockButton = ({ children, variant = 'primary', size = 'lg', className = '' }) => {
+  let baseClasses = "font-semibold py-3 px-6 rounded-full transition duration-300 shadow-lg hover:shadow-xl";
+  if (variant === 'primary') {
+    baseClasses += " bg-purple-700 text-white hover:bg-purple-800 focus:ring-4 focus:ring-purple-300";
+  } else if (variant === 'outline') {
+    baseClasses += " border border-purple-700 text-purple-700 bg-white hover:bg-purple-50 focus:ring-4 focus:ring-purple-200";
+  } else if (variant === 'ghost') {
+    baseClasses = "font-semibold py-2 px-4 rounded-lg transition duration-300 text-purple-700 hover:bg-purple-100";
+  }
+  
+  return <a className={`${baseClasses} ${className}`}>{children}</a>;
+};
+
+
+// Mock data for key value propositions
+const valueProps = [
+  {
+    icon: Globe,
+    title: 'Global Reach',
+    description: 'Hire and manage talent in over 150 countries with local compliance baked in.',
+  },
+  {
+    icon: DollarSign,
+    title: 'Cost Efficiency',
+    description: 'Consolidate payroll systems to reduce overhead and save on local provider costs.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Full Compliance',
+    description: 'Ensure statutory adherence and minimize risk with continuously updated legal templates.',
+  },
+];
+
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-purple-50">
-      {/* ========== Header ========== */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-white">
+      {/* ========== Header (DO NOT CHANGE) ========== */}
+      <header className="sticky top-0 z-50 w-full border-b border-purple-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/">
-            <Logo />
+            <MockLogo />
           </Link>
-          <Button variant="ghost" asChild>
-            <Link href="/">
+          <MockButton variant="ghost" className="px-4 py-2 text-sm">
+            <Link href="/who-we-serve" className="flex items-center">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
+              Back to Who We Serve
             </Link>
-          </Button>
+          </MockButton>
         </div>
       </header>
+      {/* ========== End Header ========== */}
 
       {/* ---------- Hero ---------- */}
-      <section className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-purple-100 to-purple-200 py-20 md:py-28">
-        {/* Background image (replace with your own or keep the Unsplash one) */}
-        <Image
-          src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-          alt="Team meeting"
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="team meeting"
-        />
-        <div className="absolute inset-0 bg-purple-900/30" />
+      <section className="relative flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 py-24 md:py-36">
+        {/* Abstract Background Element */}
+        <div className="absolute bottom-0 left-0 h-96 w-96 -translate-x-1/2 translate-y-1/2 rounded-full bg-purple-200 opacity-50 blur-[150px] pointer-events-none"></div>
 
         <div className="relative z-10 container mx-auto px-4">
-          <div className="grid gap-12 md:grid-cols-2 md:items-center">
-            {/* Left column – copy */}
-            <div className="max-w-lg">
-              <h1 className="text-5xl font-black leading-tight text-gray-900 md:text-6xl">
-                The ultimate people platform for scaling companies
-              </h1>
-              <p className="mt-6 text-lg text-gray-700">
-                Unlock efficiency with global reach using <strong>Deel</strong> to streamline{" "}
-                <span className="underline decoration-purple-600">payroll</span> for your workforce. With our owned,
-                full-scale infrastructure, built for hiring, managing, and paying global talent, you can save on
-                software costs and accelerate your market entry with full compliance.
-              </p>
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Main Copy */}
+            <h1 className="text-5xl font-extrabold leading-snug text-purple-950 md:text-7xl">
+              The ultimate people platform for <span className="text-purple-700">Scaling Companies</span>
+            </h1>
+            <p className="mt-8 text-xl text-purple-800/80 max-w-3xl mx-auto">
+              Unlock efficiency with global reach. VerticalSync streamlines payroll, HR, and compliance for your entire workforce, allowing you to scale globally with confidence and control.
+            </p>
 
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="rounded-full bg-gray-900 px-8 text-white hover:bg-gray-800"
-                >
-                  Get a free demo
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-100"
-                >
-                  Speak to sales
-                </Button>
-              </div>
+            {/* CTA Buttons */}
+            <div className="mt-12 flex flex-col gap-4 sm:flex-row justify-center">
+              <MockButton variant="primary">
+                Get a free demo
+              </MockButton>
+              <MockButton variant="outline">
+                Speak to sales
+              </MockButton>
             </div>
-
-            {/* Right column – floating stats */}
-            <div className="relative flex justify-center">
-              <div className="space-y-8">
-                {/* Total Payments */}
-                <div className="relative -mr-12 w-64 rounded-2xl bg-white p-6 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">TOTAL PAYMENTS</p>
-                      <p className="mt-1 text-3xl font-bold text-gray-900">ZMW340,800</p>
-                    </div>
-                    <div className="flex -space-x-2">
-                      {/* replace with real brand logos if you have them */}
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-400 to-blue-500" />
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-pink-400 to-purple-500" />
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-yellow-400 to-red-500" />
-                    </div>
-                  </div>
-                </div>
-
-                {/* New Joiners */}
-                <div className="relative -ml-12 w-64 rounded-2xl bg-white p-6 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">New joiners</p>
-                      <p className="mt-1 text-3xl font-bold text-gray-900">2,648</p>
-                    </div>
-                    <div className="flex items-end gap-1">
-                      <div className="h-6 w-6 rounded-sm bg-yellow-200" />
-                      <div className="h-8 w-6 rounded-sm bg-yellow-300" />
-                      <div className="h-10 w-6 rounded-sm bg-yellow-400" />
-                      <div className="h-12 w-6 rounded-sm bg-yellow-500" />
-                    </div>
-                  </div>
-                  <p className="mt-2 text-xs text-gray-500">Last 4 months</p>
-                </div>
-              </div>
-            </div>
+            
           </div>
         </div>
       </section>
+      
+      {/* ---------- Value Proposition / Features Section ---------- */}
+      <section className="py-20 md:py-28 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-8 sm:grid-cols-3 text-center">
+            {valueProps.map((prop, index) => (
+              <div key={index} className="flex flex-col items-center p-6 rounded-xl border border-purple-100 shadow-md hover:shadow-xl transition duration-300 bg-white">
+                <div className="p-4 mb-4 rounded-full bg-purple-100 text-purple-600">
+                  <prop.icon className="h-7 w-7" />
+                </div>
+                <h3 className="text-xl font-bold text-purple-950 mb-3">{prop.title}</h3>
+                <p className="text-base text-gray-700 max-w-xs">{prop.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- Footer (Minimal) ---------- */}
+      <footer className="bg-purple-950 py-10">
+        <div className="container mx-auto text-center text-purple-200">
+          <p className="text-sm">
+            © 2024 VerticalSync Inc. All rights reserved. 
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

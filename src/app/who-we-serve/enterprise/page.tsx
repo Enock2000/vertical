@@ -1,134 +1,139 @@
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { ThumbsUp, Lock, Star, Check, Flag, ArrowLeft } from "lucide-react";
+import { ThumbsUp, Lock, Star, Check, Flag, ArrowLeft, TrendingUp, DollarSign, Users, ShieldCheck, Zap } from "lucide-react";
 import Link from 'next/link';
-import Logo from '@/components/logo';
+// Assuming Logo and Button are replaced by standard Tailwind/JSX elements for a single-file context.
+
+// Mock data for the key benefits/features
+const enterpriseBenefits = [
+  {
+    icon: Lock,
+    title: 'Advanced Security & Compliance',
+    description: 'Ensure global regulatory adherence and data protection with enterprise-grade security protocols.',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Customizable Workflows',
+    description: 'Tailor HR processes, approvals, and reporting hierarchies to match your organizational structure.',
+  },
+  {
+    icon: TrendingUp,
+    title: 'Strategic Workforce Analytics',
+    description: 'Access real-time dashboards to analyze global headcount, cost, and retention trends.',
+  },
+  {
+    icon: Star,
+    title: 'Dedicated Account Manager',
+    description: 'Receive premium, dedicated support and consultation from a global expert team.',
+  },
+];
 
 export default function EnterprisePage() {
+  // Mock component replacements for simplicity and robustness
+  const MockLogo = () => (
+    <div className="text-xl font-bold text-purple-900 flex items-center gap-1">
+      <Zap className="h-5 w-5 text-purple-600 fill-purple-200" />
+      VerticalSync <span className="text-purple-600 font-extrabold">E</span>
+    </div>
+  );
+  
+  const MockButton = ({ children, variant = 'primary', size = 'lg', className = '' }) => {
+    let baseClasses = "font-semibold py-3 px-6 rounded-full transition duration-300 shadow-lg hover:shadow-xl";
+    if (variant === 'primary') {
+      baseClasses += " bg-purple-700 text-white hover:bg-purple-800 focus:ring-4 focus:ring-purple-300";
+    } else if (variant === 'outline') {
+      baseClasses += " border border-purple-700 text-purple-700 bg-white hover:bg-purple-50 focus:ring-4 focus:ring-purple-200";
+    } else if (variant === 'ghost') {
+      baseClasses = "font-semibold py-2 px-4 rounded-lg transition duration-300 text-purple-700 hover:bg-purple-100";
+    }
+    return <a className={`${baseClasses} ${className}`}>{children}</a>;
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-purple-50">
+    <div className="flex min-h-screen flex-col bg-white text-gray-800">
       {/* ========== Header ========== */}
-       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
+      <header className="sticky top-0 z-50 w-full border-b border-purple-100 bg-white/95 backdrop-blur-sm">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/">
-            <Logo />
+            <MockLogo />
           </Link>
-          <Button variant="ghost" asChild>
-            <Link href="/">
+          <MockButton variant="ghost" size="sm" className="px-4 py-2 text-sm">
+            <Link href="/who-we-serve" className="flex items-center">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Home
+              Back to Who We Serve
             </Link>
-          </Button>
+          </MockButton>
         </div>
       </header>
 
       {/* ========== Hero Section ========== */}
-      <section className="relative flex-1 overflow-hidden bg-gradient-to-br from-purple-100 via-purple-50 to-purple-100 py-16 md:py-24">
-        {/* Background Image */}
-        <Image
-          src="https://images.unsplash.com/photo-1516321310766-90c0e88e60d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-          alt="Enterprise professional"
-          fill
-          className="object-cover"
-          priority
-          data-ai-hint="enterprise professional"
-        />
-        <div className="absolute inset-0 bg-purple-900/20" />
+      <section className="relative overflow-hidden bg-gradient-to-br from-purple-50 to-purple-100 py-24 md:py-32">
+        {/* Abstract Background Element */}
+        <div className="absolute top-0 right-0 h-96 w-96 translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-200 opacity-50 blur-[100px] pointer-events-none"></div>
 
-        <div className="relative z-10 container mx-auto px-4">
-          <div className="grid gap-12 md:grid-cols-2 md:items-center">
-            {/* Left: Text & CTA */}
-            <div className="max-w-lg">
-              <p className="text-sm font-medium uppercase tracking-wider text-purple-700">
-                Deel for Enterprises
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-12 md:grid-cols-1 md:items-center"> {/* Changed to 1 column */}
+            {/* Left: Text & CTA - Now spans full width */}
+            <div className="max-w-2xl mx-auto text-center"> {/* Centered content */}
+              <p className="text-sm font-bold uppercase tracking-widest text-purple-600">
+                Enterprise Solution
               </p>
-              <h1 className="mt-2 text-5xl font-black leading-tight text-gray-900 md:text-6xl">
-                Run your global workforce with clarity and control
+              <h1 className="mt-4 text-5xl font-extrabold leading-tight text-purple-950 md:text-6xl">
+                Run your <span className="text-purple-700">Global Workforce</span> with Precision and Control
               </h1>
-              <p className="mt-6 text-lg text-gray-700">
-                You need more than one tool to run a global team, but you shouldn’t need a dozen providers. Connect enterprise{" "}
-                <span className="underline decoration-purple-600">payroll</span>, compliance, contractors, and more in one platform so
-                everything works together, costs go down, and your workforce runs more efficiently.
+              <p className="mt-6 text-xl text-purple-800/80">
+                Connect enterprise payroll, compliance, contractors, and more in one unified platform. Achieve maximum efficiency, reduce operational costs, and streamline complex HR operations for your largest teams.
               </p>
 
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="rounded-full bg-gray-900 px-8 text-white hover:bg-gray-800"
-                >
-                  Get a free 30 minute demo
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-100"
-                >
-                  Speak to sales
-                </Button>
+              <div className="mt-10 flex flex-col gap-4 sm:flex-row justify-center"> {/* Centered buttons */}
+                <MockButton variant="primary">
+                  Request Enterprise Demo
+                </MockButton>
+                <MockButton variant="outline">
+                  Contact Sales Team
+                </MockButton>
               </div>
             </div>
 
-            {/* Right: Floating Payroll Dashboard */}
-            <div className="relative flex justify-center">
-              <div className="space-y-8">
-                {/* Payroll Card */}
-                <div className="relative -mr-16 w-80 rounded-2xl bg-white p-6 shadow-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">Acme Inc.</span>
-                        <Flag className="h-4 w-4 text-red-600" />
-                      </div>
-                      <p className="text-sm text-gray-600">United States</p>
-                    </div>
-                    <select className="rounded-md border border-gray-300 px-2 py-1 text-sm">
-                      <option>Q4</option>
-                    </select>
-                  </div>
-
-                  <div className="mt-6 space-y-3 border-t pt-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">NET SALARIES</span>
-                      <span className="flex items-center gap-1 font-semibold text-green-600">
-                        $1,761,300 <Check className="h-4 w-4" />
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">SOCIAL SECURITY</span>
-                      <span className="flex items-center gap-1 font-semibold text-green-600">
-                        $264,500 <Check className="h-4 w-4" />
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">LIABILITIES</span>
-                      <span className="flex items-center gap-1 font-semibold text-green-600">
-                        $320,000 <Check className="h-4 w-4" />
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t pt-3">
-                      <span className="font-semibold">TOTAL COSTS</span>
-                      <span className="flex items-center gap-1 font-bold text-green-600">
-                        $2,345,800 <Check className="h-5 w-5" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bottom Right Badge */}
-                <div className="relative -ml-20 mt-4 w-72 rounded-2xl bg-white p-5 shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-5 w-5 text-green-600" />
-                      <span className="text-sm font-medium">November payroll complete</span>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-3xl font-bold text-gray-900">$781,933.00</p>
-                </div>
-              </div>
-            </div>
+            {/* Right: Mock UI Dashboard - REMOVED */}
+            {/* The previous mock dashboard UI has been removed as per instructions. */}
+            
           </div>
         </div>
       </section>
+
+      {/* ========== Features Section ========== */}
+      <section className="py-20 md:py-28 bg-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <h2 className="text-4xl font-extrabold text-purple-950">
+              The Enterprise Advantage
+            </h2>
+            <p className="mt-4 text-lg text-purple-800/80">
+              Scale without complexity. VerticalSync provides the necessary tools and dedicated infrastructure for high-volume, regulated global operations.
+            </p>
+          </div>
+          
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {enterpriseBenefits.map((benefit, index) => (
+              <div key={index} className="flex flex-col items-start p-6 bg-purple-50 rounded-xl shadow-lg hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 border border-purple-100">
+                <div className="p-3 mb-4 rounded-full bg-purple-600 text-white">
+                  <benefit.icon className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold text-purple-950 mb-3">{benefit.title}</h3>
+                <p className="text-base text-purple-800/90">{benefit.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* ========== Footer (Minimal) ========== */}
+      <footer className="bg-purple-950 py-10">
+        <div className="container mx-auto text-center text-purple-200">
+          <p className="text-sm">
+            © 2024 VerticalSync Inc. All rights reserved. For Enterprise inquiries, please contact sales directly.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
