@@ -16,55 +16,20 @@ const features = [
 export default function StartupsPage() {
   return (
     <div className="flex min-h-screen flex-col">
-        {/* Top Banner */}
-        <div className="bg-purple-900 text-white py-3">
-            <div className="container flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <span className="bg-yellow-400 text-purple-900 px-3 py-1 rounded font-semibold text-sm">JOIN FREE</span>
-                    <span className="text-sm">Scattered reviews waste time. Learn how better performance management drives business ROI.</span>
-                </div>
-                <Button variant="ghost" className="bg-white text-purple-900 hover:bg-gray-100 text-sm px-4 py-1 h-auto rounded">
-                    Register now
-                </Button>
-            </div>
+       {/* ========== Header ========== */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between">
+          <Link href="/">
+            <Logo />
+          </Link>
+          <Button variant="ghost" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Link>
+          </Button>
         </div>
-
-        {/* Header */}
-        <header className="bg-white border-b">
-            <div className="container flex h-16 items-center justify-between">
-                <Link href="/">
-                    <Logo />
-                </Link>
-                <nav className="flex items-center gap-6">
-                    <Button variant="ghost" asChild>
-                        <Link href="/who-we-serve">
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back
-                        </Link>
-                    </Button>
-                    <Button variant="outline">Log in</Button>
-                    <Button className="bg-purple-900 hover:bg-purple-800">Book a demo</Button>
-                </nav>
-            </div>
-        </header>
-
-        {/* Trust Bar */}
-        <div className="bg-purple-900 text-white py-4">
-            <div className="container flex items-center justify-center gap-12 text-sm">
-                <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5" />
-                    <span>Trusted by companies</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-yellow-400"> </span>
-                    <span> </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-lg">🔒</span>
-                    <span>Advanced data security</span>
-                </div>
-            </div>
-        </div>
+      </header>
 
         {/* Hero Section */}
         <main className="flex-1 bg-gradient-to-br from-yellow-200 via-yellow-100 to-orange-100">
@@ -100,6 +65,7 @@ export default function StartupsPage() {
                             height={700}
                             className="rounded-lg shadow-2xl"
                             priority
+                            data-ai-hint="professional startup"
                         />
                         {/* Floating Stats Cards */}
                         <div className="absolute top-8 left-8 bg-white rounded-lg shadow-xl p-4 max-w-[200px]">
