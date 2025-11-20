@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import type { Company, Employee } from '@/lib/data';
 
 export default function LoginPage() {
@@ -113,7 +113,7 @@ export default function LoginPage() {
               <Logo />
             </Link>
           </div>
-          <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">Admin Portal</CardTitle>
           <CardDescription>
             Enter your email and password to log in to your account.
           </CardDescription>
@@ -140,15 +140,9 @@ export default function LoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Are you an employee?{" "}
-            <Link href="/employee-login" className="underline">
-              Login here
-            </Link>
-          </div>
-           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="underline">
-              Sign up
+            <Link href="/portals" className="underline flex items-center justify-center">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to portal selection
             </Link>
           </div>
         </CardContent>

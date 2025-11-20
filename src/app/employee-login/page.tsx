@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 
 export default function GeneralLoginPage() {
   const [email, setEmail] = useState('');
@@ -114,7 +114,7 @@ export default function GeneralLoginPage() {
               <Logo />
             </Link>
           </div>
-          <CardTitle className="text-2xl font-bold">Portal Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">Employee & Applicant Portal</CardTitle>
           <CardDescription>
             Employees and applicants can access their portal here.
           </CardDescription>
@@ -141,15 +141,9 @@ export default function GeneralLoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Are you an HR Admin?{" "}
-            <Link href="/login" className="underline">
-              Admin Login
-            </Link>
-          </div>
-           <div className="mt-4 text-center text-sm">
-            Don't have an applicant account?{" "}
-            <Link href="/applicant-signup" className="underline">
-              Create one
+            <Link href="/portals" className="underline flex items-center justify-center">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to portal selection
             </Link>
           </div>
         </CardContent>

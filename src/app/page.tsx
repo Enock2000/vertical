@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -38,7 +39,7 @@ const featuresList = [
     icon: <Trophy />,
     title: 'Performance & Training',
     description: 'Set goals, track performance, and manage employee training programs with ease.',
-    href: '/features/performance-training'
+    href: '/features/performance-training',
   },
   {
     icon: <Users />,
@@ -129,7 +130,7 @@ export default function HomePage() {
 
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/login" className="text-gray-700 hover:text-indigo-600">Login</Link>
+              <Link href="/portals" className="text-gray-700 hover:text-indigo-600">Login</Link>
             </Button>
             <Button asChild className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg hover:scale-105 transition">
               <Link href="/signup">Get Started</Link>
