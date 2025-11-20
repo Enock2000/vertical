@@ -9,7 +9,7 @@ const MockLogo = () => (
   </div>
 );
 
-const MockButton = ({ children, variant = 'primary', size = 'lg', className = '' }) => {
+const MockButton = ({ children, variant = 'primary', size = 'lg', className = '', asChild = false }) => {
   let baseClasses = "font-semibold py-3 px-6 rounded-full transition duration-300 shadow-lg hover:shadow-xl";
   if (variant === 'primary') {
     baseClasses += " bg-purple-700 text-white hover:bg-purple-800 focus:ring-4 focus:ring-purple-300";
@@ -17,6 +17,14 @@ const MockButton = ({ children, variant = 'primary', size = 'lg', className = ''
     baseClasses += " border border-purple-700 text-purple-700 bg-white hover:bg-purple-50 focus:ring-4 focus:ring-purple-200";
   } else if (variant === 'ghost') {
     baseClasses = "font-semibold py-2 px-4 rounded-lg transition duration-300 text-purple-700 hover:bg-purple-100";
+  }
+
+  if (asChild) {
+      return (
+        <div className={`${baseClasses} ${className}`}>
+            {children}
+        </div>
+      )
   }
   
   return <a className={`${baseClasses} ${className}`}>{children}</a>;
@@ -48,7 +56,7 @@ export default function StartupsPage() {
           <Link href="/">
             <MockLogo />
           </Link>
-          <MockButton variant="ghost" className="px-4 py-2 text-sm">
+          <MockButton variant="ghost" className="px-4 py-2 text-sm" asChild>
             <Link href="/who-we-serve" className="flex items-center">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Who We Serve
