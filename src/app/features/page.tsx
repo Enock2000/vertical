@@ -1,196 +1,151 @@
-// src/app/features/page.tsx
+
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import Logo from '@/components/logo';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const allFeatures = [
   {
     icon: '📄',
     title: 'Automated Payroll',
     description:
-      'Run payroll in minutes, not days. We handle taxes, compliance, and direct deposits automatically.',
-    details:
-      "Say goodbye to manual calculations and spreadsheets. VerticalSync's payroll system is designed to be fast, accurate, and fully compliant with Zambian regulations.",
-    imageUrl:
-      'https://images.unsplash.com/photo-1565372918674-b4b6fe3eb8c7?q=80&w=2070&auto=format&fit=crop', // Reliable finance/payroll image
+      'Run payroll in minutes. We handle taxes, compliance, and direct deposits automatically.',
     bullets: [
       'Automated tax calculations for PAYE',
       'NAPSA and NHIMA deductions',
       'Direct deposit ACH file generation',
       'Detailed payroll history and payslips',
-      'Support for all employee types',
-      'Overtime and bonus automation',
+      '+ 2 more features',
     ],
+    href: '/features/automated-payroll',
   },
   {
     icon: '🛡️',
     title: 'Compliance Management',
     description:
-      'Stay compliant with local labor laws and tax regulations with our AI-powered compliance engine.',
-    details:
-      'VerticalSync helps you navigate complex Zambian HR laws. Automate deductions, generate contracts, and keep your records audit-ready.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1521790361509-ff8e1e6b88b3?q=80&w=2070&auto=format&fit=crop', // Reliable compliance/legal image
+      'Stay compliant with local labor laws and tax regulations with our AI-powered engine.',
     bullets: [
       'AI-powered legal recommendations',
       'Automated statutory deductions',
       'Secure record-keeping for audits',
       'IP-based attendance validation',
-      'Standardized contract templates',
-      'Audit logs for system tracking',
+      '+ 2 more features',
     ],
+    href: '/features/compliance-management',
   },
   {
     icon: '💼',
     title: 'Recruitment & Onboarding',
     description:
       'From job vacancy to onboarding checklist, manage your entire hiring pipeline in one place.',
-    details:
-      'Streamline your hiring process and create a professional onboarding experience for new hires.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071&auto=format&fit=crop',
     bullets: [
       'Post job vacancies publicly',
       'Custom application forms',
       'Visual Kanban applicant tracking',
       'AI-generated offer letters',
-      'Custom onboarding checklists',
-      'Integration with external job sources',
+      '+ 2 more features',
     ],
+    href: '/features/recruitment-onboarding',
   },
   {
     icon: '🏆',
     title: 'Performance & Training',
     description:
       'Set goals, track performance, and manage employee training programs with ease.',
-    details:
-      'Develop your team with structured goals and continuous learning tools that encourage growth.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070&auto=format&fit=crop',
     bullets: [
       'Goal tracking and progress indicators',
       '360° feedback reviews',
       'Create and assign training courses',
       'Quiz and certification tracking',
-      'Course completion analytics',
-      'Employee skill growth insights',
     ],
+     href: '/features/performance-training',
   },
   {
     icon: '👥',
     title: 'Employee Self-Service',
     description:
       'Empower your employees with a portal to manage their attendance, leave, and payslips.',
-    details:
-      'Give employees control over their data and requests while reducing HR workload.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop',
     bullets: [
       'Clock in/out with IP validation',
       'View attendance & leave history',
       'Submit leave & resignation requests',
       'Access payslips and goals',
-      'Company news & training materials',
     ],
+    href: '/features/employee-self-service',
   },
   {
     icon: '📊',
     title: 'Insightful Reporting',
     description:
       'Get real-time insights into your workforce with reports on headcount, turnover, and more.',
-    details:
-      'Make smarter HR decisions with real-time analytics dashboards for payroll and workforce trends.',
-    imageUrl:
-      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070&auto=format&fit=crop',
     bullets: [
       'Headcount & growth tracking',
       'Turnover and retention insights',
       'Diversity analytics by department',
       'Payroll cost breakdowns',
-      'Attendance and absenteeism metrics',
-      'Performance correlation reports',
     ],
+    href: '/features/insightful-reporting',
   },
 ];
 
 export default function FeaturesPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-muted/40">
+    <div className="flex min-h-screen flex-col bg-purple-50/30">
       {/* Main Content */}
-      <main className="flex-1 py-12">
-        <div className="container max-w-6xl">
-          <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+      <main className="flex-1 py-16 md:py-24">
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6">
+          
+          {/* Header Section */}
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-sm font-medium text-purple-800 mb-4">
+              <span>Everything you need</span>
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-purple-950 sm:text-5xl md:text-6xl">
               Platform Features
             </h1>
-            <p className="mx-auto mt-4 max-w-[700px] text-muted-foreground md:text-lg">
-              Explore the powerful tools VerticalSync provides to simplify HR
-              management.
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+              Explore the powerful tools <span className="text-purple-700 font-semibold">VerticalSync</span> provides to simplify HR management and automate your workflows.
             </p>
           </div>
 
-          {/* Feature Sections */}
-          <div className="space-y-24">
+          {/* Feature Grid */}
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {allFeatures.map((feature, index) => (
-              <section
-                key={index}
-                id={feature.title.toLowerCase().replace(/ /g, '-')}
-                className="scroll-mt-20"
-              >
+              <Link href={feature.href} key={index} className="block group">
                 <div
-                  className={cn(
-                    'grid items-center gap-10 md:grid-cols-2',
-                    index % 2 !== 0 ? 'md:flex-row-reverse' : ''
-                  )}
+                  
+                  className="relative flex flex-col overflow-hidden rounded-2xl border border-purple-100 bg-white p-8 shadow-sm transition-all duration-300 hover:border-purple-200 hover:shadow-lg hover:shadow-purple-100/50 h-full"
                 >
-                  {/* Image */}
-                  <div className="relative w-full h-[340px] md:h-[400px] overflow-hidden rounded-xl shadow-md">
-                    <Image
-                      src={feature.imageUrl}
-                      alt={feature.title}
-                      fill
-                      className="object-cover transition-transform duration-500 hover:scale-105"
-                    />
+                  {/* Icon */}
+                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-purple-50 text-3xl shadow-inner ring-1 ring-inset ring-purple-100 group-hover:bg-purple-600 group-hover:text-white transition-colors duration-300">
+                    {feature.icon}
                   </div>
 
-                  {/* Content */}
-                  <div className="space-y-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
-                        {feature.icon}
-                      </div>
-                      <h2 className="text-3xl font-semibold">
-                        {feature.title}
-                      </h2>
-                    </div>
-                    <p className="text-muted-foreground text-lg">
+                  {/* Text Content */}
+                  <div className="mb-6">
+                    <h3 className="text-xl font-bold text-purple-950 group-hover:text-purple-700 transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="mt-3 text-slate-600 leading-relaxed">
                       {feature.description}
                     </p>
-                    <ul className="space-y-2">
+                  </div>
+
+                  {/* Divider */}
+                  <div className="mt-auto border-t border-purple-50 pt-6">
+                    <ul className="space-y-3">
                       {feature.bullets.map((bullet, i) => (
-                        <li
-                          key={i}
-                          className="flex items-start gap-2 text-sm md:text-base"
-                        >
-                          <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
+                        <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                          <CheckCircle className="h-5 w-5 flex-shrink-0 text-purple-600" />
                           <span>{bullet}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 </div>
-
-                {/* Divider */}
-                {index < allFeatures.length - 1 && (
-                  <div className="mt-12 border-b border-muted/30" />
-                )}
-              </section>
+              </Link>
             ))}
           </div>
         </div>
