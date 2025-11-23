@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "./ui/input";
 import Image from "next/image";
+import { CheckCircle } from "lucide-react";
 
 // This is a placeholder for the actual 2FA logic.
 // In a real application, you would use a library like 'speakeasy' and 'qrcode'
@@ -21,6 +22,7 @@ const fakeGenerate2FASecret = () => {
 
 export function GoogleAuthenticatorSettings() {
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
     const [secret, setSecret] = useState<string | null>(null);
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
     const [verificationCode, setVerificationCode] = useState("");
@@ -33,11 +35,14 @@ export function GoogleAuthenticatorSettings() {
             setSecret(secret);
             setQrCodeUrl(qrCodeUrl);
             setIs2FAEnabled(true);
+            setIsVerified(false); // Reset verification status
         } else {
             // Here you would call a server-side function to disable 2FA
             setIs2FAEnabled(false);
+            setIsVerified(false);
             setSecret(null);
             setQrCodeUrl(null);
+            setVerificationCode('');
             toast({
                 title: "Two-Factor Authentication Disabled",
                 description: "Google Authenticator has been disabled for your account.",
@@ -52,6 +57,7 @@ export function GoogleAuthenticatorSettings() {
                 title: "Two-Factor Authentication Enabled",
                 description: "Google Authenticator has been successfully enabled for your account.",
             });
+            setIsVerified(true);
             setQrCodeUrl(null); // Hide QR code after verification
         } else {
             toast({
@@ -74,11 +80,11 @@ export function GoogleAuthenticatorSettings() {
                     onCheckedChange={handleToggle2FA}
                 />
             </div>
-            {is2FAEnabled && qrCodeUrl && (
+            {is2FAEnabled && !isVerified && (
                 <div className="mt-4 p-4 border rounded-lg space-y-4">
                     <p className="text-sm">1. Scan this QR code with your Google Authenticator app:</p>
                     <div className="flex justify-center my-4">
-                        <Image src={qrCodeUrl} alt="QR Code" width={128} height={128} />
+                        {qrCodeUrl && <Image src={qrCodeUrl} alt="QR Code" width={128} height={128} />}
                     </div>
                     <p className="text-sm">2. Enter the 6-digit code from your app to verify:</p>
                     <div className="flex gap-2">
@@ -91,6 +97,12 @@ export function GoogleAuthenticatorSettings() {
                         />
                         <Button onClick={handleVerifyCode}>Verify</Button>
                     </div>
+                </div>
+            )}
+             {is2FAEnabled && isVerified && (
+                <div className="mt-4 p-4 border rounded-lg text-sm flex items-center gap-2 text-green-600 bg-green-50">
+                    <CheckCircle className="h-5 w-5" />
+                    <p>Two-factor authentication is enabled and verified.</p>
                 </div>
             )}
         </div>
