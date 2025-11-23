@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "./ui/input";
+import Image from "next/image";
 
 // This is a placeholder for the actual 2FA logic.
 // In a real application, you would use a library like 'speakeasy' and 'qrcode'
@@ -13,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 const fakeGenerate2FASecret = () => {
     return {
         secret: "FAKE_SECRET_FOR_UI_ONLY",
-        qrCodeUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" // 1x1 black pixel
+        qrCodeUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAAAAACPAi4CAAAAB3RJTUUH6AoGChYwYh55VAAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAOSURBVDjLY2AYBaNgFIxIAABAAAABABwA+lAAAAAASUVORK5CYII=" // Fake QR code
     };
 };
 
@@ -61,13 +63,9 @@ export function GoogleAuthenticatorSettings() {
     };
 
     return (
-        <div className="p-6 border rounded-lg">
-            <h3 className="text-lg font-medium">Two-Factor Authentication</h3>
-            <p className="text-sm text-gray-500 mb-4">
-                Secure your account with Google Authenticator.
-            </p>
-            <div className="flex items-center justify-between">
-                <label htmlFor="2fa-switch" className="font-medium">
+        <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+                <label htmlFor="2fa-switch" className="font-medium pr-4">
                     Enable Google Authenticator
                 </label>
                 <Switch
@@ -77,19 +75,19 @@ export function GoogleAuthenticatorSettings() {
                 />
             </div>
             {is2FAEnabled && qrCodeUrl && (
-                <div className="mt-4">
-                    <p className="mb-2">1. Scan this QR code with your Google Authenticator app:</p>
+                <div className="mt-4 p-4 border rounded-lg space-y-4">
+                    <p className="text-sm">1. Scan this QR code with your Google Authenticator app:</p>
                     <div className="flex justify-center my-4">
-                        <img src={qrCodeUrl} alt="QR Code" />
+                        <Image src={qrCodeUrl} alt="QR Code" width={128} height={128} />
                     </div>
-                    <p className="mb-2">2. Enter the 6-digit code from your app to verify:</p>
+                    <p className="text-sm">2. Enter the 6-digit code from your app to verify:</p>
                     <div className="flex gap-2">
-                        <input
+                        <Input
                             type="text"
                             value={verificationCode}
                             onChange={(e) => setVerificationCode(e.target.value)}
-                            className="w-full p-2 border rounded"
                             placeholder="Verification Code"
+                            maxLength={6}
                         />
                         <Button onClick={handleVerifyCode}>Verify</Button>
                     </div>

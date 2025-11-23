@@ -199,7 +199,7 @@ export default function ApplicantProfilePage() {
                         <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                     <FormField control={form.control} name={`education.${index}.endDate`} render={({ field }) => (
-                        <FormItem><FormLabel>End Date</Label><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
                   </div>
                 </div>
@@ -259,7 +259,9 @@ export default function ApplicantProfilePage() {
           <CardDescription>Manage your account security settings.</CardDescription>
         </CardHeader>
         <CardContent>
-          <GoogleAuthenticatorSettings />
+          <div className="max-w-md">
+            <GoogleAuthenticatorSettings />
+          </div>
         </CardContent>
       </Card>
     </div>

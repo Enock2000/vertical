@@ -1,3 +1,4 @@
+
 // src/app/super-admin/settings/page.tsx
 'use client';
 
@@ -17,6 +18,7 @@ import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
 
 interface HeroImage {
     id: string;
@@ -81,7 +83,7 @@ export default function SuperAdminSettingsPage() {
             id: push(ref(db)).key!,
             imageUrl: '',
             description: '',
-            imageHint: ''
+            imageHint: '',
         };
         setHeroImages([...heroImages, newImage]);
     };
@@ -181,6 +183,17 @@ export default function SuperAdminSettingsPage() {
                             Save All Settings
                         </Button>
                     </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Security</CardTitle>
+                    <CardDescription>Manage your account security settings.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                     <div className="max-w-md">
+                        <GoogleAuthenticatorSettings />
+                    </div>
+                  </CardContent>
                 </Card>
             </main>
         </div>

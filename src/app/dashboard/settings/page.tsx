@@ -19,6 +19,7 @@ import { SubscriptionTab } from './components/subscription-tab';
 import { TestimonialsTab } from './components/testimonials-tab';
 import { ApiSettingsTab } from './components/api-settings-tab';
 import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -144,7 +145,17 @@ export default function SettingsPage() {
             <ApiSettingsTab />
         </TabsContent>
         <TabsContent value="security">
-            <GoogleAuthenticatorSettings />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Account Security</CardTitle>
+                    <CardDescription>Manage your password and two-factor authentication settings.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="max-w-md">
+                        <GoogleAuthenticatorSettings />
+                    </div>
+                </CardContent>
+            </Card>
         </TabsContent>
          <TabsContent value="testimonials">
             <TestimonialsTab />
