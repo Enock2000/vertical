@@ -49,6 +49,12 @@ export default function LoginPage() {
       
       const employee: Employee = employeeSnap.val();
       
+      // Check for 2FA
+      if (employee.isTwoFactorEnabled) {
+          router.push('/verify-2fa');
+          return; // Stop execution here, let the 2FA page handle the rest
+      }
+
       if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
           await auth.signOut();
           toast({

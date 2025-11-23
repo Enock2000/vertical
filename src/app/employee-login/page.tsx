@@ -36,6 +36,13 @@ export default function GeneralLoginPage() {
 
       if (employeeSnap.exists()) {
         const employee: Employee = employeeSnap.val();
+        
+        // Check for 2FA first
+        if (employee.isTwoFactorEnabled) {
+            router.push('/verify-2fa');
+            return; // Stop execution, let the 2FA page handle redirection
+        }
+
         if (employee.status === 'Suspended' || employee.status === 'Inactive') {
             await auth.signOut(); 
             toast({

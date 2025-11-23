@@ -127,6 +127,7 @@ export type Employee = {
   workExperience?: WorkExperienceEntry[];
   resumeUrl?: string;
   permissions?: Permission[];
+  isTwoFactorEnabled?: boolean;
 };
 
 export type ApplicationFormQuestion = {
@@ -752,3 +753,4 @@ export const calculateProductivityScore = (
 
     }).filter(Boolean) as DepartmentProductivityScore[];
 };
+

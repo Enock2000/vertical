@@ -8,6 +8,9 @@ import { Input } from "./ui/input";
 import Image from "next/image";
 import { CheckCircle } from "lucide-react";
 import QRCode from "qrcode";
+import { useAuth } from "@/app/auth-provider";
+import { db } from "@/lib/firebase";
+import { ref, update } from "firebase/database";
 
 // This is a placeholder. In a real app, this would be a call to a secure backend endpoint.
 const fakeGenerate2FASecret = () => {
@@ -18,8 +21,9 @@ const fakeGenerate2FASecret = () => {
 };
 
 export function GoogleAuthenticatorSettings() {
-    const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-    const [isVerified, setIsVerified] = useState(false);
+    const { employee } = useAuth();
+    const [is2FAEnabled, setIs2FAEnabled] = useState(!!employee?.isTwoFactorEnabled);
+    const [isVerified, setIsVerified] = useState(!!employee?.isTwoFactorEnabled);
     const [secret, setSecret] = useState<string | null>(null);
     const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
     const [verificationCode, setVerificationCode] = useState("");
@@ -43,13 +47,17 @@ export function GoogleAuthenticatorSettings() {
         }
     }, [secret, toast]);
 
-    const handleToggle2FA = (enabled: boolean) => {
+    const handleToggle2FA = async (enabled: boolean) => {
+        if (!employee) return;
+
         setIs2FAEnabled(enabled);
         if (enabled) {
             const { secret } = fakeGenerate2FASecret();
             setSecret(secret);
-            setIsVerified(false);
+            setIsVerified(false); // Require verification for new setup
         } else {
+            // Disable 2FA
+            await update(ref(db, `employees/${employee.id}`), { isTwoFactorEnabled: false });
             setIsVerified(false);
             setSecret(null);
             setQrCodeUrl(null);
@@ -61,9 +69,11 @@ export function GoogleAuthenticatorSettings() {
         }
     };
 
-    const handleVerifyCode = () => {
+    const handleVerifyCode = async () => {
+        if (!employee) return;
         // This is a placeholder verification. In a real app, you'd verify this on the backend.
         if (verificationCode === "123456") { 
+            await update(ref(db, `employees/${employee.id}`), { isTwoFactorEnabled: true });
             toast({
                 title: "Two-Factor Authentication Enabled",
                 description: "Google Authenticator has been successfully enabled for your account.",
