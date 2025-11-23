@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -29,16 +28,15 @@ export function GoogleAuthenticatorSettings() {
     const { toast } = useToast();
 
     const handleToggle2FA = async (enabled: boolean) => {
+        setIs2FAEnabled(enabled);
         if (enabled) {
             // In a real app, you'd call a server-side function to generate a secret
             const { secret, qrCodeUrl } = fakeGenerate2FASecret();
             setSecret(secret);
             setQrCodeUrl(qrCodeUrl);
-            setIs2FAEnabled(true);
-            setIsVerified(false); // Reset verification status
+            setIsVerified(false); // Reset verification status when re-enabling
         } else {
             // Here you would call a server-side function to disable 2FA
-            setIs2FAEnabled(false);
             setIsVerified(false);
             setSecret(null);
             setQrCodeUrl(null);
@@ -58,7 +56,6 @@ export function GoogleAuthenticatorSettings() {
                 description: "Google Authenticator has been successfully enabled for your account.",
             });
             setIsVerified(true);
-            setQrCodeUrl(null); // Hide QR code after verification
         } else {
             toast({
                 variant: "destructive",
