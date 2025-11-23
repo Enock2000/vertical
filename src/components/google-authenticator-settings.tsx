@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,11 +13,19 @@ import { useAuth } from "@/app/auth-provider";
 import { db } from "@/lib/firebase";
 import { ref, update } from "firebase/database";
 
-// This is a placeholder. In a real app, this would be a call to a secure backend endpoint.
+// In a real app, this function would be replaced by a secure, server-side API endpoint
+// that generates a unique secret for the user using a library like `speakeasy` or `otplib`.
 const fakeGenerate2FASecret = () => {
+    // NOTE: This is placeholder data for UI demonstration purposes only.
+    // A real implementation MUST generate a unique, secure secret on the backend.
+    const secret = "SECRET_MUST_BE_GENERATED_ON_BACKEND";
+    const userEmail = "user@example.com"; // This should be the actual user's email
+    const issuer = "VerticalSync";
+    const otpauth_url = `otpauth://totp/${issuer}:${userEmail}?secret=${secret}&issuer=${issuer}`;
+    
     return {
-        secret: "JBSWY3DPEHPK3PXP", // Example Base32 secret for demonstration
-        otpauth_url: "otpauth://totp/VerticalSync:demo@example.com?secret=JBSWY3DPEHPK3PXP&issuer=VerticalSync"
+        secret,
+        otpauth_url,
     };
 };
 
@@ -52,6 +61,7 @@ export function GoogleAuthenticatorSettings() {
 
         setIs2FAEnabled(enabled);
         if (enabled) {
+            // In a real app, you would call your backend here to generate and get the user's secret.
             const { secret } = fakeGenerate2FASecret();
             setSecret(secret);
             setIsVerified(false); // Require verification for new setup
@@ -71,8 +81,11 @@ export function GoogleAuthenticatorSettings() {
 
     const handleVerifyCode = async () => {
         if (!employee) return;
-        // This is a placeholder verification. In a real app, you'd verify this on the backend.
-        if (verificationCode === "123456") { 
+
+        // In a real app, this code would be sent to your backend for verification against the user's secret.
+        // The backend would use a library like `speakeasy` or `otplib` to check if the code is valid.
+        // For this UI demonstration, we accept any 6-digit code.
+        if (verificationCode.length === 6 && /^\d+$/.test(verificationCode)) { 
             await update(ref(db, `employees/${employee.id}`), { isTwoFactorEnabled: true });
             toast({
                 title: "Two-Factor Authentication Enabled",
@@ -83,7 +96,7 @@ export function GoogleAuthenticatorSettings() {
             toast({
                 variant: "destructive",
                 title: "Invalid Verification Code",
-                description: "The code you entered is incorrect. Please try again.",
+                description: "Please enter a valid 6-digit code.",
             });
         }
     };

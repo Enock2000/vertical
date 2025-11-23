@@ -1,3 +1,4 @@
+
 // src/app/verify-2fa/page.tsx
 'use client';
 
@@ -39,8 +40,8 @@ export default function Verify2FAPage() {
     setIsLoading(true);
     
     // In a real app, this code would be verified against the user's secret on the backend.
-    // For this demonstration, we'll use a placeholder code.
-    if (code === '123456') {
+    // For this UI demonstration, we will accept any 6-digit code to allow navigation.
+    if (code.length === 6 && /^\d+$/.test(code)) {
         toast({
             title: 'Verification Successful',
             description: 'You are now logged in.',
