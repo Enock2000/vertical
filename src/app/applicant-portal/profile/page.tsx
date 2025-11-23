@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
 
 const educationSchema = z.object({
   id: z.string().optional(),
@@ -114,142 +115,153 @@ export default function ApplicantProfilePage() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Personal Details</CardTitle>
-            <CardDescription>Manage your personal contact information.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <FormItem>
-                <FormLabel>Email Address</FormLabel>
-                <Input value={employee.email} disabled />
-              </FormItem>
+    <div className="space-y-8">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Details</CardTitle>
+              <CardDescription>Manage your personal contact information.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <FormField
                 control={form.control}
-                name="phone"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Full Name</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-          </CardContent>
-        </Card>
+              <div className="grid grid-cols-2 gap-4">
+                <FormItem>
+                  <FormLabel>Email Address</FormLabel>
+                  <Input value={employee.email} disabled />
+                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl><Input {...field} /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
+          <Card>
+              <CardHeader>
+                  <CardTitle>Resume</CardTitle>
+                  <CardDescription>Upload and manage your resume file.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <Input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} disabled={isUploading}/>
+                  {isUploading && <p className="text-sm text-muted-foreground flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</p>}
+                   {employee.resumeUrl && !isUploading && (
+                      <p className="text-sm text-green-600">
+                          A resume is on file. You can upload a new one to replace it.
+                      </p>
+                  )}
+              </CardContent>
+          </Card>
+
+
+          <Card>
             <CardHeader>
-                <CardTitle>Resume</CardTitle>
-                <CardDescription>Upload and manage your resume file.</CardDescription>
+              <CardTitle>Education</CardTitle>
+              <CardDescription>Add your educational background.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <Input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} disabled={isUploading}/>
-                {isUploading && <p className="text-sm text-muted-foreground flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</p>}
-                 {employee.resumeUrl && !isUploading && (
-                    <p className="text-sm text-green-600">
-                        A resume is on file. You can upload a new one to replace it.
-                    </p>
-                )}
+              {eduFields.map((field, index) => (
+                <div key={field.id} className="p-4 border rounded-md space-y-3 relative">
+                  <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeEdu(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                  <FormField control={form.control} name={`education.${index}.institution`} render={({ field }) => (
+                      <FormItem><FormLabel>Institution</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )}/>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name={`education.${index}.qualification`} render={({ field }) => (
+                        <FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name={`education.${index}.fieldOfStudy`} render={({ field }) => (
+                        <FormItem><FormLabel>Field of Study</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name={`education.${index}.startDate`} render={({ field }) => (
+                        <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name={`education.${index}.endDate`} render={({ field }) => (
+                        <FormItem><FormLabel>End Date</Label><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                  </div>
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={() => appendEdu({ institution: '', qualification: '', fieldOfStudy: '', startDate: '', endDate: '' })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Education
+              </Button>
             </CardContent>
-        </Card>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Work Experience</CardTitle>
+              <CardDescription>Detail your professional history.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {expFields.map((field, index) => (
+                <div key={field.id} className="p-4 border rounded-md space-y-3 relative">
+                   <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeExp(index)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name={`workExperience.${index}.company`} render={({ field }) => (
+                        <FormItem><FormLabel>Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name={`workExperience.${index}.position`} render={({ field }) => (
+                        <FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name={`workExperience.${index}.startDate`} render={({ field }) => (
+                        <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                    <FormField control={form.control} name={`workExperience.${index}.endDate`} render={({ field }) => (
+                        <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                  </div>
+                  <FormField control={form.control} name={`workExperience.${index}.responsibilities`} render={({ field }) => (
+                      <FormItem><FormLabel>Responsibilities</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                  )}/>
+                </div>
+              ))}
+               <Button type="button" variant="outline" onClick={() => appendExp({ company: '', position: '', startDate: '', endDate: '', responsibilities: '' })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Experience
+              </Button>
+            </CardContent>
+          </Card>
 
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Education</CardTitle>
-            <CardDescription>Add your educational background.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {eduFields.map((field, index) => (
-              <div key={field.id} className="p-4 border rounded-md space-y-3 relative">
-                <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeEdu(index)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-                <FormField control={form.control} name={`education.${index}.institution`} render={({ field }) => (
-                    <FormItem><FormLabel>Institution</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name={`education.${index}.qualification`} render={({ field }) => (
-                      <FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name={`education.${index}.fieldOfStudy`} render={({ field }) => (
-                      <FormItem><FormLabel>Field of Study</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name={`education.${index}.startDate`} render={({ field }) => (
-                      <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name={`education.${index}.endDate`} render={({ field }) => (
-                      <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                </div>
-              </div>
-            ))}
-            <Button type="button" variant="outline" onClick={() => appendEdu({ institution: '', qualification: '', fieldOfStudy: '', startDate: '', endDate: '' })}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Education
-            </Button>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Work Experience</CardTitle>
-            <CardDescription>Detail your professional history.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {expFields.map((field, index) => (
-              <div key={field.id} className="p-4 border rounded-md space-y-3 relative">
-                 <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeExp(index)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name={`workExperience.${index}.company`} render={({ field }) => (
-                      <FormItem><FormLabel>Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name={`workExperience.${index}.position`} render={({ field }) => (
-                      <FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name={`workExperience.${index}.startDate`} render={({ field }) => (
-                      <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                  <FormField control={form.control} name={`workExperience.${index}.endDate`} render={({ field }) => (
-                      <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
-                </div>
-                <FormField control={form.control} name={`workExperience.${index}.responsibilities`} render={({ field }) => (
-                    <FormItem><FormLabel>Responsibilities</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-              </div>
-            ))}
-             <Button type="button" variant="outline" onClick={() => appendExp({ company: '', position: '', startDate: '', endDate: '', responsibilities: '' })}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Experience
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Button type="submit" disabled={isSaving}>
-            {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Profile'}
-        </Button>
-      </form>
-    </Form>
+          <Button type="submit" disabled={isSaving}>
+              {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Profile'}
+          </Button>
+        </form>
+      </Form>
+      <Card>
+        <CardHeader>
+          <CardTitle>Security</CardTitle>
+          <CardDescription>Manage your account security settings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <GoogleAuthenticatorSettings />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

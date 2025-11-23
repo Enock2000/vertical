@@ -1,3 +1,4 @@
+
 // src/app/dashboard/settings/page.tsx
 'use client';
 
@@ -17,6 +18,7 @@ import { useAuth } from '@/app/auth-provider';
 import { SubscriptionTab } from './components/subscription-tab';
 import { TestimonialsTab } from './components/testimonials-tab';
 import { ApiSettingsTab } from './components/api-settings-tab';
+import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -126,6 +128,7 @@ export default function SettingsPage() {
             <TabsTrigger value="banks">Bank Management</TabsTrigger>
             <TabsTrigger value="subscription">Subscription</TabsTrigger>
             <TabsTrigger value="api">API</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
         </TabsList>
         <TabsContent value="payroll">
@@ -139,6 +142,9 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="api">
             <ApiSettingsTab />
+        </TabsContent>
+        <TabsContent value="security">
+            <GoogleAuthenticatorSettings />
         </TabsContent>
          <TabsContent value="testimonials">
             <TestimonialsTab />
