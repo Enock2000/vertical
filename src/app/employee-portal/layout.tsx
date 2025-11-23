@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from "next/link";
@@ -12,6 +13,7 @@ import {
     Megaphone,
     CalendarPlus,
     FileText,
+    Shield,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider";
@@ -32,6 +34,7 @@ const navItems = [
   { href: "/employee-portal/performance", icon: Trophy, label: "Performance" },
   { href: "/employee-portal/trainings", icon: BookOpen, label: "Trainings" },
   { href: "/employee-portal/announcements", icon: Megaphone, label: "Announcements" },
+  { href: "/employee-portal/security", icon: Shield, label: "Security" },
 ];
 
 export default function EmployeePortalLayout({
@@ -43,11 +46,10 @@ export default function EmployeePortalLayout({
   const router = useRouter();
   const { user, employee, company, loading } = useAuth();
 
-  // 🔹 Redirect removed — restricted instead of pushing
   useEffect(() => {
-    // if (!loading && !user) {
-    //   router.push('/employee-login');
-    // }
+    if (!loading && !user) {
+      router.push('/employee-login');
+    }
   }, [user, loading, router]);
 
 
