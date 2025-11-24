@@ -18,7 +18,8 @@ import { ref, update } from "firebase/database";
 const fakeGenerate2FASecret = (userEmail: string) => {
     // NOTE: This is placeholder data for UI demonstration purposes only.
     // A real implementation MUST generate a unique, secure secret on the backend.
-    const secret = "SECRET_MUST_BE_GENERATED_ON_BACKEND";
+    // This creates a predictable but unique-looking secret for demo purposes.
+    const secret = "SECRET" + userEmail.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const issuer = "VerticalSync";
     const otpauth_url = `otpauth://totp/${issuer}:${userEmail}?secret=${secret}&issuer=${issuer}`;
     
