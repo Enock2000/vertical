@@ -15,11 +15,10 @@ import { ref, update } from "firebase/database";
 
 // In a real app, this function would be replaced by a secure, server-side API endpoint
 // that generates a unique secret for the user using a library like `speakeasy` or `otplib`.
-const fakeGenerate2FASecret = () => {
+const fakeGenerate2FASecret = (userEmail: string) => {
     // NOTE: This is placeholder data for UI demonstration purposes only.
     // A real implementation MUST generate a unique, secure secret on the backend.
     const secret = "SECRET_MUST_BE_GENERATED_ON_BACKEND";
-    const userEmail = "user@example.com"; // This should be the actual user's email
     const issuer = "VerticalSync";
     const otpauth_url = `otpauth://totp/${issuer}:${userEmail}?secret=${secret}&issuer=${issuer}`;
     
@@ -39,8 +38,8 @@ export function GoogleAuthenticatorSettings() {
     const { toast } = useToast();
 
     useEffect(() => {
-        if (secret) {
-            const { otpauth_url } = fakeGenerate2FASecret();
+        if (secret && employee?.email) {
+            const { otpauth_url } = fakeGenerate2FASecret(employee.email);
             QRCode.toDataURL(otpauth_url, (err, url) => {
                 if (err) {
                     console.error(err);
@@ -54,7 +53,7 @@ export function GoogleAuthenticatorSettings() {
                 }
             });
         }
-    }, [secret, toast]);
+    }, [secret, employee, toast]);
 
     const handleToggle2FA = async (enabled: boolean) => {
         if (!employee) return;
@@ -62,7 +61,7 @@ export function GoogleAuthenticatorSettings() {
         setIs2FAEnabled(enabled);
         if (enabled) {
             // In a real app, you would call your backend here to generate and get the user's secret.
-            const { secret } = fakeGenerate2FASecret();
+            const { secret } = fakeGenerate2FASecret(employee.email);
             setSecret(secret);
             setIsVerified(false); // Require verification for new setup
         } else {
