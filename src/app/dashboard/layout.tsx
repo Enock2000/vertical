@@ -1,5 +1,4 @@
 
-
 // src/app/dashboard/layout.tsx
 "use client";
 
@@ -99,12 +98,10 @@ export default function DashboardLayout({
     if (!loading) {
       if (!user) {
         router.push('/login');
-      } else if (employee && employee.role !== 'Admin') {
+      } else if (employee && employee.role !== 'Admin' && employee.role !== 'Super Admin') {
         // This is the critical security check.
         // If the user is logged in but not an admin, redirect them.
-        if (employee.role === 'Super Admin') {
-          router.push('/super-admin');
-        } else if (employee.role === 'GuestAdmin') {
+        if (employee.role === 'GuestAdmin') {
             router.push('/guest-employer');
         } else {
           router.push('/employee-portal');
@@ -159,6 +156,15 @@ export default function DashboardLayout({
   if (company.status === 'Rejected') {
       return <AccessDenied title="Registration Rejected" description="Your company registration has been rejected. Please contact support for more information." />
   }
+
+  if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
+    return (
+        <div className="flex min-h-screen items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
+
 
   const breadcrumbItems = pathname.split('/').filter(Boolean).map((part, index, arr) => {
     const href = '/' + arr.slice(0, index + 1).join('/');

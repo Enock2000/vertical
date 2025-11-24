@@ -49,22 +49,23 @@ export default function LoginPage() {
       
       const employee: Employee = employeeSnap.val();
       
+      if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
+          await auth.signOut();
+          toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "You do not have permission to access the admin portal. Please use the Employee or Guest portal.",
+          });
+          setIsLoading(false);
+          return;
+      }
+      
       // Check for 2FA
       if (employee.isTwoFactorEnabled) {
           router.push('/verify-2fa');
           return; // Stop execution here, let the 2FA page handle the rest
       }
 
-      if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
-          await auth.signOut();
-          toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: "You are not an admin. Please use the employee portal to log in.",
-          });
-          setIsLoading(false);
-          return;
-      }
 
       if (employee.role === 'Super Admin') {
           router.push('/super-admin');
