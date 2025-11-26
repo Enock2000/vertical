@@ -66,8 +66,8 @@ export default function PricingPage() {
                                 <Card key={plan.id} className="flex flex-col">
                                     <CardHeader>
                                         <CardTitle>{plan.name}</CardTitle>
-                                        <CardDescription>
-                                            <span className="text-4xl font-bold">{currencyFormatter.format(plan.price)}</span>
+                                        <CardDescription className="flex items-baseline gap-1">
+                                            <span className="text-4xl font-bold text-foreground">{currencyFormatter.format(plan.price)}</span>
                                             <span className="text-muted-foreground">/month</span>
                                         </CardDescription>
                                     </CardHeader>
