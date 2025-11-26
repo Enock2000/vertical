@@ -1,3 +1,4 @@
+
 // src/app/super-admin/components/change-subscription-dialog.tsx
 'use client';
 
@@ -32,13 +33,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CalendarIcon } from 'lucide-react';
 import type { Company, SubscriptionPlan, CompanySubscription } from '@/lib/data';
-import { add } from 'date-fns';
+import { format, add } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   planId: z.string().min(1, 'Please select a subscription plan.'),
+  nextBillingDate: z.date({ required_error: 'A billing/trial end date is required.' }),
 });
 
 type ChangeSubscriptionFormValues = z.infer<typeof formSchema>;
@@ -58,6 +63,7 @@ export function ChangeSubscriptionDialog({ children, company, plans }: ChangeSub
     resolver: zodResolver(formSchema),
     defaultValues: {
       planId: company.subscription?.planId || '',
+      nextBillingDate: company.subscription?.nextBillingDate ? new Date(company.subscription.nextBillingDate) : new Date(),
     },
   });
 
@@ -72,11 +78,13 @@ export function ChangeSubscriptionDialog({ children, company, plans }: ChangeSub
         }
 
         const companyRef = ref(db, `companies/${company.id}`);
+        
         const newSubscription: CompanySubscription = {
             planId: selectedPlan.id,
-            status: 'active', // Assume changing the plan makes it active
+            status: 'active',
             jobPostingsRemaining: selectedPlan.jobPostings,
-            nextBillingDate: add(new Date(), { months: 1 }).toISOString(),
+            nextBillingDate: values.nextBillingDate.toISOString(),
+            trialEndDate: company.subscription?.status === 'trial' ? values.nextBillingDate.toISOString() : company.subscription?.trialEndDate,
         };
 
         await update(companyRef, { subscription: newSubscription });
@@ -84,7 +92,7 @@ export function ChangeSubscriptionDialog({ children, company, plans }: ChangeSub
         setOpen(false);
         toast({
             title: 'Subscription Updated',
-            description: `${company.name}'s plan has been changed to "${selectedPlan.name}".`,
+            description: `${company.name}'s plan has been updated.`,
         });
     } catch (error: any) {
       console.error('Error updating subscription:', error);
@@ -105,7 +113,7 @@ export function ChangeSubscriptionDialog({ children, company, plans }: ChangeSub
         <DialogHeader>
           <DialogTitle>Change Subscription for {company.name}</DialogTitle>
           <DialogDescription>
-            Select a new subscription plan for this company.
+            Select a new subscription plan and set the next billing date.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -130,6 +138,32 @@ export function ChangeSubscriptionDialog({ children, company, plans }: ChangeSub
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="nextBillingDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Next Billing / Trial End Date</FormLabel>
+                   <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

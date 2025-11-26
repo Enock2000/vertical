@@ -1,3 +1,4 @@
+
 // src/app/super-admin/components/columns.tsx
 "use client"
 
@@ -5,7 +6,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal, ArrowUpDown, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Company, SubscriptionPlan } from "@/lib/data"
-import { format } from "date-fns"
+import { format, differenceInDays } from "date-fns"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,8 +103,26 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
     header: "Admin Contact",
   },
   {
-    accessorKey: "adminEmail",
-    header: "Admin Email",
+    id: 'subscription',
+    header: 'Subscription',
+    cell: ({row}) => {
+        const company = row.original;
+        const sub = company.subscription;
+        if (!sub) return <Badge variant="secondary">N/A</Badge>;
+
+        const plan = subscriptionPlans.find(p => p.id === sub.planId);
+        const planName = plan ? plan.name : sub.planId;
+
+        if (sub.status === 'trial' && sub.trialEndDate) {
+            const daysRemaining = differenceInDays(new Date(sub.trialEndDate), new Date());
+            if (daysRemaining < 0) {
+                 return <Badge variant="destructive">Trial Expired</Badge>
+            }
+            return <Badge variant="outline">{daysRemaining} days left</Badge>
+        }
+        
+        return <Badge variant="default">{planName}</Badge>;
+    }
   },
   {
     accessorKey: "employeeCount",
