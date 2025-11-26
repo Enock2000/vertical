@@ -33,17 +33,17 @@ const teams = [
   {
     title: 'HR teams',
     description: 'Onboard and manage global teams easily',
-    href: '/who-we-serve/for-teams'
+    href: '/who-we-serve/for-hr'
   },
   {
     title: 'Finance teams',
     description: 'Save costs on global payroll and tools',
-    href: '/who-we-serve/for-teams'
+    href: '/who-we-serve/for-finance'
   },
   {
     title: 'Legal teams',
     description: 'Ensure compliance for global hiring',
-    href: '/who-we-serve/for-teams'
+    href: '/who-we-serve/for-legal'
   },
 ];
 
