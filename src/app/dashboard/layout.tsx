@@ -1,4 +1,5 @@
 
+
 // src/app/dashboard/layout.tsx
 "use client";
 
@@ -67,12 +68,12 @@ const navItems = [
   { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
 ];
 
-const AccessDenied = ({ title, description }: { title: string, description: string }) => (
+const AccessDenied = ({ title, description, isTrialExpired = false }: { title: string, description: string, isTrialExpired?: boolean }) => (
     <div className="flex min-h-screen items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
             <CardHeader>
                 <CardTitle className="flex items-center justify-center gap-2">
-                   {title === 'Pending Approval' ? <Clock className="text-yellow-500" /> : <AlertTriangle className="text-destructive" />}
+                   {title === 'Pending Approval' || isTrialExpired ? <Clock className="text-yellow-500" /> : <AlertTriangle className="text-destructive" />}
                     {title}
                 </CardTitle>
                 <CardDescription>{description}</CardDescription>
@@ -147,6 +148,14 @@ export default function DashboardLayout({
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
+  }
+  
+  if (company.subscription?.status === 'trial_expired') {
+      return <AccessDenied 
+        title="Free Trial Expired" 
+        description="Your free trial has ended. Please contact the platform administrator to upgrade your plan and continue using the service."
+        isTrialExpired={true}
+      />
   }
 
   if (company.status === 'Pending') {

@@ -14,8 +14,9 @@ export type SubscriptionPlan = {
 
 export type CompanySubscription = {
     planId: string;
-    status: 'active' | 'inactive' | 'trial' | 'past_due';
+    status: 'active' | 'inactive' | 'trial' | 'past_due' | 'trial_expired';
     jobPostingsRemaining: number;
+    trialEndDate?: string; // ISO 8601
     nextBillingDate: string; // ISO 8601
 };
 
@@ -753,4 +754,5 @@ export const calculateProductivityScore = (
 
     }).filter(Boolean) as DepartmentProductivityScore[];
 };
+
 

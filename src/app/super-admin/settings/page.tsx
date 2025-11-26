@@ -1,4 +1,5 @@
 
+
 // src/app/super-admin/settings/page.tsx
 'use client';
 
@@ -32,6 +33,7 @@ export default function SuperAdminSettingsPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [logoUrl, setLogoUrl] = useState('');
+    const [freeTrialDays, setFreeTrialDays] = useState(14);
     const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -47,6 +49,7 @@ export default function SuperAdminSettingsPage() {
         const unsubscribe = onValue(settingsRef, (snapshot) => {
             const settings = snapshot.val();
             setLogoUrl(settings?.mainLogoUrl || '');
+            setFreeTrialDays(settings?.freeTrialDays || 14);
             setHeroImages(settings?.heroImages ? Object.values(settings.heroImages) : []);
             setLoadingData(false);
         });
@@ -58,6 +61,7 @@ export default function SuperAdminSettingsPage() {
         try {
             const updates: Record<string, any> = {
                 'platformSettings/mainLogoUrl': logoUrl,
+                'platformSettings/freeTrialDays': freeTrialDays,
                 'platformSettings/heroImages': heroImages.reduce((acc, img) => {
                     acc[img.id] = img;
                     return acc;
@@ -130,6 +134,19 @@ export default function SuperAdminSettingsPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="max-w-2xl space-y-8">
+                         <div className="space-y-2">
+                            <Label htmlFor="free-trial-days">Free Trial Duration (Days)</Label>
+                            <Input 
+                                id="free-trial-days" 
+                                type="number"
+                                value={freeTrialDays} 
+                                onChange={(e) => setFreeTrialDays(Number(e.target.value))}
+                                placeholder="e.g., 14"
+                            />
+                        </div>
+
+                        <Separator />
+
                         <div className="space-y-2">
                             <Label htmlFor="main-logo-url">Main Platform Logo URL</Label>
                             <Input 

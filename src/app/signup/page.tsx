@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { ref, set } from 'firebase/database';
+import { ref, set, get } from 'firebase/database';
 import type { Company, Employee } from '@/lib/data';
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +56,11 @@ export default function SignUpPage() {
     }
 
     try {
+      // Fetch platform settings for trial days
+      const platformSettingsSnap = await get(ref(db, 'platformSettings/freeTrialDays'));
+      const freeTrialDays = platformSettingsSnap.val() || 14; // Default to 14 days
+      const trialEndDate = add(new Date(), { days: freeTrialDays });
+
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -77,7 +82,8 @@ export default function SignUpPage() {
             planId: 'free',
             status: 'trial',
             jobPostingsRemaining: 3,
-            nextBillingDate: add(new Date(), { days: 14 }).toISOString(),
+            trialEndDate: trialEndDate.toISOString(),
+            nextBillingDate: trialEndDate.toISOString(),
         },
         termsAgreement: {
             version: '1.0',
