@@ -1,7 +1,7 @@
 
 'use client';
 
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SupportChat } from '@/components/support-chat';
@@ -14,48 +14,48 @@ import { ref, onValue } from 'firebase/database';
 
 
 const AppBody = ({ children }: { children: React.ReactNode }) => {
-    const { employee } = useAuth();
+  const { employee } = useAuth();
 
-    useEffect(() => {
-        const root = document.documentElement;
-        if (employee?.themeSettings) {
-            const { background, primary, accent } = employee.themeSettings;
-            root.style.setProperty('--background', `${background.h} ${background.s}% ${background.l}%`);
-            root.style.setProperty('--primary', `${primary.h} ${primary.s}% ${primary.l}%`);
-            root.style.setProperty('--accent', `${accent.h} ${accent.s}% ${accent.l}%`);
-        } else {
-            // Clear styles if no settings are found to revert to CSS defaults
-            root.style.removeProperty('--background');
-            root.style.removeProperty('--primary');
-            root.style.removeProperty('--accent');
+  useEffect(() => {
+    const root = document.documentElement;
+    if (employee?.themeSettings) {
+      const { background, primary, accent } = employee.themeSettings;
+      root.style.setProperty('--background', `${background.h} ${background.s}% ${background.l}%`);
+      root.style.setProperty('--primary', `${primary.h} ${primary.s}% ${primary.l}%`);
+      root.style.setProperty('--accent', `${accent.h} ${accent.s}% ${accent.l}%`);
+    } else {
+      // Clear styles if no settings are found to revert to CSS defaults
+      root.style.removeProperty('--background');
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--accent');
+    }
+  }, [employee]);
+
+  useEffect(() => {
+    const logoUrlRef = ref(db, 'platformSettings/mainLogoUrl');
+    const unsubscribe = onValue(logoUrlRef, (snapshot) => {
+      const logoUrl = snapshot.val();
+      if (logoUrl) {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.getElementsByTagName('head')[0].appendChild(link);
         }
-    }, [employee]);
+        link.href = logoUrl;
+      }
+    });
 
-    useEffect(() => {
-        const logoUrlRef = ref(db, 'platformSettings/mainLogoUrl');
-        const unsubscribe = onValue(logoUrlRef, (snapshot) => {
-            const logoUrl = snapshot.val();
-            if (logoUrl) {
-                let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-                if (!link) {
-                    link = document.createElement('link');
-                    link.rel = 'icon';
-                    document.getElementsByTagName('head')[0].appendChild(link);
-                }
-                link.href = logoUrl;
-            }
-        });
+    return () => unsubscribe();
+  }, []);
 
-        return () => unsubscribe();
-    }, []);
-
-    return (
-        <>
-            {children}
-            <Toaster />
-            <SupportChat />
-        </>
-    )
+  return (
+    <>
+      {children}
+      <Toaster />
+      <SupportChat />
+    </>
+  )
 }
 
 export default function RootLayout({
@@ -72,18 +72,29 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        {/* Lenco Pay SDK for card/mobile money payments */}
+        <script src="https://pay.lenco.co/js/v1/inline.js" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && window.LencoPayClass) {
+                window.LencoPay = new window.LencoPayClass();
+              }
+            `,
+          }}
+        />
         <title>VerticalSync</title>
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
         >
           <AuthProvider>
             <AppBody>
-                {children}
+              {children}
             </AppBody>
           </AuthProvider>
         </ThemeProvider>

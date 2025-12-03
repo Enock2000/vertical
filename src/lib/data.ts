@@ -14,10 +14,38 @@ export type SubscriptionPlan = {
 
 export type CompanySubscription = {
     planId: string;
-    status: 'active' | 'inactive' | 'trial' | 'past_due' | 'trial_expired';
+    status: 'active' | 'inactive' | 'trial' | 'past_due' | 'trial_expired' | 'pending_payment';
     jobPostingsRemaining: number;
     trialEndDate?: string; // ISO 8601
     nextBillingDate: string; // ISO 8601
+    // Lenco Pay integration fields
+    lencoCollectionId?: string; // Current/last Lenco collection ID
+    paymentMethod?: {
+        type: 'card' | 'mobile-money' | 'bank-account';
+        // For cards
+        brand?: string; // 'visa', 'mastercard', etc.
+        last4?: string;
+        // For mobile money
+        operator?: string; // 'MTN', 'Airtel', 'Zamtel'
+        phone?: string;
+    };
+    autoRenew?: boolean; // Whether to auto-charge next month
+};
+
+export type PaymentTransaction = {
+    id: string;
+    companyId: string;
+    amount: number;
+    currency: string; // 'ZMW'
+    status: 'pending' | 'successful' | 'failed';
+    lencoCollectionId: string;
+    lencoReference: string;
+    timestamp: string; // ISO 8601
+    planId: string;
+    planName: string;
+    paymentType: 'card' | 'mobile-money' | 'bank-account' | null;
+    reasonForFailure?: string | null;
+    settlementStatus?: 'pending' | 'settled' | null;
 };
 
 export type TermsAgreement = {
