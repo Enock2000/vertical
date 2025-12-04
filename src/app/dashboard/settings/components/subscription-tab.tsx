@@ -43,7 +43,7 @@ export function SubscriptionTab({ plans }: SubscriptionTabProps) {
       const reference = `vsync_sub_${companyId}_${plan.id}_${Date.now()}`;
 
       // Get public key from environment
-      const publicKey = process.env.NEXT_PUBLIC_VSHR_PUBLIC_KEY;
+      const publicKey = process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY;
       if (!publicKey) {
         toast({
           variant: 'destructive',
