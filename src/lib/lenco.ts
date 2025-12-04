@@ -1,5 +1,6 @@
 // src/lib/lenco.ts
-'use server';
+// Server-side utility for Lenco Pay integration
+// This file is used by API routes which are already server-side
 
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -48,6 +49,14 @@ export interface LencoWebhookEvent {
     data: LencoCollection;
 }
 
+export interface CreateCollectionInput {
+    amount: number;
+    currency: string;
+    reference: string;
+    redirectUrl?: string;
+    metadata?: Record<string, any>;
+}
+
 // ============================================================================
 // Validation Schemas
 // ============================================================================
@@ -59,6 +68,81 @@ export const MobileMoneySchema = z.object({
     country: z.string().default('ZM'),
     reference: z.string(),
 });
+
+// ============================================================================
+// Collection Management
+// ============================================================================
+
+/**
+ * Create a new collection (payment request)
+ * This initiates a payment that can be completed via card, mobile money, or bank
+ */
+export async function createCollection(input: CreateCollectionInput): Promise<LencoCollection> {
+    if (!VSHR_SECRET_KEY) {
+        throw new Error('Payment gateway not configured');
+    }
+
+    try {
+        const res = await fetch(`${VSHR_BASE_URL}/collections`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${VSHR_SECRET_KEY}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                amount: input.amount.toString(),
+                currency: input.currency,
+                reference: input.reference,
+                redirectUrl: input.redirectUrl,
+                metadata: input.metadata,
+            }),
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+            throw new Error(json.message || 'Failed to create collection');
+        }
+
+        return json.data as LencoCollection;
+
+    } catch (e: any) {
+        console.error('Create collection error:', e);
+        throw e;
+    }
+}
+
+/**
+ * Get collection by ID
+ */
+export async function getCollection(collectionId: string): Promise<LencoCollection> {
+    if (!VSHR_SECRET_KEY) {
+        throw new Error('Payment gateway not configured');
+    }
+
+    try {
+        const res = await fetch(
+            `${VSHR_BASE_URL}/collections/${encodeURIComponent(collectionId)}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${VSHR_SECRET_KEY}`,
+                },
+            }
+        );
+
+        const json = await res.json();
+
+        if (!res.ok) {
+            throw new Error(json.message || 'Failed to get collection');
+        }
+
+        return json.data as LencoCollection;
+
+    } catch (e: any) {
+        console.error('Get collection error:', e);
+        throw e;
+    }
+}
 
 // ============================================================================
 // Mobile Money Payment (Server-Side)
@@ -154,7 +238,7 @@ export async function verifyPayment(reference: string) {
  * webhook_hash_key = SHA256(SECRET_KEY)
  * signature = HMAC_SHA512(webhook_hash_key, request_body)
  */
-export async function verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
+export function verifyWebhookSignature(payload: string, signature: string): boolean {
     if (!VSHR_SECRET_KEY) {
         console.error('Cannot verify webhook: VSHR_SECRET_KEY not configured');
         return false;
@@ -191,7 +275,7 @@ export async function verifyWebhookSignature(payload: string, signature: string)
 /**
  * Generate a unique reference for a subscription payment
  */
-export async function generatePaymentReference(companyId: string, planId: string): Promise<string> {
+export function generatePaymentReference(companyId: string, planId: string): string {
     const timestamp = Date.now();
     return `vsync_sub_${companyId}_${planId}_${timestamp}`;
 }
@@ -199,13 +283,13 @@ export async function generatePaymentReference(companyId: string, planId: string
 /**
  * Extract payment method details from Lenco collection
  */
-export async function extractPaymentMethod(collection: LencoCollection): Promise<{
+export function extractPaymentMethod(collection: LencoCollection): {
     type: 'card' | 'mobile-money' | 'bank-account';
     brand?: string;
     last4?: string;
     operator?: string;
     phone?: string;
-} | null> {
+} | null {
     if (!collection.type) return null;
 
     if (collection.type === 'mobile-money' && collection.mobileMoneyDetails) {
