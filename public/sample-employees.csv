@@ -1,7 +1,7 @@
-name,email,role,departmentName,salary,workerType,location,phone,annualLeaveBalance
-John Doe,john.doe@example.com,Software Engineer,Engineering,80000,Salaried,New York,123-456-7890,21
-Jane Smith,jane.smith@example.com,Product Manager,Product,95000,Salaried,San Francisco,098-765-4321,21
-Peter Jones,peter.jones@example.com,Sales Associate,Sales,60000,Salaried,London,,21
-Mary Garcia,mary.garcia@example.com,Designer,Design,75000,Salaried,Remote,,21
-David Miller,david.miller@example.com,QA Tester,Engineering,65.50,Hourly,"",,14
-Sarah Wilson,sarah.wilson@example.com,Marketing Lead,Marketing,90000,Salaried,"",,21
+name,email,phone,role,departmentName,branchName,location,workerType,salary,hourlyRate,allowances,deductions,annualLeaveBalance,gender,dateOfBirth,identificationType,identificationNumber,bankName,accountNumber,branchCode,jobTitle,contractType,contractStartDate,contractEndDate
+John Doe,john.doe@example.com,+260971234567,Software Engineer,Engineering,Head Office,Lusaka,Salaried,15000,0,500,100,21,Male,1990-05-15,NRC,123456/78/1,Zanaco,1234567890,01,Senior Developer,Permanent,2023-01-15,
+Jane Smith,jane.smith@example.com,+260972345678,Product Manager,Product,Head Office,Lusaka,Salaried,18000,0,800,150,21,Female,1988-08-22,Passport,ZN123456,FNB,9876543210,02,Product Lead,Permanent,2022-06-01,
+Peter Jones,peter.jones@example.com,+260973456789,Sales Associate,Sales,Kitwe Branch,Kitwe,Commission,8000,0,200,50,18,Male,1995-03-10,NRC,234567/89/1,Stanbic,5678901234,03,Sales Rep,Fixed-Term,2024-01-01,2024-12-31
+Mary Garcia,mary.garcia@example.com,+260974567890,Designer,Design,Head Office,Lusaka,Salaried,12000,0,400,100,21,Female,1992-11-08,NRC,345678/90/1,ABSA,4567890123,01,UI/UX Designer,Permanent,2023-03-15,
+David Miller,david.miller@example.com,+260975678901,Part-time Support,Support,Ndola Branch,Ndola,Hourly,0,65,0,0,14,Male,2000-07-25,NRC,456789/01/1,Zanaco,3456789012,04,Support Agent,Fixed-Term,2024-06-01,2024-12-31
+Sarah Wilson,sarah.wilson@example.com,+260976789012,Intern,Marketing,Head Office,Lusaka,Salaried,3000,0,100,0,10,Female,2001-02-14,NRC,567890/12/1,FNB,2345678901,01,Marketing Intern,Internship,2024-09-01,2025-03-01
