@@ -154,7 +154,7 @@ export async function verifyPayment(reference: string) {
  * webhook_hash_key = SHA256(SECRET_KEY)
  * signature = HMAC_SHA512(webhook_hash_key, request_body)
  */
-export function verifyWebhookSignature(payload: string, signature: string): boolean {
+export async function verifyWebhookSignature(payload: string, signature: string): Promise<boolean> {
     if (!VSHR_SECRET_KEY) {
         console.error('Cannot verify webhook: VSHR_SECRET_KEY not configured');
         return false;
@@ -191,7 +191,7 @@ export function verifyWebhookSignature(payload: string, signature: string): bool
 /**
  * Generate a unique reference for a subscription payment
  */
-export function generatePaymentReference(companyId: string, planId: string): string {
+export async function generatePaymentReference(companyId: string, planId: string): Promise<string> {
     const timestamp = Date.now();
     return `vsync_sub_${companyId}_${planId}_${timestamp}`;
 }
@@ -199,13 +199,13 @@ export function generatePaymentReference(companyId: string, planId: string): str
 /**
  * Extract payment method details from Lenco collection
  */
-export function extractPaymentMethod(collection: LencoCollection): {
+export async function extractPaymentMethod(collection: LencoCollection): Promise<{
     type: 'card' | 'mobile-money' | 'bank-account';
     brand?: string;
     last4?: string;
     operator?: string;
     phone?: string;
-} | null {
+} | null> {
     if (!collection.type) return null;
 
     if (collection.type === 'mobile-money' && collection.mobileMoneyDetails) {
