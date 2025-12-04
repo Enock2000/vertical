@@ -9,7 +9,7 @@ import { z } from 'zod';
 // Environment Configuration
 // ============================================================================
 
-const VSHR_BASE_URL = process.env.VSHR_BASE_URL || 'https://api.lenco.co/v2';
+const VSHR_BASE_URL = process.env.VSHR_BASE_URL || 'https://api.lenco.co/access/v2';
 const VSHR_SECRET_KEY = process.env.VSHR_SECRET_KEY;
 
 if (!VSHR_SECRET_KEY) {
