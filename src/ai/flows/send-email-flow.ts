@@ -54,31 +54,31 @@ const sendEmailFlow = ai.defineFlow(
       const apiInstance = new Brevo.TransactionalEmailsApi();
       apiInstance.setApiKey(
         Brevo.TransactionalEmailsApiApiKeys.apiKey,
-        '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'
+        process.env.BREVO_API_KEY || ''
       );
 
       const sendSmtpEmail = new Brevo.SendSmtpEmail();
-      
+
       sendSmtpEmail.to = input.to;
-      
+
       // Check which type of email it is and set properties accordingly
       if ('templateId' in input) {
         sendSmtpEmail.templateId = input.templateId;
         if (input.params) {
-            sendSmtpEmail.params = input.params;
+          sendSmtpEmail.params = input.params;
         }
       } else {
         sendSmtpEmail.subject = input.subject;
         sendSmtpEmail.htmlContent = input.htmlContent;
       }
-      
+
       sendSmtpEmail.sender = {
         email: 'no-reply@verticalsync.com',
         name: 'VerticalSync Platform',
       };
-      
+
       const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
-      
+
       const messageId = (result.body as any)?.messageId;
 
       return { success: true, messageId: messageId || 'unknown' };
