@@ -8,32 +8,7 @@
  * - Only name and email are required fields
  * - All other fields are optional and will be imported exactly as provided
  * - Missing fields are left undefined so HR can edit them later
- * 
- * Expected CSV columns (only name and email are required):
- * - name (required)
- * - email (required)
- * - phone
- * - role
- * - departmentName
- * - branchName
- * - location
- * - workerType (Salaried, Hourly, Commission, Contractor)
- * - salary
- * - hourlyRate
- * - allowances
- * - deductions
- * - annualLeaveBalance
- * - gender (Male, Female, Other)
- * - dateOfBirth (YYYY-MM-DD format)
- * - identificationType (ID Number, Passport, License)
- * - identificationNumber
- * - bankName
- * - accountNumber
- * - branchCode
- * - jobTitle
- * - contractType (Permanent, Fixed-Term, Internship)
- * - contractStartDate (YYYY-MM-DD format)
- * - contractEndDate (YYYY-MM-DD format)
+ * - New employees have requirePasswordReset: true for first-time login
  */
 
 import { ai } from '@/ai/genkit';
@@ -83,16 +58,13 @@ function parseDate(dateStr: string | undefined): string | undefined {
   if (!dateStr || !dateStr.trim()) return undefined;
   try {
     const cleaned = dateStr.trim();
-    // Handle YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
       return new Date(cleaned).toISOString();
     }
-    // Handle DD/MM/YYYY format
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(cleaned)) {
       const [day, month, year] = cleaned.split('/');
       return new Date(`${year}-${month}-${day}`).toISOString();
     }
-    // Try generic parsing
     const parsed = new Date(cleaned);
     if (!isNaN(parsed.getTime())) {
       return parsed.toISOString();
@@ -222,13 +194,11 @@ const importEmployeesFlow = ai.defineFlow(
       }
 
       for (const rawRow of data as any[]) {
-        // Normalize the row data to handle column name variations
         const row = normalizeRowData(rawRow);
 
         const email = row.email?.toString().trim();
         const name = row.name?.toString().trim();
 
-        // Only name and email are required
         if (!email) {
           failed++;
           errors.push(`Row skipped: Missing email. Row data: ${JSON.stringify(row).substring(0, 100)}`);
@@ -242,7 +212,6 @@ const importEmployeesFlow = ai.defineFlow(
         }
 
         try {
-          // Check if user already exists
           const userQuery = query(ref(db, 'employees'), orderByChild('email'), equalTo(email));
           const existingUserSnap = await get(userQuery);
           if (existingUserSnap.exists()) {
@@ -251,36 +220,30 @@ const importEmployeesFlow = ai.defineFlow(
             continue;
           }
 
-          // Temporary password (user will reset it)
           const tempPassword = Math.random().toString(36).slice(-8);
           const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
           const user = userCredential.user;
 
-          // Find matching department (if provided)
           const department = row.departmentName
             ? departments.find(d => d.name.toLowerCase() === row.departmentName.toString().trim().toLowerCase())
             : undefined;
 
-          // Find matching branch (if provided)
           const branch = row.branchName
             ? branches.find(b => b.name.toLowerCase() === row.branchName.toString().trim().toLowerCase())
             : undefined;
 
-          // Helper to get string value or undefined (bypass empty values)
           const getValue = (val: any): string | undefined => {
             if (val === undefined || val === null) return undefined;
             const trimmed = val.toString().trim();
             return trimmed.length > 0 ? trimmed : undefined;
           };
 
-          // Helper to get number or undefined (bypass empty values)
           const getNumber = (val: any): number | undefined => {
             if (val === undefined || val === null || val === '') return undefined;
             const num = parseFloat(val);
             return !isNaN(num) ? num : undefined;
           };
 
-          // Parse worker type only if provided
           let workerType: Employee['workerType'] | undefined = undefined;
           if (row.workerType) {
             const workerTypeMap: Record<string, Employee['workerType']> = {
@@ -291,7 +254,6 @@ const importEmployeesFlow = ai.defineFlow(
             workerType = workerTypeMap[row.workerType.toString().toLowerCase().trim()];
           }
 
-          // Parse gender only if provided
           let gender: 'Male' | 'Female' | 'Other' | undefined = undefined;
           if (row.gender) {
             const genderMap: Record<string, 'Male' | 'Female' | 'Other'> = {
@@ -304,7 +266,6 @@ const importEmployeesFlow = ai.defineFlow(
             gender = genderMap[row.gender.toString().toLowerCase().trim()];
           }
 
-          // Parse identification type only if provided
           let identificationType: 'ID Number' | 'Passport' | 'License' | undefined = undefined;
           if (row.identificationType) {
             const idTypeMap: Record<string, 'ID Number' | 'Passport' | 'License'> = {
@@ -320,7 +281,6 @@ const importEmployeesFlow = ai.defineFlow(
             identificationType = idTypeMap[row.identificationType.toString().toLowerCase().trim()];
           }
 
-          // Parse contract type only if provided
           let contractType: 'Permanent' | 'Fixed-Term' | 'Internship' | undefined = undefined;
           if (row.contractType) {
             const contractTypeMap: Record<string, 'Permanent' | 'Fixed-Term' | 'Internship'> = {
@@ -337,30 +297,24 @@ const importEmployeesFlow = ai.defineFlow(
             contractType = contractTypeMap[row.contractType.toString().toLowerCase().trim()];
           }
 
-          // Build the employee object - ONLY include fields that were provided in CSV
-          // Missing/empty fields are left undefined so HR can edit later
           const newEmployee: Record<string, any> = {
-            // System-generated fields (always required)
             id: user.uid,
             companyId: companyId,
             status: 'Active',
             avatar: `https://avatar.vercel.sh/${email}.png`,
             joinDate: parseDate(row.joinDate) || new Date().toISOString(),
-
-            // Required fields from CSV
+            requirePasswordReset: true, // Force password reset on first login
             name: name,
             email: email,
           };
 
-          // Add optional fields ONLY if they have values in CSV
           const phone = getValue(row.phone);
           if (phone) newEmployee.phone = phone;
 
           const role = getValue(row.role);
           if (role) newEmployee.role = role;
-          else newEmployee.role = 'Employee'; // Default role if not provided
+          else newEmployee.role = 'Employee';
 
-          // Department
           if (department) {
             newEmployee.departmentId = department.id;
             newEmployee.departmentName = department.name;
@@ -372,7 +326,6 @@ const importEmployeesFlow = ai.defineFlow(
             newEmployee.departmentName = 'Unassigned';
           }
 
-          // Branch
           if (branch) {
             newEmployee.branchId = branch.id;
             newEmployee.branchName = branch.name;
@@ -384,7 +337,6 @@ const importEmployeesFlow = ai.defineFlow(
           if (location) newEmployee.location = location;
           else newEmployee.location = '';
 
-          // Worker type and payment info
           if (workerType) newEmployee.workerType = workerType;
           else newEmployee.workerType = 'Salaried';
 
@@ -396,7 +348,6 @@ const importEmployeesFlow = ai.defineFlow(
           if (hourlyRate !== undefined) newEmployee.hourlyRate = hourlyRate;
           else newEmployee.hourlyRate = 0;
 
-          // Always initialize these to 0
           newEmployee.hoursWorked = 0;
           newEmployee.overtime = 0;
           newEmployee.bonus = 0;
@@ -414,19 +365,16 @@ const importEmployeesFlow = ai.defineFlow(
           if (annualLeaveBalance !== undefined) newEmployee.annualLeaveBalance = annualLeaveBalance;
           else newEmployee.annualLeaveBalance = 21;
 
-          // Personal info - ONLY if provided
           if (gender) newEmployee.gender = gender;
 
           const dateOfBirth = parseDate(row.dateOfBirth);
           if (dateOfBirth) newEmployee.dateOfBirth = dateOfBirth;
 
-          // Identification - ONLY if provided
           if (identificationType) newEmployee.identificationType = identificationType;
 
           const identificationNumber = getValue(row.identificationNumber);
           if (identificationNumber) newEmployee.identificationNumber = identificationNumber;
 
-          // Bank details - ONLY if provided
           const bankName = getValue(row.bankName);
           if (bankName) newEmployee.bankName = bankName;
 
@@ -436,12 +384,10 @@ const importEmployeesFlow = ai.defineFlow(
           const branchCode = getValue(row.branchCode);
           if (branchCode) newEmployee.branchCode = branchCode;
 
-          // Job title - ONLY if provided
           const jobTitle = getValue(row.jobTitle);
           if (jobTitle) newEmployee.jobTitle = jobTitle;
           else if (role) newEmployee.jobTitle = role;
 
-          // Contract details - ONLY if provided
           if (contractType) newEmployee.contractType = contractType;
 
           const contractStartDate = parseDate(row.contractStartDate);

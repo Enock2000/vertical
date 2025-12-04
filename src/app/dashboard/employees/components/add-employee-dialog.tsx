@@ -91,7 +91,7 @@ export function AddEmployeeDialog({
       return;
     }
     setIsLoading(true);
-    
+
     try {
       // Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
@@ -100,30 +100,31 @@ export function AddEmployeeDialog({
       const { password, ...employeeData } = values;
       const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
       const branchName = branches.find(b => b.id === values.branchId)?.name || '';
-      
+
       const newEmployee: Employee = {
-          ...employeeData,
-          id: user.uid,
-          companyId: companyId,
-          departmentName,
-          branchName: branchName || '',
-          avatar: `https://avatar.vercel.sh/${values.email}.png`,
-          salary: values.salary || 0,
-          hourlyRate: values.hourlyRate || 0,
-          hoursWorked: values.hoursWorked || 0,
-          joinDate: new Date().toISOString(),
-          dateOfBirth: values.dateOfBirth,
-          contractStartDate: values.contractStartDate || new Date().toISOString(),
+        ...employeeData,
+        id: user.uid,
+        companyId: companyId,
+        departmentName,
+        branchName: branchName || '',
+        avatar: `https://avatar.vercel.sh/${values.email}.png`,
+        salary: values.salary || 0,
+        hourlyRate: values.hourlyRate || 0,
+        hoursWorked: values.hoursWorked || 0,
+        joinDate: new Date().toISOString(),
+        dateOfBirth: values.dateOfBirth,
+        contractStartDate: values.contractStartDate || new Date().toISOString(),
+        requirePasswordReset: true, // Force password reset on first login
       };
 
       // Save employee data to Realtime Database
       await set(ref(db, 'employees/' + user.uid), newEmployee);
-      
+
       // Send welcome email
       await sendNewEmployeeWelcomeEmail(newEmployee, company.name);
-      
+
       onEmployeeAdded();
-      
+
       setOpen(false);
       form.reset();
       toast({
@@ -132,14 +133,14 @@ export function AddEmployeeDialog({
       });
 
     } catch (error: any) {
-        console.error("Error adding employee:", error);
-        toast({
-            variant: "destructive",
-            title: "Failed to add employee",
-            description: error.message || "An unexpected error occurred."
-        })
+      console.error("Error adding employee:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to add employee",
+        description: error.message || "An unexpected error occurred."
+      })
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
@@ -154,16 +155,16 @@ export function AddEmployeeDialog({
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
-           <EmployeeForm
-              form={form}
-              departments={departments}
-              branches={branches}
-              banks={banks}
-              onSubmit={onSubmit}
-              isSubmitting={isLoading}
-              submitButtonText="Save Employee"
-              showAccountFields={true}
-            />
+          <EmployeeForm
+            form={form}
+            departments={departments}
+            branches={branches}
+            banks={banks}
+            onSubmit={onSubmit}
+            isSubmitting={isLoading}
+            submitButtonText="Save Employee"
+            showAccountFields={true}
+          />
         </ScrollArea>
       </DialogContent>
     </Dialog>

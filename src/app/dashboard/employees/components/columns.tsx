@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User, KeyRound } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,14 +31,15 @@ import { DemoteAdminDialog } from "./demote-admin-dialog"
 import { GenerateContractDialog } from "./generate-contract-dialog"
 import { TerminateContractDialog } from "./terminate-contract-dialog"
 import { ViewEmployeeDialog } from "./view-employee-dialog"
+import { ResetEmployeePasswordDialog } from "./reset-employee-password-dialog"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
-    try {
-        await update(ref(db, `employees/${employeeId}`), { status });
-    } catch (error) {
-        console.error("Failed to update status", error);
-    }
+  try {
+    await update(ref(db, `employees/${employeeId}`), { status });
+  } catch (error) {
+    console.error("Failed to update status", error);
+  }
 };
 
 export const columns = (departments: Department[], branches: Branch[], banks: Bank[], roles: Role[], onAction: () => void): ColumnDef<Employee>[] => [
@@ -78,20 +79,20 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
       )
     },
     cell: ({ row }) => {
-        const employee = row.original;
-        const nameInitial = employee.name.split(' ').map(n => n[0]).join('');
-        return (
-            <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                    <AvatarImage src={employee.avatar} alt={employee.name} />
-                    <AvatarFallback>{nameInitial}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <div className="font-medium">{employee.name}</div>
-                    <div className="text-sm text-muted-foreground">{employee.email}</div>
-                </div>
-            </div>
-        )
+      const employee = row.original;
+      const nameInitial = employee.name.split(' ').map(n => n[0]).join('');
+      return (
+        <div className="flex items-center gap-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={employee.avatar} alt={employee.name} />
+            <AvatarFallback>{nameInitial}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{employee.name}</div>
+            <div className="text-sm text-muted-foreground">{employee.email}</div>
+          </div>
+        </div>
+      )
     }
   },
   {
@@ -112,11 +113,11 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
-      const variant: "default" | "secondary" | "destructive" | "outline" = 
+      const variant: "default" | "secondary" | "destructive" | "outline" =
         status === 'Active' ? 'default' :
-        status === 'Inactive' ? 'secondary' :
-        status === 'Suspended' ? 'destructive' : 'outline';
-      
+          status === 'Inactive' ? 'secondary' :
+            status === 'Suspended' ? 'destructive' : 'outline';
+
       return <Badge variant={variant}>{status}</Badge>
     },
   },
@@ -140,85 +141,93 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
 
       return (
         <div className="text-right">
-            <DropdownMenu>
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-8 w-8 p-0">
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
-                </Button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(employee.id)}
-                >
+              >
                 Copy employee ID
-                </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <ViewEmployeeDialog employee={employee}>
-                    <div className="w-full text-left flex items-center">
-                        <User className="mr-2 h-4 w-4" /> View Profile
-                    </div>
-                  </ViewEmployeeDialog>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
-                    <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                             <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Active')}>Active</DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'On Leave')}>On Leave</DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Sick')}>Sick</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Suspended')}>Suspend</DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Inactive')}>Inactive</DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                    </DropdownMenuPortal>
-                </DropdownMenuSub>
-                
-                {employee.role === 'Admin' ? (
-                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <DemoteAdminDialog employee={employee} onEmployeeDemoted={onAction}>
-                            <div className="w-full text-left">Demote from Admin</div>
-                        </DemoteAdminDialog>
-                    </DropdownMenuItem>
-                ) : (
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
-                             <div className="w-full text-left">Promote to Admin</div>
-                        </PromoteEmployeeDialog>
-                    </DropdownMenuItem>
-                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <ViewEmployeeDialog employee={employee}>
+                  <div className="w-full text-left flex items-center">
+                    <User className="mr-2 h-4 w-4" /> View Profile
+                  </div>
+                </ViewEmployeeDialog>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Active')}>Active</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'On Leave')}>On Leave</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Sick')}>Sick</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Suspended')}>Suspend</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Inactive')}>Inactive</DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
 
-                <DropdownMenuSeparator />
-                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <GenerateContractDialog employee={employee}>
-                    <div className="w-full text-left flex items-center">
-                        <FileSignature className="mr-2 h-4 w-4" /> Generate Contract
-                    </div>
-                  </GenerateContractDialog>
-                </DropdownMenuItem>
+              {employee.role === 'Admin' ? (
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <EditEmployeeDialog employee={employee} departments={departments} branches={branches} banks={banks} onEmployeeUpdated={onAction}>
-                    <div className="w-full text-left">Edit Profile</div>
-                  </EditEmployeeDialog>
+                  <DemoteAdminDialog employee={employee} onEmployeeDemoted={onAction}>
+                    <div className="w-full text-left">Demote from Admin</div>
+                  </DemoteAdminDialog>
                 </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
-                    <TerminateContractDialog employee={employee} onContractTerminated={onAction}>
-                         <div className="w-full text-left flex items-center">
-                            <FileX2 className="mr-2 h-4 w-4"/> Terminate Contract
-                        </div>
-                    </TerminateContractDialog>
+              ) : (
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
+                    <div className="w-full text-left">Promote to Admin</div>
+                  </PromoteEmployeeDialog>
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
-                  <DeleteEmployeeAlert employeeId={employee.id} employeeName={employee.name} onEmployeeDeleted={onAction}>
-                    <div className="w-full text-left">Delete Employee</div>
-                  </DeleteEmployeeAlert>
-                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <GenerateContractDialog employee={employee}>
+                  <div className="w-full text-left flex items-center">
+                    <FileSignature className="mr-2 h-4 w-4" /> Generate Contract
+                  </div>
+                </GenerateContractDialog>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <EditEmployeeDialog employee={employee} departments={departments} branches={branches} banks={banks} onEmployeeUpdated={onAction}>
+                  <div className="w-full text-left">Edit Profile</div>
+                </EditEmployeeDialog>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                <ResetEmployeePasswordDialog employee={employee} onPasswordReset={onAction}>
+                  <div className="w-full text-left flex items-center">
+                    <KeyRound className="mr-2 h-4 w-4" /> Reset Password
+                  </div>
+                </ResetEmployeePasswordDialog>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
+                <TerminateContractDialog employee={employee} onContractTerminated={onAction}>
+                  <div className="w-full text-left flex items-center">
+                    <FileX2 className="mr-2 h-4 w-4" /> Terminate Contract
+                  </div>
+                </TerminateContractDialog>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
+                <DeleteEmployeeAlert employeeId={employee.id} employeeName={employee.name} onEmployeeDeleted={onAction}>
+                  <div className="w-full text-left">Delete Employee</div>
+                </DeleteEmployeeAlert>
+              </DropdownMenuItem>
             </DropdownMenuContent>
-            </DropdownMenu>
+          </DropdownMenu>
         </div>
       )
     },
   },
 ]
+

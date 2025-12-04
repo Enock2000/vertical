@@ -80,9 +80,9 @@ export type Branch = {
 };
 
 export type ThemeSettings = {
-  background: { h: string; s: string; l: string };
-  primary: { h: string; s: string; l: string };
-  accent: { h: string; s: string; l: string };
+    background: { h: string; s: string; l: string };
+    primary: { h: string; s: string; l: string };
+    accent: { h: string; s: string; l: string };
 };
 
 export type WorkerType = 'Salaried' | 'Hourly' | 'Contractor';
@@ -107,56 +107,57 @@ export type WorkExperienceEntry = {
 
 
 export type Employee = {
-  id: string;
-  companyId: string; // Multi-tenancy key
-  name: string;
-  email: string;
-  phone?: string;
-  role: string;
-  status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant' | 'GuestAdmin';
-  avatar: string;
-  location: string;
-  departmentId: string;
-  departmentName: string;
-  branchId?: string;
-  branchName?: string;
-  workerType: WorkerType;
-  salary: number; // For Salaried
-  hourlyRate: number; // For Hourly
-  hoursWorked: number; // For Hourly
-  allowances: number;
-  deductions: number; // Other deductions
-  overtime: number; // Overtime hours
-  bonus: number;
-  reimbursements: number;
-  joinDate: string; // ISO 8601 date string
-  annualLeaveBalance: number;
-  gender?: 'Male' | 'Female' | 'Other';
-  dateOfBirth?: string; // ISO 8601 date string
-  identificationType?: 'ID Number' | 'Passport' | 'License';
-  identificationNumber?: string;
-  // Bank Details
-  bankName?: string;
-  accountNumber?: string;
-  branchCode?: string;
-  jobTitle?: string; // Original job title before promotion
-  adminRoleId?: string; // ID of the assigned admin Role
-  themeSettings?: ThemeSettings;
-  // Contract Details
-  contractType?: 'Permanent' | 'Fixed-Term' | 'Internship';
-  contractStartDate?: string; // ISO 8601
-  contractEndDate?: string | null; // ISO 8601
-  contractFileUrl?: string | null;
-  terminationDate?: string | null;
-  terminationReason?: string | null;
-  resignationDate?: string | null;
-  resignationReason?: string | null;
-  // Applicant Profile
-  education?: EducationEntry[];
-  workExperience?: WorkExperienceEntry[];
-  resumeUrl?: string;
-  permissions?: Permission[];
-  isTwoFactorEnabled?: boolean;
+    id: string;
+    companyId: string; // Multi-tenancy key
+    name: string;
+    email: string;
+    phone?: string;
+    role: string;
+    status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant' | 'GuestAdmin';
+    avatar: string;
+    location: string;
+    departmentId: string;
+    departmentName: string;
+    branchId?: string;
+    branchName?: string;
+    workerType: WorkerType;
+    salary: number; // For Salaried
+    hourlyRate: number; // For Hourly
+    hoursWorked: number; // For Hourly
+    allowances: number;
+    deductions: number; // Other deductions
+    overtime: number; // Overtime hours
+    bonus: number;
+    reimbursements: number;
+    joinDate: string; // ISO 8601 date string
+    annualLeaveBalance: number;
+    gender?: 'Male' | 'Female' | 'Other';
+    dateOfBirth?: string; // ISO 8601 date string
+    identificationType?: 'ID Number' | 'Passport' | 'License';
+    identificationNumber?: string;
+    // Bank Details
+    bankName?: string;
+    accountNumber?: string;
+    branchCode?: string;
+    jobTitle?: string; // Original job title before promotion
+    adminRoleId?: string; // ID of the assigned admin Role
+    themeSettings?: ThemeSettings;
+    // Contract Details
+    contractType?: 'Permanent' | 'Fixed-Term' | 'Internship';
+    contractStartDate?: string; // ISO 8601
+    contractEndDate?: string | null; // ISO 8601
+    contractFileUrl?: string | null;
+    terminationDate?: string | null;
+    terminationReason?: string | null;
+    resignationDate?: string | null;
+    resignationReason?: string | null;
+    // Applicant Profile
+    education?: EducationEntry[];
+    workExperience?: WorkExperienceEntry[];
+    resumeUrl?: string;
+    permissions?: Permission[];
+    isTwoFactorEnabled?: boolean;
+    requirePasswordReset?: boolean; // True if user must reset password on next login
 };
 
 export type ApplicationFormQuestion = {
@@ -167,23 +168,23 @@ export type ApplicationFormQuestion = {
 };
 
 export type JobVacancy = {
-  id: string;
-  companyId: string;
-  title: string;
-  departmentId: string;
-  departmentName: string;
-  description: string;
-  requirements?: string;
-  location?: string;
-  salary?: number;
-  jobType?: 'Full-Time' | 'Part-Time' | 'Contract' | 'Remote';
-  status: 'Open' | 'Closed' | 'Archived' | 'Pending' | 'Approved' | 'Rejected';
-  createdAt: string; // ISO 8601 date string
-  closingDate: string; // ISO 8601 date string
-  views?: number;
-  customForm?: ApplicationFormQuestion[];
-  applicationMethod?: 'internal' | 'email';
-  applicationEmail?: string;
+    id: string;
+    companyId: string;
+    title: string;
+    departmentId: string;
+    departmentName: string;
+    description: string;
+    requirements?: string;
+    location?: string;
+    salary?: number;
+    jobType?: 'Full-Time' | 'Part-Time' | 'Contract' | 'Remote';
+    status: 'Open' | 'Closed' | 'Archived' | 'Pending' | 'Approved' | 'Rejected';
+    createdAt: string; // ISO 8601 date string
+    closingDate: string; // ISO 8601 date string
+    views?: number;
+    customForm?: ApplicationFormQuestion[];
+    applicationMethod?: 'internal' | 'email';
+    applicationEmail?: string;
 };
 
 export type GuestJobVacancy = {
@@ -204,14 +205,14 @@ export type GuestJobVacancy = {
 }
 
 export const ApplicantStatus = {
-  New: 'New',
-  Screening: 'Screening',
-  Interview: 'Interview',
-  Offer: 'Offer',
-  Onboarding: 'Onboarding',
-  Hired: 'Hired',
-  Rejected: 'Rejected',
-  Accepted: 'Accepted'
+    New: 'New',
+    Screening: 'Screening',
+    Interview: 'Interview',
+    Offer: 'Offer',
+    Onboarding: 'Onboarding',
+    Hired: 'Hired',
+    Rejected: 'Rejected',
+    Accepted: 'Accepted'
 } as const;
 
 export type ApplicantStatus = (typeof ApplicantStatus)[keyof typeof ApplicantStatus];
@@ -234,37 +235,37 @@ export const defaultOnboardingTasks: Omit<OnboardingTask, 'id' | 'completed' | '
 
 
 export type Applicant = {
-  id: string;
-  userId: string;
-  companyId: string;
-  jobVacancyId: string;
-  name: string;
-  email: string;
-  phone: string;
-  coverLetter?: string;
-  linkedinProfile?: string;
-  resumeUrl: string | null; // URL to the resume file in storage
-  status: ApplicantStatus;
-  appliedAt: string; // ISO 8601 date string
-  onboardingTasks?: OnboardingTask[];
-  source?: string;
-  hiredAt?: string; // ISO 8601 date string
-  answers?: Record<string, string>; // questionId: answer
+    id: string;
+    userId: string;
+    companyId: string;
+    jobVacancyId: string;
+    name: string;
+    email: string;
+    phone: string;
+    coverLetter?: string;
+    linkedinProfile?: string;
+    resumeUrl: string | null; // URL to the resume file in storage
+    status: ApplicantStatus;
+    appliedAt: string; // ISO 8601 date string
+    onboardingTasks?: OnboardingTask[];
+    source?: string;
+    hiredAt?: string; // ISO 8601 date string
+    answers?: Record<string, string>; // questionId: answer
 };
 
 export type PayrollConfig = {
-  employeeNapsaRate: number;
-  employerNapsaRate: number;
-  employeeNhimaRate: number;
-  employerNhimaRate: number;
-  taxRate: number;
-  overtimeMultiplier: number;
-  // Working Hours
-  dailyTargetHours: number;
-  weeklyTargetHours: number;
-  monthlyTargetHours: number;
-  yearlyTargetHours: number;
-  allowedIpAddress?: string | null; // This will now be legacy, branches will handle IPs
+    employeeNapsaRate: number;
+    employerNapsaRate: number;
+    employeeNhimaRate: number;
+    employerNhimaRate: number;
+    taxRate: number;
+    overtimeMultiplier: number;
+    // Working Hours
+    dailyTargetHours: number;
+    weeklyTargetHours: number;
+    monthlyTargetHours: number;
+    yearlyTargetHours: number;
+    allowedIpAddress?: string | null; // This will now be legacy, branches will handle IPs
 };
 
 export type PayrollDetails = {
@@ -286,38 +287,38 @@ export type PayrollRunEmployee = PayrollDetails & {
 };
 
 export type PayrollRun = {
-  id: string;
-  companyId: string;
-  runDate: string; // ISO 8601 date string
-  employeeCount: number;
-  totalAmount: number;
-  achFileName: string;
-  employees: Record<string, PayrollRunEmployee>; // Keyed by employee ID
+    id: string;
+    companyId: string;
+    runDate: string; // ISO 8601 date string
+    employeeCount: number;
+    totalAmount: number;
+    achFileName: string;
+    employees: Record<string, PayrollRunEmployee>; // Keyed by employee ID
 };
 
 
 export type LeaveRequest = {
-  id: string;
-  companyId: string;
-  employeeId: string;
-  employeeName: string;
-  leaveType: 'Annual' | 'Sick' | 'Unpaid' | 'Maternity';
-  startDate: string;
-  endDate: string;
-  reason: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-  sickNoteUrl?: string;
+    id: string;
+    companyId: string;
+    employeeId: string;
+    employeeName: string;
+    leaveType: 'Annual' | 'Sick' | 'Unpaid' | 'Maternity';
+    startDate: string;
+    endDate: string;
+    reason: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    sickNoteUrl?: string;
 };
 
 export type ResignationRequest = {
-  id: string;
-  companyId: string;
-  employeeId: string;
-  employeeName: string;
-  submissionDate: string; // ISO 8601
-  resignationDate: string; // ISO 8601
-  reason: string;
-  status: 'Pending' | 'Approved' | 'Withdrawn';
+    id: string;
+    companyId: string;
+    employeeId: string;
+    employeeName: string;
+    submissionDate: string; // ISO 8601
+    resignationDate: string; // ISO 8601
+    reason: string;
+    status: 'Pending' | 'Approved' | 'Withdrawn';
 };
 
 export type AttendanceRecord = {
@@ -344,7 +345,7 @@ export type Department = {
     maxSalary: number;
 };
 
-export type Permission = 
+export type Permission =
     | 'dashboard'
     | 'employees'
     | 'recruitment'
@@ -390,40 +391,40 @@ export type Role = {
 };
 
 export type Goal = {
-  id: string;
-  companyId: string;
-  employeeId: string;
-  title: string;
-  description: string;
-  status: 'On Track' | 'At Risk' | 'Completed' | 'Postponed';
-  progress: number; // 0-100
-  dueDate: string; // ISO 8601
+    id: string;
+    companyId: string;
+    employeeId: string;
+    title: string;
+    description: string;
+    status: 'On Track' | 'At Risk' | 'Completed' | 'Postponed';
+    progress: number; // 0-100
+    dueDate: string; // ISO 8601
 };
 
 export type PerformanceReview = {
-  id: string;
-  companyId: string;
-  employeeId: string;
-  reviewerId: string; // Manager's ID
-  reviewDate: string; // ISO 8601
-  status: 'Pending' | 'In Progress' | 'Completed';
-  goals: Goal[];
-  employeeSelfAssessment: string;
-  managerFeedback: string;
-  overallRating: 1 | 2 | 3 | 4 | 5;
+    id: string;
+    companyId: string;
+    employeeId: string;
+    reviewerId: string; // Manager's ID
+    reviewDate: string; // ISO 8601
+    status: 'Pending' | 'In Progress' | 'Completed';
+    goals: Goal[];
+    employeeSelfAssessment: string;
+    managerFeedback: string;
+    overallRating: 1 | 2 | 3 | 4 | 5;
 };
 
 export type Feedback = {
-  id: string;
-  companyId: string;
-  subjectEmployeeId: string; // Employee being reviewed
-  providerEmployeeId: string; // Employee giving feedback
-  providerEmployeeName: string; // Denormalized for easy display
-  feedbackDate: string; // ISO 8601
-  isAnonymous: boolean;
-  content: string;
-  prompt: string;
-  requestedFor: string[]; // Array of employee IDs asked to give feedback
+    id: string;
+    companyId: string;
+    subjectEmployeeId: string; // Employee being reviewed
+    providerEmployeeId: string; // Employee giving feedback
+    providerEmployeeName: string; // Denormalized for easy display
+    feedbackDate: string; // ISO 8601
+    isAnonymous: boolean;
+    content: string;
+    prompt: string;
+    requestedFor: string[]; // Array of employee IDs asked to give feedback
 };
 
 export type Question = {
@@ -435,23 +436,23 @@ export type Question = {
 };
 
 export type TrainingCourse = {
-  id: string;
-  companyId: string;
-  title: string;
-  description: string;
-  category: string;
-  duration: number; // in hours
-  questions: Question[];
+    id: string;
+    companyId: string;
+    title: string;
+    description: string;
+    category: string;
+    duration: number; // in hours
+    questions: Question[];
 };
 
 export type Enrollment = {
-  id: string;
-  companyId: string;
-  employeeId: string;
-  courseId: string;
-  enrollmentDate: string; // ISO 8601
-  status: 'Enrolled' | 'In Progress' | 'Completed';
-  score?: number; // Percentage score
+    id: string;
+    companyId: string;
+    employeeId: string;
+    courseId: string;
+    enrollmentDate: string; // ISO 8601
+    status: 'Enrolled' | 'In Progress' | 'Completed';
+    score?: number; // Percentage score
 };
 
 export type TrainingSubmission = {
@@ -465,13 +466,13 @@ export type TrainingSubmission = {
 };
 
 export type Certification = {
-  id: string;
-  companyId: string;
-  employeeId: string;
-  name: string;
-  issuingBody: string;
-  issueDate: string; // ISO 8601
-  expiryDate?: string | null; // ISO 8601, optional
+    id: string;
+    companyId: string;
+    employeeId: string;
+    name: string;
+    issuingBody: string;
+    issueDate: string; // ISO 8601
+    expiryDate?: string | null; // ISO 8601, optional
 };
 
 export type Bank = {
@@ -514,24 +515,24 @@ export type RosterAssignment = {
 };
 
 export type Notification = {
-  id: string;
-  companyId: string;
-  userId: string; // The user who should receive the notification
-  title: string;
-  message: string;
-  link: string; // Link to the relevant page
-  isRead: boolean;
-  timestamp: string; // ISO 8601 string
+    id: string;
+    companyId: string;
+    userId: string; // The user who should receive the notification
+    title: string;
+    message: string;
+    link: string; // Link to the relevant page
+    isRead: boolean;
+    timestamp: string; // ISO 8601 string
 };
 
 export type Announcement = {
-  id: string;
-  companyId: string;
-  title: string;
-  content: string;
-  authorName: string;
-  createdAt: string; // ISO 8601
-  audience: 'all' | string[]; // 'all' or an array of department IDs
+    id: string;
+    companyId: string;
+    title: string;
+    content: string;
+    authorName: string;
+    createdAt: string; // ISO 8601
+    audience: 'all' | string[]; // 'all' or an array of department IDs
 };
 
 export type Testimonial = {
@@ -617,18 +618,18 @@ export type SalesDailyReport = {
 
 // Helper function to create a notification
 export const createNotification = async (companyId: string, notification: Omit<Notification, 'id' | 'isRead' | 'timestamp'>) => {
-  try {
-    const notificationsRef = ref(db, `companies/${companyId}/notifications`);
-    const newNotificationRef = push(notificationsRef);
-    const newNotification: Omit<Notification, 'id' | 'companyId'> = {
-      ...notification,
-      isRead: false,
-      timestamp: new Date().toISOString(),
-    };
-    await set(newNotificationRef, { ...newNotification, id: newNotificationRef.key, companyId });
-  } catch (error) {
-    console.error('Error creating notification:', error);
-  }
+    try {
+        const notificationsRef = ref(db, `companies/${companyId}/notifications`);
+        const newNotificationRef = push(notificationsRef);
+        const newNotification: Omit<Notification, 'id' | 'companyId'> = {
+            ...notification,
+            isRead: false,
+            timestamp: new Date().toISOString(),
+        };
+        await set(newNotificationRef, { ...newNotification, id: newNotificationRef.key, companyId });
+    } catch (error) {
+        console.error('Error creating notification:', error);
+    }
 };
 
 // Helper function to get all admin user IDs for a company
@@ -657,8 +658,8 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
         basePay = employee.salary; // Assuming salary field is used for contract amount
     }
 
-    const overtimePay = employee.workerType === 'Hourly' 
-        ? employee.overtime * employee.hourlyRate * config.overtimeMultiplier 
+    const overtimePay = employee.workerType === 'Hourly'
+        ? employee.overtime * employee.hourlyRate * config.overtimeMultiplier
         : employee.overtime; // For salaried, assume 'overtime' is a flat amount
 
     const grossPay = basePay + overtimePay + employee.allowances + employee.bonus + employee.reimbursements;
@@ -692,17 +693,17 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
     const totalDeductions = employeeNapsaDeduction + employeeNhimaDeduction + taxDeduction + employee.deductions;
     const netPay = grossPay - totalDeductions;
 
-    return { 
+    return {
         basePay,
         overtimePay,
-        grossPay, 
+        grossPay,
         employeeNapsaDeduction,
         employerNapsaContribution,
         employeeNhimaDeduction,
         employerNhimaContribution,
         taxDeduction,
-        totalDeductions, 
-        netPay 
+        totalDeductions,
+        netPay
     };
 };
 
@@ -739,12 +740,12 @@ export const calculateProductivityScore = (
 
         const totalAbsences = deptEmployees.reduce((acc, emp) => {
             return acc + workDays.filter(day => {
-                 const dateStr = day.toISOString().split('T')[0];
-                 const record = allAttendance[dateStr]?.[emp.id];
-                 return !record || record.status === 'Absent';
+                const dateStr = day.toISOString().split('T')[0];
+                const record = allAttendance[dateStr]?.[emp.id];
+                return !record || record.status === 'Absent';
             }).length;
         }, 0);
-        
+
         const attendanceScore = totalExpectedDays > 0 ? ((totalExpectedDays - totalAbsences) / totalExpectedDays) * 100 : 0;
 
         // 2. Target Hours Met
@@ -771,7 +772,7 @@ export const calculateProductivityScore = (
             performance: Math.round(performanceScore),
             goals: Math.round(goalsScore),
         };
-        
+
         const average = (scores.attendance + scores.hours + scores.performance + scores.goals) / 4;
 
         return {

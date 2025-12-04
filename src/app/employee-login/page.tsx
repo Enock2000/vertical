@@ -30,73 +30,79 @@ export default function GeneralLoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      
+
       const employeeRef = ref(db, 'employees/' + user.uid);
       const employeeSnap = await get(employeeRef);
 
       if (employeeSnap.exists()) {
         const employee: Employee = employeeSnap.val();
-        
+
         // Check for 2FA first
         if (employee.isTwoFactorEnabled) {
-            router.push('/verify-2fa');
-            return; // Stop execution, let the 2FA page handle redirection
+          router.push('/verify-2fa');
+          return; // Stop execution, let the 2FA page handle redirection
+        }
+
+        // Check if password reset is required (first-time login or HR-triggered reset)
+        if (employee.requirePasswordReset) {
+          router.push('/force-password-reset');
+          return;
         }
 
         if (employee.status === 'Suspended' || employee.status === 'Inactive') {
-            await auth.signOut(); 
-            toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: `Your account is currently ${employee.status}. Please contact HR.`,
-            });
-            setIsLoading(false);
-            return;
+          await auth.signOut();
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: `Your account is currently ${employee.status}. Please contact HR.`,
+          });
+          setIsLoading(false);
+          return;
         }
 
         if (employee.role === 'GuestAdmin') {
-            router.push('/guest-employer');
-            return;
+          router.push('/guest-employer');
+          return;
         }
-        
+
         // Fetch company details for all other roles
         const companyRef = ref(db, 'companies/' + employee.companyId);
         const companySnap = await get(companyRef);
-        
+
         if (companySnap.exists()) {
-            const company: Company = companySnap.val();
-             if (company.status !== 'Active' && company.status !== 'Guest') { // Allow guest company employees if any
-                await auth.signOut();
-                toast({
-                    variant: "destructive",
-                    title: "Access Denied",
-                    description: `Your company's account is currently ${company.status}. Please contact your administrator.`,
-                });
-                setIsLoading(false);
-                return;
-            }
-            if (company.employeePortalDisabled) {
-                 await auth.signOut();
-                toast({
-                    variant: "destructive",
-                    title: "Access Denied",
-                    description: "Your company's employee portal is currently disabled. Please contact your administrator.",
-                });
-                setIsLoading(false);
-                return;
-            }
+          const company: Company = companySnap.val();
+          if (company.status !== 'Active' && company.status !== 'Guest') { // Allow guest company employees if any
+            await auth.signOut();
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: `Your company's account is currently ${company.status}. Please contact your administrator.`,
+            });
+            setIsLoading(false);
+            return;
+          }
+          if (company.employeePortalDisabled) {
+            await auth.signOut();
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "Your company's employee portal is currently disabled. Please contact your administrator.",
+            });
+            setIsLoading(false);
+            return;
+          }
         }
 
 
         if (employee.role === 'Applicant') {
-            router.push('/applicant-portal');
-            return;
+          router.push('/applicant-portal');
+          return;
         }
-        
+
         router.push('/employee-portal');
         return;
       }
-      
+
       await auth.signOut();
       toast({ variant: "destructive", title: "Login Failed", description: "No employee or applicant profile found for this account." });
 
@@ -139,7 +145,7 @@ export default function GeneralLoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-             <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
