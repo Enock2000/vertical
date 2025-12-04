@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { ref, get, query, orderByChild, equalTo } from 'firebase/database';
 import type { Employee, Company, Applicant } from '@/lib/data';
@@ -21,8 +21,40 @@ export default function GeneralLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Email Required",
+        description: "Please enter your email address first.",
+      });
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: `A password reset link has been sent to ${email}. Check your inbox.`,
+      });
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to Send Reset Email",
+        description: error.code === 'auth/user-not-found'
+          ? "No account found with this email address."
+          : "Failed to send reset email. Please try again.",
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,7 +178,19 @@ export default function GeneralLoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="px-0 font-normal text-sm h-auto"
+                  onClick={handleForgotPassword}
+                  disabled={isSendingReset}
+                >
+                  {isSendingReset ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                  Forgot Password?
+                </Button>
+              </div>
               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -164,3 +208,4 @@ export default function GeneralLoginPage() {
     </div>
   );
 }
+
