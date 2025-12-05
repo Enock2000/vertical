@@ -66,7 +66,7 @@ export default function SignUpPage() {
       const user = userCredential.user;
 
       // 2. Create Company Profile in Realtime Database with 'Pending' status
-      const companyId = user.uid; 
+      const companyId = user.uid;
       const companyRef = ref(db, `companies/${companyId}`);
       const newCompany: Company = {
         id: companyId,
@@ -79,15 +79,15 @@ export default function SignUpPage() {
         createdAt: new Date().toISOString(),
         status: 'Pending',
         subscription: {
-            planId: 'free',
-            status: 'trial',
-            jobPostingsRemaining: 3,
-            trialEndDate: trialEndDate.toISOString(),
-            nextBillingDate: trialEndDate.toISOString(),
+          planId: 'free',
+          status: 'trial',
+          jobPostingsRemaining: 3,
+          trialEndDate: trialEndDate.toISOString(),
+          nextBillingDate: trialEndDate.toISOString(),
         },
         termsAgreement: {
-            version: '1.0',
-            acceptedAt: new Date().toISOString(),
+          version: '1.0',
+          acceptedAt: new Date().toISOString(),
         }
       };
       await set(companyRef, newCompany);
@@ -95,35 +95,32 @@ export default function SignUpPage() {
       // 3. Create an initial Admin Employee record for the new user with 'Pending Approval' status
       const employeeRef = ref(db, `employees/${user.uid}`);
       const newEmployee: Omit<Employee, 'id'> = {
-          companyId: companyId,
-          name: contactName,
-          email: email,
-          role: 'Admin',
-          status: 'Pending Approval',
-          avatar: `https://avatar.vercel.sh/${email}.png`,
-          location: '',
-          departmentId: 'admin',
-          departmentName: 'Administration',
-          workerType: 'Salaried',
-          salary: 0,
-          hourlyRate: 0,
-          hoursWorked: 0,
-          allowances: 0,
-          deductions: 0,
-          overtime: 0,
-          bonus: 0,
-          reimbursements: 0,
-          joinDate: new Date().toISOString(),
-          annualLeaveBalance: 21,
+        companyId: companyId,
+        name: contactName,
+        email: email,
+        role: 'Admin',
+        status: 'Pending Approval',
+        avatar: `https://avatar.vercel.sh/${email}.png`,
+        location: '',
+        departmentId: 'admin',
+        departmentName: 'Administration',
+        workerType: 'Salaried',
+        salary: 0,
+        hourlyRate: 0,
+        hoursWorked: 0,
+        allowances: 0,
+        deductions: 0,
+        overtime: 0,
+        bonus: 0,
+        reimbursements: 0,
+        joinDate: new Date().toISOString(),
+        annualLeaveBalance: 21,
       };
       await set(employeeRef, {
         ...newEmployee,
         id: user.uid,
       });
 
-      // 4. Send welcome email
-      await sendWelcomePendingEmail(newCompany);
-      
       // Sign out the user immediately after signup, as they need to be approved
       await auth.signOut();
 
@@ -131,6 +128,10 @@ export default function SignUpPage() {
         title: "Registration Submitted!",
         description: "Your company profile is under review. You will be notified once it's approved.",
       });
+
+      // Send welcome email in background (don't let it block or fail the signup flow)
+      sendWelcomePendingEmail(newCompany).catch(err => console.error('Failed to send welcome email:', err));
+
       router.push('/login');
 
     } catch (error: any) {
@@ -162,20 +163,20 @@ export default function SignUpPage() {
         <CardContent>
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="company-name">Company Name</Label>
-                    <Input id="company-name" placeholder="Acme Inc." required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="company-tpin">Company TPIN</Label>
-                    <Input id="company-tpin" placeholder="123456789" required value={companyTpin} onChange={(e) => setCompanyTpin(e.target.value)} />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-name">Company Name</Label>
+                <Input id="company-name" placeholder="Acme Inc." required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-tpin">Company TPIN</Label>
+                <Input id="company-tpin" placeholder="123456789" required value={companyTpin} onChange={(e) => setCompanyTpin(e.target.value)} />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="company-address">Company Address</Label>
               <Input id="company-address" placeholder="123 Main St, Anytown, USA" required value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
             </div>
-             <div className="space-y-2">
+            <div className="space-y-2">
               <Label htmlFor="email">Your Admin Email</Label>
               <Input id="email" type="email" placeholder="you@acme.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
@@ -191,7 +192,7 @@ export default function SignUpPage() {
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
-             <TermsAgreementForm onAgreementChange={setTermsAgreed} />
+            <TermsAgreementForm onAgreementChange={setTermsAgreed} />
             <Button type="submit" className="w-full" disabled={isLoading || !termsAgreed}>
               {isLoading ? <Loader2 className="animate-spin" /> : 'Create account'}
             </Button>

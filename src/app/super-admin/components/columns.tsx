@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button"
 import type { Company, SubscriptionPlan } from "@/lib/data"
 import { format, differenceInDays } from "date-fns"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { db } from "@/lib/firebase"
@@ -38,23 +38,28 @@ const handleStatusUpdate = async (company: Company, status: Company['status'], t
             if (employeeSnap.exists() && (employeeSnap.val().role === 'GuestAdmin' || employeeSnap.val().status !== 'Active')) {
                 await update(employeeRef, { status: 'Active', role: 'Admin' });
             }
-             await sendCompanyApprovedEmail(company);
-        } else if (status === 'Suspended') {
-            await sendCompanySuspendedEmail(company);
         } else if (status === 'Guest') {
             if (employeeSnap.exists() && employeeSnap.val().role === 'Admin') {
                 await update(employeeRef, { role: 'GuestAdmin' });
             }
         }
-        
+
+        // Show success toast immediately - don't wait for email
         toast({
             title: `Company ${status}`,
             description: `The company registration has been ${status.toLowerCase()}.`
         });
 
+        // Send email in background (don't block or fail the operation)
+        if (status === 'Active') {
+            sendCompanyApprovedEmail(company).catch(err => console.error('Failed to send approval email:', err));
+        } else if (status === 'Suspended') {
+            sendCompanySuspendedEmail(company).catch(err => console.error('Failed to send suspension email:', err));
+        }
+
     } catch (error) {
         console.error("Failed to update status", error);
-         toast({
+        toast({
             variant: "destructive",
             title: "Update Failed",
             description: "Could not update company status.",
@@ -83,161 +88,161 @@ const DeleteCompanyAlert = ({ company, onConfirm, onCancel }: { company: Company
 
 
 export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<EnrichedCompany>[] => [
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Company Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
-  },
-  {
-    accessorKey: "contactName",
-    header: "Admin Contact",
-  },
-  {
-    id: 'subscription',
-    header: 'Subscription',
-    cell: ({row}) => {
-        const company = row.original;
-        const sub = company.subscription;
-        if (!sub) return <Badge variant="secondary">N/A</Badge>;
-
-        const plan = subscriptionPlans.find(p => p.id === sub.planId);
-        const planName = plan ? plan.name : sub.planId;
-
-        if (sub.status === 'trial' && sub.trialEndDate) {
-            const daysRemaining = differenceInDays(new Date(sub.trialEndDate), new Date());
-            if (daysRemaining < 0) {
-                 return <Badge variant="destructive">Trial Expired</Badge>
-            }
-            return <Badge variant="outline">{daysRemaining} days left</Badge>
-        }
-        
-        return <Badge variant="default">{planName}</Badge>;
-    }
-  },
-  {
-    accessorKey: "employeeCount",
-    header: "Employees",
-    cell: ({ row }) => <div className="text-center">{row.original.employeeCount}</div>,
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Registration Date",
-    cell: ({ row }) => format(new Date(row.original.createdAt), 'MMM d, yyyy'),
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-        const status = row.original.status;
-        const variant: "default" | "secondary" | "destructive" | "outline" = 
-            status === 'Active' ? 'default' :
-            status === 'Rejected' ? 'destructive' :
-            status === 'Suspended' ? 'outline' :
-            'secondary';
-        return <Badge variant={variant}>{status}</Badge>
-    }
-  },
-  {
-    id: "actions",
-    cell: ({ row }) => {
-      const company = row.original
-      const { toast } = useToast()
-      const [isDeleting, setIsDeleting] = useState(false);
-
-      const handleDelete = async () => {
-        try {
-            await remove(ref(db, `companies/${company.id}`));
-            // In a real app, you would also trigger a function to delete all associated employees, auth users, etc.
-            toast({
-                title: "Company Deleted",
-                description: `${company.name} has been permanently deleted.`
-            });
-        } catch (error) {
-            console.error("Failed to delete company", error);
-            toast({
-                variant: "destructive",
-                title: "Delete Failed",
-                description: "Could not delete company.",
-            });
-        } finally {
-            setIsDeleting(false);
-        }
-      };
-
-
-      return (
-        <div className="text-right">
-            {isDeleting && <DeleteCompanyAlert company={company} onConfirm={handleDelete} onCancel={() => setIsDeleting(false)} />}
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
+    {
+        accessorKey: "name",
+        header: ({ column }) => {
+            return (
+                <Button
+                    variant="ghost"
+                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                >
+                    Company Name
+                    <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <ViewCompanyProfileDialog company={company}>
-                        <div className="w-full text-left">View Profile</div>
-                    </ViewCompanyProfileDialog>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <ChangeSubscriptionDialog company={company} plans={subscriptionPlans}>
-                        <div className="w-full text-left">Change Subscription</div>
-                    </ChangeSubscriptionDialog>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <SendEmailDialog company={company}>
-                         <div className="w-full text-left flex items-center">
-                            <MessageSquare className="mr-2 h-4 w-4" /> Send Email
-                        </div>
-                    </SendEmailDialog>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {company.status === 'Pending' && (
-                    <>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
-                            Approve
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Rejected', toast)}>
-                            Reject
-                        </DropdownMenuItem>
-                    </>
-                )}
-                 {company.status === 'Active' && (
-                    <>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Suspended', toast)}>
-                            Suspend
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Guest', toast)}>
-                            Downgrade to Guest
-                        </DropdownMenuItem>
-                    </>
-                )}
-                 {(company.status === 'Suspended' || company.status === 'Rejected' || company.status === 'Guest') && (
-                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
-                        Activate
-                    </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600" onClick={() => setIsDeleting(true)}>
-                    Delete
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-      )
+            )
+        },
+        cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
     },
-  },
+    {
+        accessorKey: "contactName",
+        header: "Admin Contact",
+    },
+    {
+        id: 'subscription',
+        header: 'Subscription',
+        cell: ({ row }) => {
+            const company = row.original;
+            const sub = company.subscription;
+            if (!sub) return <Badge variant="secondary">N/A</Badge>;
+
+            const plan = subscriptionPlans.find(p => p.id === sub.planId);
+            const planName = plan ? plan.name : sub.planId;
+
+            if (sub.status === 'trial' && sub.trialEndDate) {
+                const daysRemaining = differenceInDays(new Date(sub.trialEndDate), new Date());
+                if (daysRemaining < 0) {
+                    return <Badge variant="destructive">Trial Expired</Badge>
+                }
+                return <Badge variant="outline">{daysRemaining} days left</Badge>
+            }
+
+            return <Badge variant="default">{planName}</Badge>;
+        }
+    },
+    {
+        accessorKey: "employeeCount",
+        header: "Employees",
+        cell: ({ row }) => <div className="text-center">{row.original.employeeCount}</div>,
+    },
+    {
+        accessorKey: "createdAt",
+        header: "Registration Date",
+        cell: ({ row }) => format(new Date(row.original.createdAt), 'MMM d, yyyy'),
+    },
+    {
+        accessorKey: "status",
+        header: "Status",
+        cell: ({ row }) => {
+            const status = row.original.status;
+            const variant: "default" | "secondary" | "destructive" | "outline" =
+                status === 'Active' ? 'default' :
+                    status === 'Rejected' ? 'destructive' :
+                        status === 'Suspended' ? 'outline' :
+                            'secondary';
+            return <Badge variant={variant}>{status}</Badge>
+        }
+    },
+    {
+        id: "actions",
+        cell: ({ row }) => {
+            const company = row.original
+            const { toast } = useToast()
+            const [isDeleting, setIsDeleting] = useState(false);
+
+            const handleDelete = async () => {
+                try {
+                    await remove(ref(db, `companies/${company.id}`));
+                    // In a real app, you would also trigger a function to delete all associated employees, auth users, etc.
+                    toast({
+                        title: "Company Deleted",
+                        description: `${company.name} has been permanently deleted.`
+                    });
+                } catch (error) {
+                    console.error("Failed to delete company", error);
+                    toast({
+                        variant: "destructive",
+                        title: "Delete Failed",
+                        description: "Could not delete company.",
+                    });
+                } finally {
+                    setIsDeleting(false);
+                }
+            };
+
+
+            return (
+                <div className="text-right">
+                    {isDeleting && <DeleteCompanyAlert company={company} onConfirm={handleDelete} onCancel={() => setIsDeleting(false)} />}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <ViewCompanyProfileDialog company={company}>
+                                    <div className="w-full text-left">View Profile</div>
+                                </ViewCompanyProfileDialog>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <ChangeSubscriptionDialog company={company} plans={subscriptionPlans}>
+                                    <div className="w-full text-left">Change Subscription</div>
+                                </ChangeSubscriptionDialog>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <SendEmailDialog company={company}>
+                                    <div className="w-full text-left flex items-center">
+                                        <MessageSquare className="mr-2 h-4 w-4" /> Send Email
+                                    </div>
+                                </SendEmailDialog>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {company.status === 'Pending' && (
+                                <>
+                                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
+                                        Approve
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Rejected', toast)}>
+                                        Reject
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                            {company.status === 'Active' && (
+                                <>
+                                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Suspended', toast)}>
+                                        Suspend
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Guest', toast)}>
+                                        Downgrade to Guest
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                            {(company.status === 'Suspended' || company.status === 'Rejected' || company.status === 'Guest') && (
+                                <DropdownMenuItem onClick={() => handleStatusUpdate(company, 'Active', toast)}>
+                                    Activate
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600" onClick={() => setIsDeleting(true)}>
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            )
+        },
+    },
 ]
