@@ -58,7 +58,7 @@ export type Company = {
     name: string;
     tpin: string;
     address: string;
-    contactName: string;
+    contactName?: string; // Optional - legacy field
     contactNumber: string;
     adminEmail: string;
     createdAt: string; // ISO 8601

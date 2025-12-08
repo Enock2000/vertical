@@ -30,10 +30,10 @@ export default function SignUpPage() {
   const [companyName, setCompanyName] = useState('');
   const [companyTpin, setCompanyTpin] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
-  const [contactName, setContactName] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
 
@@ -43,6 +43,17 @@ export default function SignUpPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      toast({
+        variant: "destructive",
+        title: "Passwords Don't Match",
+        description: "Please ensure both password fields match.",
+      });
+      setIsLoading(false);
+      return;
+    }
 
     const phoneRegex = /^\+\d{1,15}$/;
     if (!phoneRegex.test(contactNumber)) {
@@ -73,7 +84,6 @@ export default function SignUpPage() {
         name: companyName,
         tpin: companyTpin,
         address: companyAddress,
-        contactName: contactName,
         contactNumber: contactNumber,
         adminEmail: email,
         createdAt: new Date().toISOString(),
@@ -96,7 +106,7 @@ export default function SignUpPage() {
       const employeeRef = ref(db, `employees/${user.uid}`);
       const newEmployee: Omit<Employee, 'id'> = {
         companyId: companyId,
-        name: contactName,
+        name: companyName,  // Use company name as the admin name
         email: email,
         role: 'Admin',
         status: 'Pending Approval',
@@ -181,16 +191,18 @@ export default function SignUpPage() {
               <Input id="email" type="email" placeholder="you@acme.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="contact-name">Your Full Name</Label>
-              <Input id="contact-name" placeholder="John Doe" required value={contactName} onChange={(e) => setContactName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contact-number">Your Contact Number</Label>
+              <Label htmlFor="contact-number">Admin Number</Label>
               <Input id="contact-number" type="tel" placeholder="+260977123456" required value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm Password</Label>
+                <Input id="confirm-password" type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+              </div>
             </div>
             <TermsAgreementForm onAgreementChange={setTermsAgreed} />
             <Button type="submit" className="w-full" disabled={isLoading || !termsAgreed}>
