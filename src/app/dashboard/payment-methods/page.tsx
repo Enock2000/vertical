@@ -28,15 +28,16 @@ export default function PaymentMethodsPage() {
     let banksLoaded = false;
 
     const checkLoading = () => {
-        if (employeesLoaded && banksLoaded) {
-            setLoading(false);
-        }
+      if (employeesLoaded && banksLoaded) {
+        setLoading(false);
+      }
     };
 
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
+        // Exclude Admin role (company owner should not appear in employee list)
+        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.role !== 'Admin');
         setEmployees(employeeList);
       } else {
         setEmployees([]);
@@ -44,12 +45,12 @@ export default function PaymentMethodsPage() {
       employeesLoaded = true;
       checkLoading();
     }, (error) => {
-        console.error("Firebase read failed (employees): " + error.name);
-        employeesLoaded = true;
-        checkLoading();
+      console.error("Firebase read failed (employees): " + error.name);
+      employeesLoaded = true;
+      checkLoading();
     });
 
-     const banksUnsubscribe = onValue(banksRef, (snapshot) => {
+    const banksUnsubscribe = onValue(banksRef, (snapshot) => {
       const data = snapshot.val();
       const list: Bank[] = data ? Object.values(data) : [];
       setBanks(list);
@@ -58,8 +59,8 @@ export default function PaymentMethodsPage() {
     });
 
     return () => {
-        employeesUnsubscribe();
-        banksUnsubscribe();
+      employeesUnsubscribe();
+      banksUnsubscribe();
     };
   }, [companyId]);
 
@@ -81,11 +82,11 @@ export default function PaymentMethodsPage() {
       </CardHeader>
       <CardContent>
         {loading ? (
-            <div className="flex items-center justify-center h-24">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
+          <div className="flex items-center justify-center h-24">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
         ) : (
-            <DataTable columns={tableColumns} data={employees} />
+          <DataTable columns={tableColumns} data={employees} />
         )}
       </CardContent>
     </Card>

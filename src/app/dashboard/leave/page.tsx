@@ -44,31 +44,32 @@ export default function LeavePage() {
     let requestsLoaded = false, employeesLoaded = false, resignationsLoaded = false;
 
     const checkLoading = () => {
-        if(requestsLoaded && employeesLoaded && resignationsLoaded) {
-            setLoading(false);
-        }
+      if (requestsLoaded && employeesLoaded && resignationsLoaded) {
+        setLoading(false);
+      }
     }
 
     const requestsUnsubscribe = onValue(requestsRef, (snapshot) => {
       const data = snapshot.val();
       const requestList = data ? Object.keys(data).map(key => ({
-          ...data[key],
-          id: key,
-      })).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()) : [];
+        ...data[key],
+        id: key,
+      })).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()) : [];
       setLeaveRequests(requestList);
       requestsLoaded = true; checkLoading();
     });
 
-     const resignationsUnsubscribe = onValue(resignationsRef, (snapshot) => {
+    const resignationsUnsubscribe = onValue(resignationsRef, (snapshot) => {
       const data = snapshot.val();
-      const list = data ? Object.values<ResignationRequest>(data).sort((a,b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()) : [];
+      const list = data ? Object.values<ResignationRequest>(data).sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()) : [];
       setResignationRequests(list);
       resignationsLoaded = true; checkLoading();
     });
 
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
-      const employeeList = data ? Object.values<Employee>(data).filter(e => e.companyId === companyId) : [];
+      // Exclude Admin role (company owner should not appear in employee list)
+      const employeeList = data ? Object.values<Employee>(data).filter(e => e.companyId === companyId && e.role !== 'Admin') : [];
       setEmployees(employeeList);
       employeesLoaded = true; checkLoading();
     });
@@ -80,70 +81,70 @@ export default function LeavePage() {
     };
   }, [companyId]);
 
-  const handleLeaveRequestAdded = () => {};
+  const handleLeaveRequestAdded = () => { };
 
   const handleStatusUpdate = async (id: string, status: 'Approved' | 'Rejected') => {
     const request = leaveRequests.find(r => r.id === id);
     if (!request || !companyId) return;
 
     try {
-        const requestRef = ref(db, `companies/${companyId}/leaveRequests/${id}`);
-        await update(requestRef, { status });
-        
-        await createNotification(companyId, {
-            userId: request.employeeId,
-            title: `Leave Request ${status}`,
-            message: `Your leave request for ${request.leaveType} has been ${status.toLowerCase()}.`,
-            link: '/employee-portal/attendance',
-        });
+      const requestRef = ref(db, `companies/${companyId}/leaveRequests/${id}`);
+      await update(requestRef, { status });
 
-        toast({
-            title: `Request ${status}`,
-            description: `The leave request has been successfully ${status.toLowerCase()}.`
-        })
+      await createNotification(companyId, {
+        userId: request.employeeId,
+        title: `Leave Request ${status}`,
+        message: `Your leave request for ${request.leaveType} has been ${status.toLowerCase()}.`,
+        link: '/employee-portal/attendance',
+      });
+
+      toast({
+        title: `Request ${status}`,
+        description: `The leave request has been successfully ${status.toLowerCase()}.`
+      })
     } catch (error) {
-        console.error("Error updating leave status: ", error);
-        toast({
-            variant: "destructive",
-            title: "Update Failed",
-            description: "Could not update leave request status."
-        })
+      console.error("Error updating leave status: ", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update leave request status."
+      })
     }
   }
-  
-   const handleResignationStatusUpdate = async (id: string, status: 'Approved' | 'Withdrawn') => {
+
+  const handleResignationStatusUpdate = async (id: string, status: 'Approved' | 'Withdrawn') => {
     const request = resignationRequests.find(r => r.id === id);
     if (!request || !companyId) return;
 
     try {
-        await update(ref(db, `companies/${companyId}/resignationRequests/${id}`), { status });
-        
-        if (status === 'Approved') {
-            await update(ref(db, `employees/${request.employeeId}`), { 
-                status: 'Inactive',
-                terminationDate: request.resignationDate,
-                terminationReason: `Resignation approved. Reason: ${request.reason}`
-            });
-        }
-        
-        await createNotification(companyId, {
-            userId: request.employeeId,
-            title: `Resignation Request ${status}`,
-            message: `Your resignation request has been ${status.toLowerCase()}.`,
-            link: '/employee-portal',
-        });
+      await update(ref(db, `companies/${companyId}/resignationRequests/${id}`), { status });
 
-        toast({
-            title: `Request ${status}`,
-            description: `The resignation request has been successfully ${status.toLowerCase()}.`
-        })
+      if (status === 'Approved') {
+        await update(ref(db, `employees/${request.employeeId}`), {
+          status: 'Inactive',
+          terminationDate: request.resignationDate,
+          terminationReason: `Resignation approved. Reason: ${request.reason}`
+        });
+      }
+
+      await createNotification(companyId, {
+        userId: request.employeeId,
+        title: `Resignation Request ${status}`,
+        message: `Your resignation request has been ${status.toLowerCase()}.`,
+        link: '/employee-portal',
+      });
+
+      toast({
+        title: `Request ${status}`,
+        description: `The resignation request has been successfully ${status.toLowerCase()}.`
+      })
     } catch (error) {
-        console.error("Error updating resignation status: ", error);
-        toast({
-            variant: "destructive",
-            title: "Update Failed",
-            description: "Could not update resignation request status."
-        })
+      console.error("Error updating resignation status: ", error);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update resignation request status."
+      })
     }
   }
 
@@ -158,7 +159,7 @@ export default function LeavePage() {
               Manage employee leave and resignation requests.
             </CardDescription>
           </div>
-           <RequestLeaveDialog employees={employees} onLeaveRequestAdded={handleLeaveRequestAdded}>
+          <RequestLeaveDialog employees={employees} onLeaveRequestAdded={handleLeaveRequestAdded}>
             <Button size="sm" className="gap-1">
               <PlusCircle className="h-3.5 w-3.5" />
               <span className="sr-only sm:not-sr-only sm:whitespace-rap">
@@ -168,21 +169,21 @@ export default function LeavePage() {
           </RequestLeaveDialog>
         </CardHeader>
         <CardContent>
-           <TabsList className="mb-4">
-              <TabsTrigger value="requests">Leave Requests</TabsTrigger>
-              <TabsTrigger value="resignations">Resignations</TabsTrigger>
+          <TabsList className="mb-4">
+            <TabsTrigger value="requests">Leave Requests</TabsTrigger>
+            <TabsTrigger value="resignations">Resignations</TabsTrigger>
           </TabsList>
           {loading ? (
-               <div className="flex items-center justify-center h-24">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
+            <div className="flex items-center justify-center h-24">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
           ) : (
             <>
               <TabsContent value="requests">
-                  <DataTable columns={columns(handleStatusUpdate)} data={leaveRequests} />
+                <DataTable columns={columns(handleStatusUpdate)} data={leaveRequests} />
               </TabsContent>
-               <TabsContent value="resignations">
-                  <ResignationDataTable columns={resignationColumns(handleResignationStatusUpdate)} data={resignationRequests} />
+              <TabsContent value="resignations">
+                <ResignationDataTable columns={resignationColumns(handleResignationStatusUpdate)} data={resignationRequests} />
               </TabsContent>
             </>
           )}
