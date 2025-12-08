@@ -12,15 +12,15 @@ import { PayslipDialog } from './components/payslip-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { runPayroll } from '@/ai/flows/run-payroll-flow';
@@ -58,7 +58,8 @@ export default function PayrollPage() {
         const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.status === 'Active');
+                // Filter by company, active status, and exclude Admin role (company owner should not appear in payroll)
+                const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.status === 'Active' && e.role !== 'Admin');
                 setEmployees(employeeList);
             } else {
                 setEmployees([]);
@@ -79,7 +80,7 @@ export default function PayrollPage() {
                 const runsList = Object.keys(data).map(key => ({
                     ...data[key],
                     id: key,
-                })).sort((a,b) => new Date(b.runDate).getTime() - new Date(a.runDate).getTime());
+                })).sort((a, b) => new Date(b.runDate).getTime() - new Date(a.runDate).getTime());
                 setPayrollRuns(runsList);
             } else {
                 setPayrollRuns([]);
@@ -99,7 +100,7 @@ export default function PayrollPage() {
         if (!payrollConfig || employees.length === 0) {
             return new Map<string, PayrollDetails>();
         }
-        
+
         const map = new Map<string, PayrollDetails>();
         employees.forEach(employee => {
             const details = calculatePayroll(employee, payrollConfig);
@@ -116,13 +117,13 @@ export default function PayrollPage() {
     const totalPayrollAmount = useMemo(() => {
         return Array.from(payrollDetailsMap.values()).reduce((sum, details) => sum + details.netPay, 0);
     }, [payrollDetailsMap]);
-    
+
     const handleRunPayroll = async () => {
         if (!companyId || !adminEmployee) return;
         setIsProcessing(true);
         try {
             const result = await runPayroll(companyId, adminEmployee.name);
-            if(result.success && result.achFileContent) {
+            if (result.success && result.achFileContent) {
                 toast({
                     title: "Payroll Processed",
                     description: "The ACH file has been generated for download."
@@ -136,14 +137,14 @@ export default function PayrollPage() {
                 link.click();
                 document.body.removeChild(link);
             } else {
-                 toast({
+                toast({
                     variant: "destructive",
                     title: "Payroll Failed",
                     description: result.message,
                 });
             }
         } catch (error: any) {
-             toast({
+            toast({
                 variant: "destructive",
                 title: "An Error Occurred",
                 description: error.message || "Could not process payroll.",
@@ -159,18 +160,18 @@ export default function PayrollPage() {
         ...tableColumnsDef.slice(0, tableColumnsDef.length - 1),
         {
             ...tableColumnsDef[tableColumnsDef.length - 1],
-            cell: ({ row }: { row: { original: Employee }}) => {
+            cell: ({ row }: { row: { original: Employee } }) => {
                 const payrollDetails = getPayrollDetails(row.original);
-                 return (
-                     <div className="text-right">
+                return (
+                    <div className="text-right">
                         <PayslipDialog employee={row.original} payrollDetails={payrollDetails} companyName={company?.name || ''} payslipDate={new Date()}>
                             <Button variant="ghost" size="sm">
                                 <Receipt className="mr-2 h-4 w-4" />
                                 Payslip
                             </Button>
                         </PayslipDialog>
-                     </div>
-                 )
+                    </div>
+                )
             }
         }
     ]
@@ -188,7 +189,7 @@ export default function PayrollPage() {
                         <CardTitle>Run Payroll</CardTitle>
                         <CardDescription>Review and process payroll for the current period.</CardDescription>
                     </div>
-                     <AlertDialog>
+                    <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button size="sm" className="gap-1" disabled={employees.length === 0 || isProcessing}>
                                 <PlayCircle className="h-3.5 w-3.5" />
@@ -199,19 +200,19 @@ export default function PayrollPage() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                            <AlertDialogTitle>Confirm Payroll Run</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                You are about to process payroll for <strong>{employees.length}</strong> active employees, totaling approximately <strong>{currencyFormatter.format(totalPayrollAmount)}</strong>.
-                                This will generate an ACH file for bank transfers. This action cannot be undone.
-                            </AlertDialogDescription>
+                                <AlertDialogTitle>Confirm Payroll Run</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    You are about to process payroll for <strong>{employees.length}</strong> active employees, totaling approximately <strong>{currencyFormatter.format(totalPayrollAmount)}</strong>.
+                                    This will generate an ACH file for bank transfers. This action cannot be undone.
+                                </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleRunPayroll} disabled={isProcessing}>
-                                {isProcessing ? (
-                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Processing...</>
-                                ) : "Yes, Run Payroll"}
-                            </AlertDialogAction>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleRunPayroll} disabled={isProcessing}>
+                                    {isProcessing ? (
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                                    ) : "Yes, Run Payroll"}
+                                </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -227,14 +228,14 @@ export default function PayrollPage() {
                 </CardContent>
             </Card>
 
-             <Card>
+            <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><History className="h-5 w-5"/> Payroll History</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><History className="h-5 w-5" /> Payroll History</CardTitle>
                     <CardDescription>Review past payroll runs and download ACH files.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {loading ? (
-                         <div className="flex items-center justify-center h-24">
+                        <div className="flex items-center justify-center h-24">
                             <Loader2 className="h-8 w-8 animate-spin" />
                         </div>
                     ) : payrollRuns.length > 0 ? (
@@ -247,7 +248,7 @@ export default function PayrollPage() {
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
-                             <TableBody>
+                            <TableBody>
                                 {payrollRuns.map(run => (
                                     <TableRow key={run.id}>
                                         <TableCell>{format(new Date(run.runDate), 'MMMM d, yyyy - hh:mm a')}</TableCell>
@@ -266,7 +267,7 @@ export default function PayrollPage() {
                         </div>
                     )}
                 </CardContent>
-             </Card>
+            </Card>
         </div>
     );
 }

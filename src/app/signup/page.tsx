@@ -168,8 +168,8 @@ export default function SignUpPage() {
                 <Input id="company-name" placeholder="Acme Inc." required value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company-tpin">Company TPIN</Label>
-                <Input id="company-tpin" placeholder="123456789" required value={companyTpin} onChange={(e) => setCompanyTpin(e.target.value)} />
+                <Label htmlFor="company-tpin">Company TPIN <span className="text-muted-foreground text-xs">(Optional)</span></Label>
+                <Input id="company-tpin" placeholder="123456789" value={companyTpin} onChange={(e) => setCompanyTpin(e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
