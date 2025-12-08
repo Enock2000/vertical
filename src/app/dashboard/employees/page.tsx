@@ -37,52 +37,53 @@ export default function EmployeesPage() {
     const branchesRef = ref(db, `companies/${companyId}/branches`);
     const banksRef = ref(db, `companies/${companyId}/banks`);
     const rolesRef = ref(db, `companies/${companyId}/roles`);
-    
+
     let loadedCount = 0;
     const totalToLoad = 5;
 
     const checkLoading = () => {
-        loadedCount++;
-        if (loadedCount === totalToLoad) {
-            setLoading(false);
-        }
+      loadedCount++;
+      if (loadedCount === totalToLoad) {
+        setLoading(false);
+      }
     };
 
     const employeesUnsubscribe = onValue(employeesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId);
+        // Filter by company and exclude Admin role (company owner/admin should not appear in employee list)
+        const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.role !== 'Admin');
         setEmployees(employeeList);
       } else {
         setEmployees([]);
       }
       checkLoading();
     }, (error) => {
-        console.error("Firebase read failed (employees): " + error.name);
-        checkLoading();
-    });
-    
-    const departmentsUnsubscribe = onValue(departmentsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            const deptList = Object.keys(data).map(key => ({
-                ...data[key],
-                id: key,
-            }));
-            setDepartments(deptList);
-        } else {
-            setDepartments([]);
-        }
-        checkLoading();
-    }, (error) => {
-        console.error("Firebase read failed (departments): " + error.name);
-        checkLoading();
+      console.error("Firebase read failed (employees): " + error.name);
+      checkLoading();
     });
 
-     const branchesUnsubscribe = onValue(branchesRef, (snapshot) => {
-        const data = snapshot.val();
-        setBranches(data ? Object.values(data) : []);
-        checkLoading();
+    const departmentsUnsubscribe = onValue(departmentsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const deptList = Object.keys(data).map(key => ({
+          ...data[key],
+          id: key,
+        }));
+        setDepartments(deptList);
+      } else {
+        setDepartments([]);
+      }
+      checkLoading();
+    }, (error) => {
+      console.error("Firebase read failed (departments): " + error.name);
+      checkLoading();
+    });
+
+    const branchesUnsubscribe = onValue(branchesRef, (snapshot) => {
+      const data = snapshot.val();
+      setBranches(data ? Object.values(data) : []);
+      checkLoading();
     });
 
     const banksUnsubscribe = onValue(banksRef, (snapshot) => {
@@ -93,21 +94,21 @@ export default function EmployeesPage() {
     });
 
     const rolesUnsubscribe = onValue(rolesRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            setRoles(Object.values(data));
-        } else {
-            setRoles([]);
-        }
-        checkLoading();
+      const data = snapshot.val();
+      if (data) {
+        setRoles(Object.values(data));
+      } else {
+        setRoles([]);
+      }
+      checkLoading();
     });
 
     return () => {
-        employeesUnsubscribe();
-        departmentsUnsubscribe();
-        branchesUnsubscribe();
-        banksUnsubscribe();
-        rolesUnsubscribe();
+      employeesUnsubscribe();
+      departmentsUnsubscribe();
+      branchesUnsubscribe();
+      banksUnsubscribe();
+      rolesUnsubscribe();
     };
   }, [companyId]);
 
@@ -128,24 +129,24 @@ export default function EmployeesPage() {
           </CardDescription>
         </div>
         <div className="flex gap-2">
-            <ImportEmployeesDialog companyId={companyId!} companyName={company?.name || ''} onImportComplete={handleAction} />
-            <AddEmployeeDialog departments={departments} branches={branches} banks={banks} onEmployeeAdded={handleAction}>
+          <ImportEmployeesDialog companyId={companyId!} companyName={company?.name || ''} onImportComplete={handleAction} />
+          <AddEmployeeDialog departments={departments} branches={branches} banks={banks} onEmployeeAdded={handleAction}>
             <Button size="sm" className="gap-1">
-                <PlusCircle className="h-3.5 w-3.5" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+              <PlusCircle className="h-3.5 w-3.5" />
+              <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                 Add Employee
-                </span>
+              </span>
             </Button>
-            </AddEmployeeDialog>
+          </AddEmployeeDialog>
         </div>
       </CardHeader>
       <CardContent>
         {loading ? (
-            <div className="flex items-center justify-center h-24">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
+          <div className="flex items-center justify-center h-24">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
         ) : (
-            <DataTable columns={tableColumns} data={employees} />
+          <DataTable columns={tableColumns} data={employees} />
         )}
       </CardContent>
     </Card>
