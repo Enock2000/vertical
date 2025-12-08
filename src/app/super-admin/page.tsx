@@ -36,7 +36,7 @@ export default function SuperAdminPage() {
         let companiesLoaded = false;
         let employeesLoaded = false;
         let plansLoaded = false;
-        
+
         const checkLoading = () => {
             if (companiesLoaded && employeesLoaded && plansLoaded) {
                 setLoadingData(false);
@@ -67,7 +67,9 @@ export default function SuperAdminPage() {
     }, []);
 
     const nonAdminEmployees = useMemo(() => {
-        return allEmployees.filter(emp => emp.role !== 'Super Admin');
+        // Exclude Super Admin (platform admins) and Admin (company owners) from employee count
+        // Only count regular employees, not company administrators
+        return allEmployees.filter(emp => emp.role !== 'Super Admin' && emp.role !== 'Admin');
     }, [allEmployees]);
 
 
@@ -85,7 +87,7 @@ export default function SuperAdminPage() {
             </div>
         );
     }
-    
+
     if (!employee || employee.role !== 'Super Admin') return null;
 
     return (
@@ -93,7 +95,7 @@ export default function SuperAdminPage() {
             <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
                 <div className="flex items-center gap-4">
                     <Link href="/">
-                      <Logo />
+                        <Logo />
                     </Link>
                     <h1 className="text-lg font-semibold">Super Admin Portal</h1>
                 </div>
@@ -126,7 +128,7 @@ export default function SuperAdminPage() {
                         </CardContent>
                     </Card>
                 </div>
-                 <Card>
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Company Management</CardTitle>
@@ -135,7 +137,7 @@ export default function SuperAdminPage() {
                             </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
-                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/settings')}>
+                            <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/settings')}>
                                 <Settings className="h-3.5 w-3.5" />
                                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                                     Platform Settings
@@ -162,19 +164,19 @@ export default function SuperAdminPage() {
                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/jobs')}>
                                 <Briefcase className="h-3.5 w-3.5" />
                                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-                                All Jobs
+                                    All Jobs
                                 </span>
                             </Button>
                             <Button size="sm" className="gap-1" onClick={() => router.push('/super-admin-signup')}>
                                 <PlusCircle className="h-3.5 w-3.5" />
                                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-                                Add Super Admin
+                                    Add Super Admin
                                 </span>
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent>
-                         <DataTable columns={columns(subscriptionPlans)} data={enrichedCompanies} />
+                        <DataTable columns={columns(subscriptionPlans)} data={enrichedCompanies} />
                     </CardContent>
                 </Card>
             </main>
