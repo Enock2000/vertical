@@ -69,6 +69,10 @@ export type Company = {
     enabledModules?: Permission[];
     employeePortalDisabled?: boolean;
     apiKey?: string;
+    // New fields
+    industry?: string;
+    companySize?: '1-10' | '11-100' | '100+';
+    country?: string;
 };
 
 export type Branch = {

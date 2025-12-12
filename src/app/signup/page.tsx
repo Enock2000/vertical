@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
@@ -18,6 +17,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 import Logo from "@/components/logo";
 import { useToast } from '@/hooks/use-toast';
@@ -25,11 +31,15 @@ import { Loader2 } from 'lucide-react';
 import { add } from 'date-fns';
 import { TermsAgreementForm } from './components/terms-agreement';
 import { sendWelcomePendingEmail } from '@/lib/email';
+import { countries, industries, companySizes, validatePhoneForCountry, getCountryByCode } from '@/lib/countries';
 
 export default function SignUpPage() {
   const [companyName, setCompanyName] = useState('');
   const [companyTpin, setCompanyTpin] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
+  const [industry, setIndustry] = useState('');
+  const [companySize, setCompanySize] = useState<'1-10' | '11-100' | '100+' | ''>('');
+  const [country, setCountry] = useState('ZM'); // Default to Zambia
   const [contactNumber, setContactNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,6 +49,10 @@ export default function SignUpPage() {
 
   const router = useRouter();
   const { toast } = useToast();
+
+  // Get selected country details
+  const selectedCountry = useMemo(() => getCountryByCode(country), [country]);
+  const phonePlaceholder = selectedCountry?.phonePlaceholder || '+260977123456';
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,12 +69,13 @@ export default function SignUpPage() {
       return;
     }
 
-    const phoneRegex = /^\+\d{1,15}$/;
-    if (!phoneRegex.test(contactNumber)) {
+    // Validate phone number for selected country
+    const phoneValidation = validatePhoneForCountry(contactNumber, country);
+    if (!phoneValidation.valid) {
       toast({
         variant: "destructive",
         title: "Invalid Phone Number",
-        description: "Please enter a valid phone number in international format (e.g., +260977123456).",
+        description: phoneValidation.message,
       });
       setIsLoading(false);
       return;
@@ -121,6 +136,9 @@ export default function SignUpPage() {
         adminEmail: email,
         createdAt: new Date().toISOString(),
         status: 'Pending',
+        industry: industry || undefined,
+        companySize: companySize || undefined,
+        country: country,
         subscription: {
           planId: 'free',
           status: 'trial',
@@ -219,13 +237,60 @@ export default function SignUpPage() {
               <Label htmlFor="company-address">Company Address</Label>
               <Input id="company-address" placeholder="123 Main St, Anytown, USA" required value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="industry">Industry</Label>
+                <Select value={industry} onValueChange={setIndustry}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {industries.map((ind) => (
+                      <SelectItem key={ind} value={ind}>{ind}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="company-size">Company Size</Label>
+                <Select value={companySize} onValueChange={(val) => setCompanySize(val as '1-10' | '11-100' | '100+')}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companySizes.map((size) => (
+                      <SelectItem key={size.value} value={size.value}>{size.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country">Country</Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {countries.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <span className="flex items-center gap-2">
+                        <span>{c.flag}</span>
+                        <span>{c.name}</span>
+                        <span className="text-muted-foreground text-xs">{c.dialCode}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Your Admin Email</Label>
               <Input id="email" type="email" placeholder="you@acme.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact-number">Admin Number</Label>
-              <Input id="contact-number" type="tel" placeholder="+260977123456" required value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
+              <Input id="contact-number" type="tel" placeholder={phonePlaceholder} required value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
