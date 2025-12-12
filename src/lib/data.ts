@@ -53,6 +53,42 @@ export type TermsAgreement = {
     acceptedAt: string; // ISO 8601
 };
 
+// Verification types
+export type VerificationDocumentType =
+    | 'registration_certificate'
+    | 'tax_clearance'
+    | 'director_id'
+    | 'proof_of_address'
+    | 'bank_statement';
+
+export type VerificationDocument = {
+    id: string;
+    type: VerificationDocumentType;
+    name: string;
+    url: string;
+    uploadedAt: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    rejectionReason?: string;
+    reviewedBy?: string;
+    reviewedAt?: string;
+};
+
+export type CompanyVerification = {
+    status: 'Not Started' | 'In Progress' | 'Pending Review' | 'Verified';
+    progress: number; // 0-100
+    documents: Record<string, VerificationDocument>;
+    submittedAt?: string;
+    verifiedAt?: string;
+};
+
+export const verificationDocuments: { type: VerificationDocumentType; label: string; description: string; weight: number }[] = [
+    { type: 'registration_certificate', label: 'Registration Certificate', description: 'Business registration proof (PACRA Certificate)', weight: 20 },
+    { type: 'tax_clearance', label: 'Tax Clearance Certificate', description: 'Tax compliance certificate from ZRA', weight: 20 },
+    { type: 'director_id', label: "Director's National ID", description: 'National Registration Card (NRC) of company director', weight: 20 },
+    { type: 'proof_of_address', label: 'Proof of Business Address', description: 'Utility bill or lease agreement', weight: 20 },
+    { type: 'bank_statement', label: 'Bank Statement', description: 'Recent bank statement (within 3 months)', weight: 20 },
+];
+
 export type Company = {
     id: string;
     name: string;
@@ -73,6 +109,8 @@ export type Company = {
     industry?: string;
     companySize?: '1-10' | '11-100' | '100+';
     country?: string;
+    // Verification
+    verification?: CompanyVerification;
 };
 
 export type Branch = {

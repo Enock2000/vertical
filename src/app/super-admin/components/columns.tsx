@@ -3,7 +3,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, MessageSquare } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, MessageSquare, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Company, SubscriptionPlan } from "@/lib/data"
 import { format, differenceInDays } from "date-fns"
@@ -25,6 +25,7 @@ import { ViewCompanyProfileDialog } from "./view-company-profile-dialog"
 import { ChangeSubscriptionDialog } from "./change-subscription-dialog"
 import { sendCompanyApprovedEmail, sendCompanySuspendedEmail } from "@/lib/email"
 import { SendEmailDialog } from "./send-email-dialog"
+import { VerificationDialog } from "./verification-dialog"
 
 export type EnrichedCompany = Company & { employeeCount: number };
 
@@ -153,11 +154,43 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
         }
     },
     {
+        id: 'verification',
+        header: 'Verification',
+        cell: ({ row }) => {
+            const company = row.original;
+            const verification = company.verification;
+
+            if (!verification) {
+                return <Badge variant="outline">Not Started</Badge>;
+            }
+
+            const progress = verification.progress || 0;
+            const status = verification.status;
+
+            if (status === 'Verified') {
+                return <Badge className="bg-green-500">✓ Verified</Badge>;
+            }
+
+            return (
+                <div className="flex items-center gap-2">
+                    <div className="w-12 h-2 bg-secondary rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                    <span className="text-xs text-muted-foreground">{progress}%</span>
+                </div>
+            );
+        }
+    },
+    {
         id: "actions",
         cell: ({ row }) => {
             const company = row.original
             const { toast } = useToast()
             const [isDeleting, setIsDeleting] = useState(false);
+            const [showVerification, setShowVerification] = useState(false);
 
             const handleDelete = async () => {
                 try {
@@ -183,6 +216,7 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
             return (
                 <div className="text-right">
                     {isDeleting && <DeleteCompanyAlert company={company} onConfirm={handleDelete} onCancel={() => setIsDeleting(false)} />}
+                    <VerificationDialog company={company} open={showVerification} onClose={() => setShowVerification(false)} />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
@@ -208,6 +242,10 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
                                         <MessageSquare className="mr-2 h-4 w-4" /> Send Email
                                     </div>
                                 </SendEmailDialog>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setShowVerification(true)}>
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Review Verification
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {company.status === 'Pending' && (

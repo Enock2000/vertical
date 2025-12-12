@@ -6,24 +6,24 @@
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Users,
-    Home,
-    FileText,
-    ShieldCheck,
-    PanelLeft,
-    Search,
-    CalendarPlus,
-    BarChart3,
-    Settings,
-    Network,
-    Briefcase,
-    Trophy,
-    Loader2,
-    Clock,
-    Landmark,
-    AlertTriangle,
-    Megaphone,
-    DollarSign,
+  Users,
+  Home,
+  FileText,
+  ShieldCheck,
+  PanelLeft,
+  Search,
+  CalendarPlus,
+  BarChart3,
+  Settings,
+  Network,
+  Briefcase,
+  Trophy,
+  Loader2,
+  Clock,
+  Landmark,
+  AlertTriangle,
+  Megaphone,
+  DollarSign,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
@@ -65,24 +65,25 @@ const navItems = [
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting", permission: "reporting" as Permission },
   { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
+  { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },
   { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
 ];
 
 const AccessDenied = ({ title, description, isTrialExpired = false }: { title: string, description: string, isTrialExpired?: boolean }) => (
-    <div className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md text-center">
-            <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2">
-                   {title === 'Pending Approval' || isTrialExpired ? <Clock className="text-yellow-500" /> : <AlertTriangle className="text-destructive" />}
-                    {title}
-                </CardTitle>
-                <CardDescription>{description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <Button onClick={() => auth.signOut()}>Logout</Button>
-            </CardContent>
-        </Card>
-    </div>
+  <div className="flex min-h-screen items-center justify-center p-4">
+    <Card className="w-full max-w-md text-center">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-center gap-2">
+          {title === 'Pending Approval' || isTrialExpired ? <Clock className="text-yellow-500" /> : <AlertTriangle className="text-destructive" />}
+          {title}
+        </CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={() => auth.signOut()}>Logout</Button>
+      </CardContent>
+    </Card>
+  </div>
 )
 
 export default function DashboardLayout({
@@ -103,21 +104,21 @@ export default function DashboardLayout({
         // This is the critical security check.
         // If the user is logged in but not an admin, redirect them.
         if (employee.role === 'GuestAdmin') {
-            router.push('/guest-employer');
+          router.push('/guest-employer');
         } else {
           router.push('/employee-portal');
         }
       }
     }
   }, [user, employee, loading, router]);
-  
+
   useEffect(() => {
     if (employee?.adminRoleId && companyId) {
-        const roleRef = ref(db, `companies/${companyId}/roles/${employee.adminRoleId}`);
-        const unsubscribe = onValue(roleRef, (snapshot) => {
-            setAdminRole(snapshot.val());
-        });
-        return () => unsubscribe();
+      const roleRef = ref(db, `companies/${companyId}/roles/${employee.adminRoleId}`);
+      const unsubscribe = onValue(roleRef, (snapshot) => {
+        setAdminRole(snapshot.val());
+      });
+      return () => unsubscribe();
     }
   }, [employee, companyId]);
 
@@ -126,17 +127,17 @@ export default function DashboardLayout({
 
     // If company has specific modules enabled, use them
     if (company.enabledModules && company.enabledModules.length > 0) {
-        return navItems.filter(item => company.enabledModules?.includes(item.permission));
+      return navItems.filter(item => company.enabledModules?.includes(item.permission));
     }
-    
+
     // Fallback for older data structure or if enabledModules is not set: use admin role permissions
     if (employee?.role === 'Admin' && !employee.adminRoleId) {
-        return navItems;
+      return navItems;
     }
     if (adminRole) {
-        return navItems.filter(item => adminRole.permissions.includes(item.permission));
+      return navItems.filter(item => adminRole.permissions.includes(item.permission));
     }
-    
+
     // Default to a minimal set if no rules match
     return navItems.filter(item => item.permission === 'dashboard');
   }, [employee, adminRole, company]);
@@ -149,28 +150,28 @@ export default function DashboardLayout({
       </div>
     );
   }
-  
+
   if (company.subscription?.status === 'trial_expired') {
-      return <AccessDenied 
-        title="Free Trial Expired" 
-        description="Your free trial has ended. Please contact the platform administrator to upgrade your plan and continue using the service."
-        isTrialExpired={true}
-      />
+    return <AccessDenied
+      title="Free Trial Expired"
+      description="Your free trial has ended. Please contact the platform administrator to upgrade your plan and continue using the service."
+      isTrialExpired={true}
+    />
   }
 
   if (company.status === 'Pending') {
-      return <AccessDenied title="Pending Approval" description="Your company registration is currently under review. You will be notified once it has been approved." />
+    return <AccessDenied title="Pending Approval" description="Your company registration is currently under review. You will be notified once it has been approved." />
   }
-  
+
   if (company.status === 'Rejected') {
-      return <AccessDenied title="Registration Rejected" description="Your company registration has been rejected. Please contact support for more information." />
+    return <AccessDenied title="Registration Rejected" description="Your company registration has been rejected. Please contact support for more information." />
   }
 
   if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
     return (
-        <div className="flex min-h-screen items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     )
   }
 
@@ -186,31 +187,31 @@ export default function DashboardLayout({
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
         <div className="flex h-14 items-center border-b px-6">
-           <Link
+          <Link
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
           >
-            <Logo companyName={company.name} logoUrl={company.logoUrl}/>
+            <Logo companyName={company.name} logoUrl={company.logoUrl} />
           </Link>
         </div>
         <ScrollArea className="flex-grow">
-            <nav className="flex flex-col gap-1 p-4">
-                {visibleNavItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                      (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
-                          ? "bg-muted text-primary"
-                          : ""
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                ))}
-            </nav>
+          <nav className="flex flex-col gap-1 p-4">
+            {visibleNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                  (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
+                    ? "bg-muted text-primary"
+                    : ""
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </ScrollArea>
       </aside>
       <div className="flex flex-col sm:pl-60">
@@ -223,49 +224,49 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs flex flex-col p-0">
-               <div className="p-6">
-                 <Link
+              <div className="p-6">
+                <Link
                   href="/dashboard"
                   className="group flex h-10 shrink-0 items-center justify-start gap-2 rounded-full text-lg font-semibold"
                 >
-                  <Logo companyName={company.name} logoUrl={company.logoUrl}/>
+                  <Logo companyName={company.name} logoUrl={company.logoUrl} />
                 </Link>
-               </div>
-               <ScrollArea className="flex-grow">
-                  <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
-                    {visibleNavItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={cn(
-                          "flex items-center gap-4 px-2.5",
-                          pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        <item.icon className="h-5 w-5" />
-                        {item.label}
-                      </Link>
-                    ))}
-                  </nav>
-               </ScrollArea>
+              </div>
+              <ScrollArea className="flex-grow">
+                <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
+                  {visibleNavItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex items-center gap-4 px-2.5",
+                        pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              </ScrollArea>
             </SheetContent>
           </Sheet>
-           <Breadcrumb className="hidden md:flex">
+          <Breadcrumb className="hidden md:flex">
             <BreadcrumbList>
-                {breadcrumbItems.map(item => (
-                    <React.Fragment key={item.href}>
-                        <BreadcrumbItem>
-                            {item.isLast ? (
-                                <BreadcrumbPage>{item.text}</BreadcrumbPage>
-                            ) : (
-                                <BreadcrumbLink asChild>
-                                    <Link href={item.href}>{item.text}</Link>
-                                </BreadcrumbLink>
-                            )}
-                        </BreadcrumbItem>
-                        {!item.isLast && <BreadcrumbSeparator />}
-                    </React.Fragment>
-                ))}
+              {breadcrumbItems.map(item => (
+                <React.Fragment key={item.href}>
+                  <BreadcrumbItem>
+                    {item.isLast ? (
+                      <BreadcrumbPage>{item.text}</BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink asChild>
+                        <Link href={item.href}>{item.text}</Link>
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                  {!item.isLast && <BreadcrumbSeparator />}
+                </React.Fragment>
+              ))}
             </BreadcrumbList>
           </Breadcrumb>
           <div className="relative ml-auto flex-1 md:grow-0">
