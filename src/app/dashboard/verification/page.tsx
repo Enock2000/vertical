@@ -8,9 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { ref as dbRef, onValue, update } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '@/app/auth-provider';
 import type { Company, VerificationDocument, VerificationDocumentType, CompanyVerification } from '@/lib/data';
 import { verificationDocuments } from '@/lib/data';
@@ -77,17 +76,29 @@ export default function VerificationPage() {
         setUploading(docType);
 
         try {
-            // Upload to Firebase Storage
-            const fileRef = storageRef(storage, `companies/${companyId}/verification/${docType}/${file.name}`);
-            await uploadBytes(fileRef, file);
-            const downloadUrl = await getDownloadURL(fileRef);
+            // Upload to Backblaze B2 via API route
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('companyId', companyId);
+            formData.append('docType', docType);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Upload failed');
+            }
 
             // Update database
             const docData: VerificationDocument = {
                 id: docType,
                 type: docType,
                 name: file.name,
-                url: downloadUrl,
+                url: result.url,
                 uploadedAt: new Date().toISOString(),
                 status: 'Pending',
             };
@@ -124,7 +135,7 @@ export default function VerificationPage() {
             toast({
                 variant: 'destructive',
                 title: 'Upload Failed',
-                description: 'Could not upload document. Please try again.',
+                description: error instanceof Error ? error.message : 'Could not upload document. Please try again.',
             });
         } finally {
             setUploading(null);
