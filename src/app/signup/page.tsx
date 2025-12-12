@@ -67,6 +67,39 @@ export default function SignUpPage() {
     }
 
     try {
+      // Check for duplicate company name
+      const companiesRef = ref(db, 'companies');
+      const companiesSnap = await get(companiesRef);
+      if (companiesSnap.exists()) {
+        const companies = companiesSnap.val();
+        const existingCompany = Object.values<Company>(companies).find(
+          (c) => c.name.toLowerCase() === companyName.toLowerCase()
+        );
+        if (existingCompany) {
+          toast({
+            variant: "destructive",
+            title: "Company Already Exists",
+            description: `A company with the name "${companyName}" is already registered. Please use a different company name.`,
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // Check for duplicate admin email
+        const existingEmail = Object.values<Company>(companies).find(
+          (c) => c.adminEmail.toLowerCase() === email.toLowerCase()
+        );
+        if (existingEmail) {
+          toast({
+            variant: "destructive",
+            title: "Email Already Registered",
+            description: "This email address is already associated with an existing company account.",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Fetch platform settings for trial days
       const platformSettingsSnap = await get(ref(db, 'platformSettings/freeTrialDays'));
       const freeTrialDays = platformSettingsSnap.val() || 14; // Default to 14 days
