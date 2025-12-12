@@ -119,12 +119,19 @@ export default function VerificationPage() {
             const newStatus: CompanyVerification['status'] =
                 uploadedCount === verificationDocuments.length ? 'Pending Review' : 'In Progress';
 
-            await update(dbRef(db, `companies/${companyId}/verification`), {
+            // Build update object, only include submittedAt if all documents uploaded
+            const updateData: Record<string, unknown> = {
                 status: newStatus,
                 progress: calculateProgress({ ...currentVerification, documents: updatedDocuments }),
                 documents: updatedDocuments,
-                submittedAt: uploadedCount === verificationDocuments.length ? new Date().toISOString() : currentVerification.submittedAt,
-            });
+            };
+
+            // Only set submittedAt when all documents are uploaded
+            if (uploadedCount === verificationDocuments.length) {
+                updateData.submittedAt = new Date().toISOString();
+            }
+
+            await update(dbRef(db, `companies/${companyId}/verification`), updateData);
 
             toast({
                 title: 'Document Uploaded',
