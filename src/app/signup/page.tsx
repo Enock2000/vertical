@@ -235,7 +235,7 @@ export default function SignUpPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="company-address">Company Address</Label>
-              <Input id="company-address" placeholder="123 Main St, Anytown, USA" required value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
+              <Input id="company-address" placeholder="Plot 123, Cairo Road, Lusaka, Zambia" required value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
