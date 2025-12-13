@@ -182,9 +182,6 @@ export default function SignUpPage() {
         id: user.uid,
       });
 
-      // Sign out the user immediately after signup, as they need to be approved
-      await auth.signOut();
-
       toast({
         title: "Registration Submitted!",
         description: "Your company profile is under review. You will be notified once it's approved.",
@@ -193,7 +190,8 @@ export default function SignUpPage() {
       // Send welcome email in background (don't let it block or fail the signup flow)
       sendWelcomePendingEmail(newCompany).catch(err => console.error('Failed to send welcome email:', err));
 
-      router.push('/login');
+      // Redirect to pending approval page (keep user logged in to show their status)
+      router.push('/pending-approval');
 
     } catch (error: any) {
       console.error("Sign up error:", error);

@@ -46,30 +46,30 @@ export default function LoginPage() {
         setIsLoading(false);
         return;
       }
-      
+
       const employee: Employee = employeeSnap.val();
-      
+
       if (employee.role !== 'Admin' && employee.role !== 'Super Admin') {
-          await auth.signOut();
-          toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: "You do not have permission to access the admin portal. Please use the Employee or Guest portal.",
-          });
-          setIsLoading(false);
-          return;
+        await auth.signOut();
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: "You do not have permission to access the admin portal. Please use the Employee or Guest portal.",
+        });
+        setIsLoading(false);
+        return;
       }
-      
+
       // Check for 2FA
       if (employee.isTwoFactorEnabled) {
-          router.push('/verify-2fa');
-          return; // Stop execution here, let the 2FA page handle the rest
+        router.push('/verify-2fa');
+        return; // Stop execution here, let the 2FA page handle the rest
       }
 
 
       if (employee.role === 'Super Admin') {
-          router.push('/super-admin');
-          return;
+        router.push('/super-admin');
+        return;
       }
 
       // Check company status for Admin users
@@ -77,26 +77,26 @@ export default function LoginPage() {
       const companySnap = await get(companyRef);
 
       if (!companySnap.exists()) {
-          await auth.signOut();
-          toast({ variant: "destructive", title: "Login Failed", description: "Associated company not found." });
-          setIsLoading(false);
-          return;
+        await auth.signOut();
+        toast({ variant: "destructive", title: "Login Failed", description: "Associated company not found." });
+        setIsLoading(false);
+        return;
       }
 
       const company: Company = companySnap.val();
 
       if (company.status === 'Pending') {
-          await auth.signOut();
-          toast({ variant: "destructive", title: "Account Pending", description: "Your company's registration is still under review." });
+        // Redirect to pending approval page instead of signing out
+        router.push('/pending-approval');
       } else if (company.status === 'Rejected') {
-          await auth.signOut();
-          toast({ variant: "destructive", title: "Access Denied", description: "Your company's registration has been rejected." });
+        await auth.signOut();
+        toast({ variant: "destructive", title: "Access Denied", description: "Your company's registration has been rejected." });
       } else if (company.status === 'Suspended') {
-          await auth.signOut();
-          toast({ variant: "destructive", title: "Account Suspended", description: "This company account has been suspended. Please contact support." });
+        await auth.signOut();
+        toast({ variant: "destructive", title: "Account Suspended", description: "This company account has been suspended. Please contact support." });
       } else {
-          // If company is Active and user is Admin, proceed to dashboard
-          router.push('/dashboard');
+        // If company is Active and user is Admin, proceed to dashboard
+        router.push('/dashboard');
       }
 
     } catch (error: any) {
@@ -140,7 +140,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}/>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? <Loader2 className="animate-spin" /> : 'Log In'}
