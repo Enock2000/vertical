@@ -2,7 +2,7 @@
 // src/app/dashboard/settings/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,6 +20,9 @@ import { TestimonialsTab } from './components/testimonials-tab';
 import { ApiSettingsTab } from './components/api-settings-tab';
 import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Lazy load Assets page for better performance
+const AssetsPage = lazy(() => import('./assets/page'));
 
 const formSchema = z.object({
   employeeNapsaRate: z.coerce.number().min(0).max(100),
@@ -64,7 +67,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!companyId) return;
-    
+
     const configRef = dbRef(db, `companies/${companyId}/payrollConfig`);
     const banksRef = dbRef(db, `companies/${companyId}/banks`);
     const plansRef = dbRef(db, 'subscriptionPlans');
@@ -74,18 +77,18 @@ export default function SettingsPage() {
     let plansLoaded = false;
 
     const checkLoading = () => {
-        if (configLoaded && banksLoaded && plansLoaded) {
-            setLoading(false);
-        }
+      if (configLoaded && banksLoaded && plansLoaded) {
+        setLoading(false);
+      }
     }
 
     const configUnsubscribe = onValue(configRef, (snapshot) => {
       const data: PayrollConfig | null = snapshot.val();
       if (data) {
         form.reset({
-            ...form.getValues(), // preserve defaults
-            ...data,
-            allowedIpAddress: data.allowedIpAddress || '',
+          ...form.getValues(), // preserve defaults
+          ...data,
+          allowedIpAddress: data.allowedIpAddress || '',
         });
       }
       configLoaded = true;
@@ -93,23 +96,23 @@ export default function SettingsPage() {
     });
 
     const banksUnsubscribe = onValue(banksRef, (snapshot) => {
-        const data = snapshot.val();
-        setBanks(data ? Object.values(data) : []);
-        banksLoaded = true;
-        checkLoading();
+      const data = snapshot.val();
+      setBanks(data ? Object.values(data) : []);
+      banksLoaded = true;
+      checkLoading();
     });
-    
+
     const plansUnsubscribe = onValue(plansRef, (snapshot) => {
-        const data = snapshot.val();
-        setSubscriptionPlans(data ? Object.values(data) : []);
-        plansLoaded = true;
-        checkLoading();
+      const data = snapshot.val();
+      setSubscriptionPlans(data ? Object.values(data) : []);
+      plansLoaded = true;
+      checkLoading();
     });
 
     return () => {
-        configUnsubscribe();
-        banksUnsubscribe();
-        plansUnsubscribe();
+      configUnsubscribe();
+      banksUnsubscribe();
+      plansUnsubscribe();
     };
   }, [companyId, form]);
 
@@ -123,43 +126,50 @@ export default function SettingsPage() {
   }
 
   return (
-     <Tabs defaultValue="payroll">
-        <TabsList className="mb-4">
-            <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
-            <TabsTrigger value="banks">Bank Management</TabsTrigger>
-            <TabsTrigger value="subscription">Subscription</TabsTrigger>
-            <TabsTrigger value="api">API</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-        </TabsList>
-        <TabsContent value="payroll">
-            <PayrollSettingsTab form={form} />
-        </TabsContent>
-        <TabsContent value="banks">
-            <BanksTab banks={banks} />
-        </TabsContent>
-         <TabsContent value="subscription">
-            <SubscriptionTab plans={subscriptionPlans} />
-        </TabsContent>
-        <TabsContent value="api">
-            <ApiSettingsTab />
-        </TabsContent>
-        <TabsContent value="security">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Account Security</CardTitle>
-                    <CardDescription>Manage your password and two-factor authentication settings.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="max-w-md">
-                        <GoogleAuthenticatorSettings />
-                    </div>
-                </CardContent>
-            </Card>
-        </TabsContent>
-         <TabsContent value="testimonials">
-            <TestimonialsTab />
-        </TabsContent>
+    <Tabs defaultValue="payroll">
+      <TabsList className="mb-4 flex-wrap h-auto gap-1">
+        <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
+        <TabsTrigger value="banks">Bank Management</TabsTrigger>
+        <TabsTrigger value="assets">Asset Management</TabsTrigger>
+        <TabsTrigger value="subscription">Subscription</TabsTrigger>
+        <TabsTrigger value="api">API</TabsTrigger>
+        <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
+      </TabsList>
+      <TabsContent value="payroll">
+        <PayrollSettingsTab form={form} />
+      </TabsContent>
+      <TabsContent value="banks">
+        <BanksTab banks={banks} />
+      </TabsContent>
+      <TabsContent value="assets">
+        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+          <AssetsPage />
+        </Suspense>
+      </TabsContent>
+      <TabsContent value="subscription">
+        <SubscriptionTab plans={subscriptionPlans} />
+      </TabsContent>
+      <TabsContent value="api">
+        <ApiSettingsTab />
+      </TabsContent>
+      <TabsContent value="security">
+        <Card>
+          <CardHeader>
+            <CardTitle>Account Security</CardTitle>
+            <CardDescription>Manage your password and two-factor authentication settings.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-md">
+              <GoogleAuthenticatorSettings />
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      <TabsContent value="testimonials">
+        <TestimonialsTab />
+      </TabsContent>
     </Tabs>
   );
 }
+

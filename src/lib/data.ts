@@ -147,6 +147,56 @@ export type WorkExperienceEntry = {
     responsibilities: string;
 };
 
+// Asset Management types
+export type AssetCategory =
+    | 'Laptop'
+    | 'Phone'
+    | 'Tablet'
+    | 'ID Card'
+    | 'Access Card'
+    | 'Keys'
+    | 'Vehicle'
+    | 'Uniform'
+    | 'Tools'
+    | 'Other';
+
+export type AssetCondition = 'Excellent' | 'Good' | 'Fair' | 'Poor';
+
+export type AssetStatus = 'Available' | 'Assigned' | 'Under Repair' | 'Retired';
+
+export type Asset = {
+    id: string;
+    companyId: string;
+    category: AssetCategory;
+    name: string;
+    serialNumber?: string;
+    purchaseDate?: string;
+    purchasePrice?: number;
+    currentValue?: number;
+    condition: AssetCondition;
+    status: AssetStatus;
+    assignedTo?: string; // Employee ID
+    assignedToName?: string; // Employee name for display
+    assignedAt?: string;
+    notes?: string;
+    createdAt: string;
+};
+
+export type AssetReturnRecord = {
+    assetId: string;
+    assetName: string;
+    category: AssetCategory;
+    serialNumber?: string;
+    returnedAt: string;
+    returnCondition: AssetCondition;
+    notes?: string;
+};
+
+export const assetCategories: AssetCategory[] = [
+    'Laptop', 'Phone', 'Tablet', 'ID Card', 'Access Card',
+    'Keys', 'Vehicle', 'Uniform', 'Tools', 'Other'
+];
+
 // Offboarding types
 export type OffboardingReason =
     | 'Resigned'
@@ -175,6 +225,7 @@ export type OffboardingRecord = {
     exitInterviewNotes?: string;
     finalSettlementAmount?: number;
     finalSettlementPaid?: boolean;
+    returnedAssets?: AssetReturnRecord[];
 };
 
 export const defaultOffboardingChecklist: Omit<OffboardingChecklistItem, 'id'>[] = [
