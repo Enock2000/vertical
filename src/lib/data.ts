@@ -147,6 +147,43 @@ export type WorkExperienceEntry = {
     responsibilities: string;
 };
 
+// Offboarding types
+export type OffboardingReason =
+    | 'Resigned'
+    | 'Retired'
+    | 'Terminated'
+    | 'Contract Ended'
+    | 'Redundant'
+    | 'Other';
+
+export type OffboardingChecklistItem = {
+    id: string;
+    label: string;
+    completed: boolean;
+    completedAt?: string;
+    completedBy?: string;
+    notes?: string;
+};
+
+export type OffboardingRecord = {
+    reason: OffboardingReason;
+    otherReason?: string;
+    offboardedAt: string;
+    offboardedBy: string;
+    lastWorkingDay: string;
+    checklist: OffboardingChecklistItem[];
+    exitInterviewNotes?: string;
+    finalSettlementAmount?: number;
+    finalSettlementPaid?: boolean;
+};
+
+export const defaultOffboardingChecklist: Omit<OffboardingChecklistItem, 'id'>[] = [
+    { label: 'Collect company assets (laptop, ID card, keys)', completed: false },
+    { label: 'Remove system access and accounts', completed: false },
+    { label: 'Process final salary and gratuity', completed: false },
+    { label: 'Conduct exit interview', completed: false },
+];
+
 
 export type Employee = {
     id: string;
@@ -155,7 +192,7 @@ export type Employee = {
     email: string;
     phone?: string;
     role: string;
-    status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant' | 'GuestAdmin';
+    status: 'Active' | 'Inactive' | 'Suspended' | 'On Leave' | 'Sick' | 'Pending Approval' | 'Applicant' | 'GuestAdmin' | 'Offboarded';
     avatar: string;
     location: string;
     departmentId: string;
@@ -200,6 +237,8 @@ export type Employee = {
     permissions?: Permission[];
     isTwoFactorEnabled?: boolean;
     requirePasswordReset?: boolean; // True if user must reset password on next login
+    // Offboarding
+    offboarding?: OffboardingRecord;
 };
 
 export type ApplicationFormQuestion = {

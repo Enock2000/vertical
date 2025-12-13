@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { PlusCircle, Loader2, Download } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { PlusCircle, Loader2, Users, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,6 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { DataTable } from './components/data-table';
 import { columns } from './components/columns';
 import type { Employee, Department, Bank, Role, Branch } from '@/lib/data';
@@ -22,12 +24,24 @@ import { ImportEmployeesDialog } from './components/import-employees-dialog';
 
 export default function EmployeesPage() {
   const { company, companyId } = useAuth();
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('active');
+
+  // Filter employees by status
+  const activeEmployees = useMemo(
+    () => allEmployees.filter(e => e.status !== 'Offboarded'),
+    [allEmployees]
+  );
+
+  const offboardedEmployees = useMemo(
+    () => allEmployees.filter(e => e.status === 'Offboarded'),
+    [allEmployees]
+  );
 
   useEffect(() => {
     if (!companyId) return;
@@ -53,9 +67,9 @@ export default function EmployeesPage() {
       if (data) {
         // Filter by company and exclude Admin role (company owner/admin should not appear in employee list)
         const employeeList = Object.values<Employee>(data).filter(e => e.companyId === companyId && e.role !== 'Admin');
-        setEmployees(employeeList);
+        setAllEmployees(employeeList);
       } else {
-        setEmployees([]);
+        setAllEmployees([]);
       }
       checkLoading();
     }, (error) => {
@@ -146,7 +160,33 @@ export default function EmployeesPage() {
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <DataTable columns={tableColumns} data={employees} />
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="active" className="gap-2">
+                <Users className="h-4 w-4" />
+                Active
+                <Badge variant="secondary" className="ml-1">{activeEmployees.length}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="offboarded" className="gap-2">
+                <UserX className="h-4 w-4" />
+                Offboarded
+                <Badge variant="outline" className="ml-1">{offboardedEmployees.length}</Badge>
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="active">
+              <DataTable columns={tableColumns} data={activeEmployees} />
+            </TabsContent>
+            <TabsContent value="offboarded">
+              {offboardedEmployees.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <UserX className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No offboarded employees yet.</p>
+                </div>
+              ) : (
+                <DataTable columns={tableColumns} data={offboardedEmployees} />
+              )}
+            </TabsContent>
+          </Tabs>
         )}
       </CardContent>
     </Card>
