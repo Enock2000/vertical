@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, UserMinus, CheckCircle2, Circle, Package } from 'lucide-react';
+import { Loader2, UserMinus, CheckCircle2, Circle, Package, Printer, CheckCircle } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -51,6 +51,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     const { employee: currentUser, companyId } = useAuth();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
     const [reason, setReason] = useState<OffboardingReason | ''>('');
     const [otherReason, setOtherReason] = useState('');
     const [lastWorkingDay, setLastWorkingDay] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -65,7 +66,6 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     );
 
     const toggleChecklistItem = (itemId: string) => {
-        // Don't toggle the first item (Collect assets) - it has its own dialog
         if (itemId === 'item-0') return;
 
         setChecklist((prev) =>
@@ -84,7 +84,6 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
 
     const handleAssetsCollected = (assets: AssetReturnRecord[]) => {
         setReturnedAssets(assets);
-        // Mark the assets checklist item as completed
         setChecklist((prev) =>
             prev.map((item) =>
                 item.id === 'item-0'
@@ -98,6 +97,108 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                     : item
             )
         );
+    };
+
+    const handlePrintHandover = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        printWindow.document.write(`
+      <html>
+        <head>
+          <title>Offboarding Handover Form - ${employee.name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; }
+            h1 { text-align: center; margin-bottom: 10px; }
+            .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+            .section { margin: 20px 0; }
+            .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .info-item { margin: 5px 0; }
+            .info-label { color: #666; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+            th { background: #f5f5f5; }
+            .checklist-item { padding: 5px 0; }
+            .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+            .signature-box { border-top: 1px solid #000; padding-top: 10px; text-align: center; }
+            .signature-label { color: #666; font-size: 14px; }
+            @media print { body { padding: 20px; } }
+          </style>
+        </head>
+        <body>
+          <h1>Employee Offboarding Form</h1>
+          <p class="subtitle">Exit Documentation</p>
+          
+          <div class="section">
+            <div class="section-title">Employee Information</div>
+            <div class="info-grid">
+              <div class="info-item"><span class="info-label">Name:</span> ${employee.name}</div>
+              <div class="info-item"><span class="info-label">Department:</span> ${employee.departmentName}</div>
+              <div class="info-item"><span class="info-label">Exit Reason:</span> ${reason}${otherReason ? ` - ${otherReason}` : ''}</div>
+              <div class="info-item"><span class="info-label">Last Working Day:</span> ${format(new Date(lastWorkingDay), 'PPP')}</div>
+            </div>
+          </div>
+
+          ${returnedAssets.length > 0 ? `
+          <div class="section">
+            <div class="section-title">Assets Returned</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset Name</th>
+                  <th>Category</th>
+                  <th>Serial Number</th>
+                  <th>Condition</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${returnedAssets.map(asset => `
+                  <tr>
+                    <td>${asset.assetName}</td>
+                    <td>${asset.category}</td>
+                    <td>${asset.serialNumber || '-'}</td>
+                    <td>${asset.returnCondition}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          ` : ''}
+
+          <div class="section">
+            <div class="section-title">Offboarding Checklist</div>
+            ${checklist.map(item => `
+              <div class="checklist-item">
+                ${item.completed ? '☑' : '☐'} ${item.label}
+              </div>
+            `).join('')}
+          </div>
+
+          ${exitNotes ? `
+          <div class="section">
+            <div class="section-title">Exit Interview Notes</div>
+            <p>${exitNotes}</p>
+          </div>
+          ` : ''}
+
+          <div class="signatures">
+            <div>
+              <div class="signature-box">
+                <div class="signature-label">Employee Signature</div>
+              </div>
+            </div>
+            <div>
+              <div class="signature-box">
+                <div class="signature-label">HR/Admin Signature</div>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `);
+        printWindow.document.close();
+        printWindow.print();
     };
 
     const handleOffboard = async () => {
@@ -122,7 +223,6 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         setLoading(true);
 
         try {
-            // Build the offboarding record, only including non-undefined values
             const offboardingRecord: Record<string, unknown> = {
                 reason,
                 offboardedAt: new Date().toISOString(),
@@ -137,7 +237,6 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                 finalSettlementPaid: false,
             };
 
-            // Only add optional fields if they have values
             if (reason === 'Other' && otherReason.trim()) {
                 offboardingRecord.otherReason = otherReason.trim();
             }
@@ -156,13 +255,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                 offboarding: offboardingRecord,
             });
 
-            toast({
-                title: 'Employee Offboarded',
-                description: `${employee.name} has been successfully offboarded.`,
-            });
-
-            setOpen(false);
-            onComplete?.();
+            setSuccess(true);
         } catch (error) {
             console.error('Offboarding error:', error);
             toast({
@@ -175,10 +268,27 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         }
     };
 
+    const handleClose = () => {
+        setOpen(false);
+        if (success) {
+            onComplete?.();
+            setSuccess(false);
+            setReason('');
+            setOtherReason('');
+            setExitNotes('');
+            setFinalSettlement('');
+            setReturnedAssets([]);
+            setChecklist(defaultOffboardingChecklist.map((item, index) => ({
+                ...item,
+                id: `item-${index}`,
+            })));
+        }
+    };
+
     const completedCount = checklist.filter((item) => item.completed).length;
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleClose}>
             <DialogTrigger asChild>
                 {children || (
                     <Button variant="outline" size="sm">
@@ -188,157 +298,177 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                 )}
             </DialogTrigger>
             <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <UserMinus className="h-5 w-5 text-destructive" />
-                        Offboard Employee
-                    </DialogTitle>
-                    <DialogDescription>
-                        Complete the offboarding process for <strong>{employee.name}</strong>. This action will archive the employee record.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                    {/* Exit Reason */}
-                    <div className="space-y-2">
-                        <Label htmlFor="reason">Exit Reason *</Label>
-                        <Select value={reason} onValueChange={(val) => setReason(val as OffboardingReason)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select reason..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {offboardingReasons.map((r) => (
-                                    <SelectItem key={r.value} value={r.value}>
-                                        {r.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {reason === 'Other' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="otherReason">Specify Reason *</Label>
-                            <Input
-                                id="otherReason"
-                                value={otherReason}
-                                onChange={(e) => setOtherReason(e.target.value)}
-                                placeholder="Enter the reason..."
-                            />
+                {success ? (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-green-600">
+                                <CheckCircle className="h-5 w-5" />
+                                Offboarding Complete
+                            </DialogTitle>
+                            <DialogDescription>
+                                {employee.name} has been successfully offboarded.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-6 text-center">
+                            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                            <p className="text-muted-foreground mb-6">
+                                The employee record has been archived. You can now print the handover form.
+                            </p>
+                            <div className="flex justify-center gap-3">
+                                <Button variant="outline" onClick={handlePrintHandover}>
+                                    <Printer className="h-4 w-4 mr-2" />
+                                    Print Handover Form
+                                </Button>
+                                <Button onClick={handleClose}>
+                                    Done
+                                </Button>
+                            </div>
                         </div>
-                    )}
+                    </>
+                ) : (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2">
+                                <UserMinus className="h-5 w-5 text-destructive" />
+                                Offboard Employee
+                            </DialogTitle>
+                            <DialogDescription>
+                                Complete the offboarding process for <strong>{employee.name}</strong>.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    {/* Last Working Day */}
-                    <div className="space-y-2">
-                        <Label htmlFor="lastWorkingDay">Last Working Day</Label>
-                        <Input
-                            id="lastWorkingDay"
-                            type="date"
-                            value={lastWorkingDay}
-                            onChange={(e) => setLastWorkingDay(e.target.value)}
-                        />
-                    </div>
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="reason">Exit Reason *</Label>
+                                <Select value={reason} onValueChange={(val) => setReason(val as OffboardingReason)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select reason..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {offboardingReasons.map((r) => (
+                                            <SelectItem key={r.value} value={r.value}>
+                                                {r.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    {/* Offboarding Checklist */}
-                    <div className="space-y-2">
-                        <Label>Offboarding Checklist ({completedCount}/{checklist.length})</Label>
-                        <div className="border rounded-lg p-3 space-y-2">
-                            {checklist.map((item, index) => (
-                                index === 0 ? (
-                                    // First item: Collect Assets - opens special dialog
-                                    <CollectAssetsDialog
-                                        key={item.id}
-                                        employee={employee}
-                                        companyId={companyId!}
-                                        onComplete={handleAssetsCollected}
-                                    >
-                                        <div
-                                            className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                                        >
-                                            {item.completed ? (
-                                                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                            ) : (
-                                                <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                            )}
-                                            <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
-                                                {item.label}
-                                            </span>
-                                            <Package className="h-4 w-4 text-muted-foreground ml-auto" />
-                                        </div>
-                                    </CollectAssetsDialog>
-                                ) : (
-                                    // Other items: regular toggle
-                                    <div
-                                        key={item.id}
-                                        className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                                        onClick={() => toggleChecklistItem(item.id)}
-                                    >
-                                        {item.completed ? (
-                                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            {reason === 'Other' && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="otherReason">Specify Reason *</Label>
+                                    <Input
+                                        id="otherReason"
+                                        value={otherReason}
+                                        onChange={(e) => setOtherReason(e.target.value)}
+                                        placeholder="Enter the reason..."
+                                    />
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <Label htmlFor="lastWorkingDay">Last Working Day</Label>
+                                <Input
+                                    id="lastWorkingDay"
+                                    type="date"
+                                    value={lastWorkingDay}
+                                    onChange={(e) => setLastWorkingDay(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Offboarding Checklist ({completedCount}/{checklist.length})</Label>
+                                <div className="border rounded-lg p-3 space-y-2">
+                                    {checklist.map((item, index) => (
+                                        index === 0 ? (
+                                            <CollectAssetsDialog
+                                                key={item.id}
+                                                employee={employee}
+                                                companyId={companyId!}
+                                                onComplete={handleAssetsCollected}
+                                            >
+                                                <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors">
+                                                    {item.completed ? (
+                                                        <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                                    ) : (
+                                                        <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                    )}
+                                                    <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
+                                                        {item.label}
+                                                    </span>
+                                                    <Package className="h-4 w-4 text-muted-foreground ml-auto" />
+                                                </div>
+                                            </CollectAssetsDialog>
                                         ) : (
-                                            <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                        )}
-                                        <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
-                                            {item.label}
-                                        </span>
-                                    </div>
-                                )
-                            ))}
+                                            <div
+                                                key={item.id}
+                                                className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
+                                                onClick={() => toggleChecklistItem(item.id)}
+                                            >
+                                                {item.completed ? (
+                                                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                                ) : (
+                                                    <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                )}
+                                                <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
+                                                    {item.label}
+                                                </span>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                            </div>
+
+                            {returnedAssets.length > 0 && (
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+                                    ✓ {returnedAssets.length} asset(s) collected
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <Label htmlFor="exitNotes">Exit Interview Notes</Label>
+                                <Textarea
+                                    id="exitNotes"
+                                    value={exitNotes}
+                                    onChange={(e) => setExitNotes(e.target.value)}
+                                    placeholder="Add any notes from the exit interview..."
+                                    rows={3}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="finalSettlement">Final Settlement Amount (ZMW)</Label>
+                                <Input
+                                    id="finalSettlement"
+                                    type="number"
+                                    value={finalSettlement}
+                                    onChange={(e) => setFinalSettlement(e.target.value)}
+                                    placeholder="0.00"
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Show collected assets count */}
-                    {returnedAssets.length > 0 && (
-                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
-                            ✓ {returnedAssets.length} asset(s) collected and marked as returned
-                        </div>
-                    )}
-
-                    {/* Exit Interview Notes */}
-                    <div className="space-y-2">
-                        <Label htmlFor="exitNotes">Exit Interview Notes</Label>
-                        <Textarea
-                            id="exitNotes"
-                            value={exitNotes}
-                            onChange={(e) => setExitNotes(e.target.value)}
-                            placeholder="Add any notes from the exit interview..."
-                            rows={3}
-                        />
-                    </div>
-
-                    {/* Final Settlement */}
-                    <div className="space-y-2">
-                        <Label htmlFor="finalSettlement">Final Settlement Amount (ZMW)</Label>
-                        <Input
-                            id="finalSettlement"
-                            type="number"
-                            value={finalSettlement}
-                            onChange={(e) => setFinalSettlement(e.target.value)}
-                            placeholder="0.00"
-                        />
-                    </div>
-                </div>
-
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
-                        Cancel
-                    </Button>
-                    <Button variant="destructive" onClick={handleOffboard} disabled={loading}>
-                        {loading ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Processing...
-                            </>
-                        ) : (
-                            <>
-                                <UserMinus className="h-4 w-4 mr-2" />
-                                Confirm Offboarding
-                            </>
-                        )}
-                    </Button>
-                </DialogFooter>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={handleClose} disabled={loading}>
+                                Cancel
+                            </Button>
+                            <Button variant="destructive" onClick={handleOffboard} disabled={loading}>
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserMinus className="h-4 w-4 mr-2" />
+                                        Confirm Offboarding
+                                    </>
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     );
 }
-

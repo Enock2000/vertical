@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { Loader2, Package, Printer, CheckCircle2, Circle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, Package, CheckCircle2, Circle } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -44,7 +44,6 @@ interface AssetReturn {
 
 export function CollectAssetsDialog({ employee, companyId, onComplete, children }: CollectAssetsDialogProps) {
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [assetsLoading, setAssetsLoading] = useState(true);
@@ -145,94 +144,6 @@ export function CollectAssetsDialog({ employee, companyId, onComplete, children 
         } finally {
             setLoading(false);
         }
-    };
-
-    const handlePrint = () => {
-        const printContent = printRef.current;
-        if (!printContent) return;
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
-        printWindow.document.write(`
-      <html>
-        <head>
-          <title>Asset Handover Form - ${employee.name}</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            h1 { text-align: center; margin-bottom: 10px; }
-            .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-            .section { margin: 20px 0; }
-            .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-            .info-item { margin: 5px 0; }
-            .info-label { color: #666; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-            th { background: #f5f5f5; }
-            .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
-            .signature-box { border-top: 1px solid #000; padding-top: 10px; text-align: center; }
-            .signature-label { color: #666; font-size: 14px; }
-            @media print { body { padding: 20px; } }
-          </style>
-        </head>
-        <body>
-          <h1>Asset Handover Form</h1>
-          <p class="subtitle">Company Asset Return Documentation</p>
-          
-          <div class="section">
-            <div class="section-title">Employee Information</div>
-            <div class="info-grid">
-              <div class="info-item"><span class="info-label">Name:</span> ${employee.name}</div>
-              <div class="info-item"><span class="info-label">Department:</span> ${employee.departmentName}</div>
-              <div class="info-item"><span class="info-label">Employee ID:</span> ${employee.id}</div>
-              <div class="info-item"><span class="info-label">Date:</span> ${format(new Date(), 'PPP')}</div>
-            </div>
-          </div>
-
-          <div class="section">
-            <div class="section-title">Assets Returned</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Asset Name</th>
-                  <th>Category</th>
-                  <th>Serial Number</th>
-                  <th>Condition</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${assetReturns.filter(a => a.returned).map(item => `
-                  <tr>
-                    <td>${item.asset.name}</td>
-                    <td>${item.asset.category}</td>
-                    <td>${item.asset.serialNumber || '-'}</td>
-                    <td>${item.returnCondition}</td>
-                    <td>${item.notes || '-'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="signatures">
-            <div>
-              <div class="signature-box">
-                <div class="signature-label">Employee Signature</div>
-              </div>
-            </div>
-            <div>
-              <div class="signature-box">
-                <div class="signature-label">HR/Admin Signature</div>
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-        printWindow.document.close();
-        printWindow.print();
     };
 
     const returnedCount = assetReturns.filter(a => a.returned).length;
@@ -352,10 +263,6 @@ export function CollectAssetsDialog({ employee, companyId, onComplete, children 
                 </div>
 
                 <DialogFooter className="gap-2">
-                    <Button variant="outline" onClick={handlePrint} disabled={returnedCount === 0}>
-                        <Printer className="h-4 w-4 mr-2" />
-                        Print Handover Form
-                    </Button>
                     <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
                         Cancel
                     </Button>
