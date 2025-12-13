@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2, UserMinus, CheckCircle2, Circle, Package, Printer, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2, UserMinus, CheckCircle2, Circle, Package, Printer, CheckCircle, ChevronDown, ChevronUp, Calculator } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
     Select,
     SelectContent,
@@ -31,11 +32,11 @@ import {
 } from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { ref, update, onValue } from 'firebase/database';
+import { ref, update, onValue, get } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
-import type { Employee, OffboardingReason, OffboardingChecklistItem, AssetReturnRecord, Asset, AssetCondition } from '@/lib/data';
-import { defaultOffboardingChecklist } from '@/lib/data';
-import { format } from 'date-fns';
+import type { Employee, OffboardingReason, OffboardingChecklistItem, AssetReturnRecord, Asset, AssetCondition, PayrollConfig } from '@/lib/data';
+import { defaultOffboardingChecklist, calculatePayroll } from '@/lib/data';
+import { format, differenceInDays, differenceInMonths, differenceInYears } from 'date-fns';
 
 interface OffboardEmployeeDialogProps {
     employee: Employee;
@@ -47,6 +48,22 @@ interface AssetCollectionItem {
     asset: Asset;
     collected: boolean;
     returnCondition: AssetCondition;
+}
+
+interface FinalCompensation {
+    daysWorkedThisMonth: number;
+    proratedSalary: number;
+    outstandingLeaveDays: number;
+    leavePayout: number;
+    yearsOfService: number;
+    gratuityAmount: number;
+    grossFinalPay: number;
+    napsaDeduction: number;
+    nhimaDeduction: number;
+    payeDeduction: number;
+    otherDeductions: number;
+    totalDeductions: number;
+    netFinalPay: number;
 }
 
 const offboardingReasons: { value: OffboardingReason; label: string }[] = [
@@ -68,10 +85,16 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     const [otherReason, setOtherReason] = useState('');
     const [lastWorkingDay, setLastWorkingDay] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [exitNotes, setExitNotes] = useState('');
-    const [finalSettlement, setFinalSettlement] = useState('');
     const [assetsExpanded, setAssetsExpanded] = useState(false);
+    const [compensationExpanded, setCompensationExpanded] = useState(false);
     const [assetsLoading, setAssetsLoading] = useState(false);
     const [assetItems, setAssetItems] = useState<AssetCollectionItem[]>([]);
+    const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
+
+    // Compensation fields
+    const [gratuityMonths, setGratuityMonths] = useState('2');
+    const [additionalPayout, setAdditionalPayout] = useState('0');
+
     const [checklist, setChecklist] = useState<OffboardingChecklistItem[]>(
         defaultOffboardingChecklist.map((item, index) => ({
             ...item,
@@ -79,13 +102,14 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         }))
     );
 
-    // Load assigned assets when dialog opens
+    // Load assigned assets and payroll config when dialog opens
     useEffect(() => {
         if (!open || !companyId) return;
 
+        // Load assets
         setAssetsLoading(true);
         const assetsRef = ref(db, `companies/${companyId}/assets`);
-        const unsubscribe = onValue(assetsRef, (snapshot) => {
+        const unsubscribeAssets = onValue(assetsRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
                 const assignedAssets = Object.keys(data)
@@ -103,8 +127,73 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             setAssetsLoading(false);
         });
 
-        return () => unsubscribe();
+        // Load payroll config
+        const configRef = ref(db, `companies/${companyId}/payrollConfig`);
+        get(configRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                setPayrollConfig(snapshot.val());
+            }
+        });
+
+        return () => unsubscribeAssets();
     }, [open, companyId, employee.id]);
+
+    // Calculate final compensation
+    const finalCompensation = useMemo((): FinalCompensation | null => {
+        if (!payrollConfig) return null;
+
+        const lastDay = new Date(lastWorkingDay);
+        const monthStart = new Date(lastDay.getFullYear(), lastDay.getMonth(), 1);
+        const monthEnd = new Date(lastDay.getFullYear(), lastDay.getMonth() + 1, 0);
+        const totalDaysInMonth = monthEnd.getDate();
+        const daysWorkedThisMonth = differenceInDays(lastDay, monthStart) + 1;
+
+        // Prorated salary
+        const dailyRate = employee.salary / totalDaysInMonth;
+        const proratedSalary = dailyRate * daysWorkedThisMonth;
+
+        // Outstanding leave payout
+        const outstandingLeaveDays = employee.annualLeaveBalance || 0;
+        const leavePayout = outstandingLeaveDays * dailyRate;
+
+        // Gratuity (based on years of service)
+        const joinDate = new Date(employee.joinDate);
+        const yearsOfService = differenceInYears(lastDay, joinDate);
+        const monthsForGratuity = parseFloat(gratuityMonths) || 0;
+        const gratuityAmount = monthsForGratuity > 0 ? (employee.salary * monthsForGratuity) * Math.max(1, yearsOfService) / yearsOfService : 0;
+
+        // Additional payout
+        const additional = parseFloat(additionalPayout) || 0;
+
+        // Gross final pay
+        const grossFinalPay = proratedSalary + leavePayout + gratuityAmount + additional + employee.allowances + employee.bonus;
+
+        // Deductions using payroll config
+        const napsaDeduction = grossFinalPay * (payrollConfig.employeeNapsaRate / 100);
+        const nhimaDeduction = grossFinalPay * (payrollConfig.employeeNhimaRate / 100);
+        const taxablePay = grossFinalPay - napsaDeduction;
+        const payeDeduction = taxablePay * (payrollConfig.taxRate / 100);
+        const otherDeductions = employee.deductions || 0;
+
+        const totalDeductions = napsaDeduction + nhimaDeduction + payeDeduction + otherDeductions;
+        const netFinalPay = grossFinalPay - totalDeductions;
+
+        return {
+            daysWorkedThisMonth,
+            proratedSalary,
+            outstandingLeaveDays,
+            leavePayout,
+            yearsOfService,
+            gratuityAmount,
+            grossFinalPay,
+            napsaDeduction,
+            nhimaDeduction,
+            payeDeduction,
+            otherDeductions,
+            totalDeductions,
+            netFinalPay,
+        };
+    }, [employee, lastWorkingDay, payrollConfig, gratuityMonths, additionalPayout]);
 
     // Update checklist item when assets are collected
     useEffect(() => {
@@ -154,47 +243,133 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         setAssetItems(prev => prev.map(item => ({ ...item, collected: true })));
     };
 
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-ZM', {
+            style: 'currency',
+            currency: 'ZMW',
+            minimumFractionDigits: 2,
+        }).format(amount);
+    };
+
     const handlePrintHandover = () => {
         const collectedAssets = assetItems.filter(a => a.collected);
+        const comp = finalCompensation;
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
         printWindow.document.write(`
       <html>
         <head>
-          <title>Offboarding Handover Form - ${employee.name}</title>
+          <title>Offboarding & Final Settlement - ${employee.name}</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 40px; }
-            h1 { text-align: center; margin-bottom: 10px; }
-            .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
-            .section { margin: 20px 0; }
-            .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-            .info-item { margin: 5px 0; }
+            body { font-family: Arial, sans-serif; padding: 40px; font-size: 12px; }
+            h1 { text-align: center; margin-bottom: 5px; font-size: 18px; }
+            .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
+            .section { margin: 15px 0; }
+            .section-title { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; font-size: 14px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .info-item { margin: 3px 0; }
             .info-label { color: #666; }
-            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-            th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+            table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
             th { background: #f5f5f5; }
-            .checklist-item { padding: 5px 0; }
-            .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 60px; }
+            .amount { text-align: right; font-family: monospace; }
+            .total-row { font-weight: bold; background: #f9f9f9; }
+            .net-row { font-weight: bold; background: #e6f3e6; font-size: 14px; }
+            .deduction { color: #c00; }
+            .signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; }
             .signature-box { border-top: 1px solid #000; padding-top: 10px; text-align: center; }
-            .signature-label { color: #666; font-size: 14px; }
+            .signature-label { color: #666; font-size: 11px; }
             @media print { body { padding: 20px; } }
           </style>
         </head>
         <body>
-          <h1>Employee Offboarding Form</h1>
-          <p class="subtitle">Exit Documentation</p>
+          <h1>Employee Final Settlement</h1>
+          <p class="subtitle">Offboarding & Compensation Documentation</p>
           
           <div class="section">
             <div class="section-title">Employee Information</div>
             <div class="info-grid">
               <div class="info-item"><span class="info-label">Name:</span> ${employee.name}</div>
               <div class="info-item"><span class="info-label">Department:</span> ${employee.departmentName}</div>
+              <div class="info-item"><span class="info-label">Position:</span> ${employee.jobTitle || employee.role}</div>
+              <div class="info-item"><span class="info-label">Join Date:</span> ${format(new Date(employee.joinDate), 'PPP')}</div>
               <div class="info-item"><span class="info-label">Exit Reason:</span> ${reason}${otherReason ? ` - ${otherReason}` : ''}</div>
               <div class="info-item"><span class="info-label">Last Working Day:</span> ${format(new Date(lastWorkingDay), 'PPP')}</div>
+              <div class="info-item"><span class="info-label">Years of Service:</span> ${comp?.yearsOfService || 0} year(s)</div>
+              <div class="info-item"><span class="info-label">Monthly Salary:</span> ${formatCurrency(employee.salary)}</div>
             </div>
           </div>
+
+          ${comp ? `
+          <div class="section">
+            <div class="section-title">Final Compensation Breakdown</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="amount">Amount (ZMW)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Prorated Salary (${comp.daysWorkedThisMonth} days)</td>
+                  <td class="amount">${formatCurrency(comp.proratedSalary)}</td>
+                </tr>
+                <tr>
+                  <td>Leave Payout (${comp.outstandingLeaveDays} days)</td>
+                  <td class="amount">${formatCurrency(comp.leavePayout)}</td>
+                </tr>
+                <tr>
+                  <td>Gratuity/Severance</td>
+                  <td class="amount">${formatCurrency(comp.gratuityAmount)}</td>
+                </tr>
+                ${employee.allowances > 0 ? `
+                <tr>
+                  <td>Allowances</td>
+                  <td class="amount">${formatCurrency(employee.allowances)}</td>
+                </tr>
+                ` : ''}
+                ${employee.bonus > 0 ? `
+                <tr>
+                  <td>Bonus</td>
+                  <td class="amount">${formatCurrency(employee.bonus)}</td>
+                </tr>
+                ` : ''}
+                <tr class="total-row">
+                  <td>Gross Final Pay</td>
+                  <td class="amount">${formatCurrency(comp.grossFinalPay)}</td>
+                </tr>
+                <tr>
+                  <td class="deduction">Less: NAPSA (${payrollConfig?.employeeNapsaRate || 5}%)</td>
+                  <td class="amount deduction">-${formatCurrency(comp.napsaDeduction)}</td>
+                </tr>
+                <tr>
+                  <td class="deduction">Less: NHIMA (${payrollConfig?.employeeNhimaRate || 1}%)</td>
+                  <td class="amount deduction">-${formatCurrency(comp.nhimaDeduction)}</td>
+                </tr>
+                <tr>
+                  <td class="deduction">Less: PAYE (${payrollConfig?.taxRate || 25}%)</td>
+                  <td class="amount deduction">-${formatCurrency(comp.payeDeduction)}</td>
+                </tr>
+                ${comp.otherDeductions > 0 ? `
+                <tr>
+                  <td class="deduction">Less: Other Deductions</td>
+                  <td class="amount deduction">-${formatCurrency(comp.otherDeductions)}</td>
+                </tr>
+                ` : ''}
+                <tr class="total-row">
+                  <td>Total Deductions</td>
+                  <td class="amount deduction">-${formatCurrency(comp.totalDeductions)}</td>
+                </tr>
+                <tr class="net-row">
+                  <td>NET FINAL PAYMENT</td>
+                  <td class="amount">${formatCurrency(comp.netFinalPay)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          ` : ''}
 
           ${collectedAssets.length > 0 ? `
           <div class="section">
@@ -225,7 +400,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
           <div class="section">
             <div class="section-title">Offboarding Checklist</div>
             ${checklist.map(item => `
-              <div class="checklist-item">
+              <div style="padding: 3px 0;">
                 ${item.completed ? '☑' : '☐'} ${item.label}
               </div>
             `).join('')}
@@ -241,14 +416,18 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
           <div class="signatures">
             <div>
               <div class="signature-box">
-                <div class="signature-label">Employee Signature</div>
+                <div class="signature-label">Employee Signature & Date</div>
               </div>
             </div>
             <div>
               <div class="signature-box">
-                <div class="signature-label">HR/Admin Signature</div>
+                <div class="signature-label">HR/Admin Signature & Date</div>
               </div>
             </div>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #999;">
+            Generated on ${format(new Date(), 'PPP')} | Document Reference: OFF-${employee.id.slice(-6).toUpperCase()}
           </div>
         </body>
       </html>
@@ -322,8 +501,9 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             if (exitNotes.trim()) {
                 offboardingRecord.exitInterviewNotes = exitNotes.trim();
             }
-            if (finalSettlement) {
-                offboardingRecord.finalSettlementAmount = parseFloat(finalSettlement);
+            if (finalCompensation) {
+                offboardingRecord.finalSettlementAmount = finalCompensation.netFinalPay;
+                offboardingRecord.finalSettlementDetails = finalCompensation;
             }
             if (returnedAssets.length > 0) {
                 offboardingRecord.returnedAssets = returnedAssets;
@@ -354,9 +534,11 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             setReason('');
             setOtherReason('');
             setExitNotes('');
-            setFinalSettlement('');
             setAssetItems([]);
             setAssetsExpanded(false);
+            setCompensationExpanded(false);
+            setGratuityMonths('2');
+            setAdditionalPayout('0');
             setChecklist(defaultOffboardingChecklist.map((item, index) => ({
                 ...item,
                 id: `item-${index}`,
@@ -378,7 +560,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 {success ? (
                     <>
                         <DialogHeader>
@@ -392,13 +574,18 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                         </DialogHeader>
                         <div className="py-6 text-center">
                             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                            <p className="text-muted-foreground mb-6">
-                                The employee record has been archived. You can now print the handover form.
+                            <p className="text-muted-foreground mb-2">
+                                The employee record has been archived.
                             </p>
+                            {finalCompensation && (
+                                <p className="text-lg font-semibold text-green-600 mb-4">
+                                    Final Settlement: {formatCurrency(finalCompensation.netFinalPay)}
+                                </p>
+                            )}
                             <div className="flex justify-center gap-3">
                                 <Button variant="outline" onClick={handlePrintHandover}>
                                     <Printer className="h-4 w-4 mr-2" />
-                                    Print Handover Form
+                                    Print Settlement Form
                                 </Button>
                                 <Button onClick={() => handleOpenChange(false)}>
                                     Done
@@ -419,20 +606,32 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                         </DialogHeader>
 
                         <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="reason">Exit Reason *</Label>
-                                <Select value={reason} onValueChange={(val) => setReason(val as OffboardingReason)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select reason..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {offboardingReasons.map((r) => (
-                                            <SelectItem key={r.value} value={r.value}>
-                                                {r.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="reason">Exit Reason *</Label>
+                                    <Select value={reason} onValueChange={(val) => setReason(val as OffboardingReason)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select reason..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {offboardingReasons.map((r) => (
+                                                <SelectItem key={r.value} value={r.value}>
+                                                    {r.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="lastWorkingDay">Last Working Day</Label>
+                                    <Input
+                                        id="lastWorkingDay"
+                                        type="date"
+                                        value={lastWorkingDay}
+                                        onChange={(e) => setLastWorkingDay(e.target.value)}
+                                    />
+                                </div>
                             </div>
 
                             {reason === 'Other' && (
@@ -447,16 +646,97 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                 </div>
                             )}
 
-                            <div className="space-y-2">
-                                <Label htmlFor="lastWorkingDay">Last Working Day</Label>
-                                <Input
-                                    id="lastWorkingDay"
-                                    type="date"
-                                    value={lastWorkingDay}
-                                    onChange={(e) => setLastWorkingDay(e.target.value)}
-                                />
-                            </div>
+                            <Separator />
 
+                            {/* Final Compensation Section */}
+                            <Collapsible open={compensationExpanded} onOpenChange={setCompensationExpanded}>
+                                <CollapsibleTrigger asChild>
+                                    <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-3 rounded-lg border">
+                                        <div className="flex items-center gap-2">
+                                            <Calculator className="h-5 w-5 text-green-600" />
+                                            <span className="font-medium">Final Compensation</span>
+                                        </div>
+                                        {finalCompensation && (
+                                            <Badge variant="secondary" className="mr-2">
+                                                Net: {formatCurrency(finalCompensation.netFinalPay)}
+                                            </Badge>
+                                        )}
+                                        {compensationExpanded ? (
+                                            <ChevronUp className="h-4 w-4" />
+                                        ) : (
+                                            <ChevronDown className="h-4 w-4" />
+                                        )}
+                                    </div>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div className="mt-3 p-4 border rounded-lg bg-muted/30 space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Gratuity (Months of Salary)</Label>
+                                                <Input
+                                                    type="number"
+                                                    value={gratuityMonths}
+                                                    onChange={(e) => setGratuityMonths(e.target.value)}
+                                                    min="0"
+                                                    step="0.5"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Additional Payout (ZMW)</Label>
+                                                <Input
+                                                    type="number"
+                                                    value={additionalPayout}
+                                                    onChange={(e) => setAdditionalPayout(e.target.value)}
+                                                    min="0"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {finalCompensation && (
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span>Prorated Salary ({finalCompensation.daysWorkedThisMonth} days)</span>
+                                                    <span>{formatCurrency(finalCompensation.proratedSalary)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Leave Payout ({finalCompensation.outstandingLeaveDays} days)</span>
+                                                    <span>{formatCurrency(finalCompensation.leavePayout)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>Gratuity ({finalCompensation.yearsOfService} yrs service)</span>
+                                                    <span>{formatCurrency(finalCompensation.gratuityAmount)}</span>
+                                                </div>
+                                                <Separator className="my-2" />
+                                                <div className="flex justify-between font-medium">
+                                                    <span>Gross Final Pay</span>
+                                                    <span>{formatCurrency(finalCompensation.grossFinalPay)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-red-600">
+                                                    <span>NAPSA ({payrollConfig?.employeeNapsaRate || 5}%)</span>
+                                                    <span>-{formatCurrency(finalCompensation.napsaDeduction)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-red-600">
+                                                    <span>NHIMA ({payrollConfig?.employeeNhimaRate || 1}%)</span>
+                                                    <span>-{formatCurrency(finalCompensation.nhimaDeduction)}</span>
+                                                </div>
+                                                <div className="flex justify-between text-red-600">
+                                                    <span>PAYE ({payrollConfig?.taxRate || 25}%)</span>
+                                                    <span>-{formatCurrency(finalCompensation.payeDeduction)}</span>
+                                                </div>
+                                                <Separator className="my-2" />
+                                                <div className="flex justify-between font-bold text-lg text-green-600">
+                                                    <span>Net Final Payment</span>
+                                                    <span>{formatCurrency(finalCompensation.netFinalPay)}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CollapsibleContent>
+                            </Collapsible>
+
+                            <Separator />
+
+                            {/* Checklist */}
                             <div className="space-y-2">
                                 <Label>Offboarding Checklist ({completedCount}/{checklist.length})</Label>
                                 <div className="border rounded-lg p-3 space-y-2">
@@ -570,18 +850,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                     value={exitNotes}
                                     onChange={(e) => setExitNotes(e.target.value)}
                                     placeholder="Add any notes from the exit interview..."
-                                    rows={3}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="finalSettlement">Final Settlement Amount (ZMW)</Label>
-                                <Input
-                                    id="finalSettlement"
-                                    type="number"
-                                    value={finalSettlement}
-                                    onChange={(e) => setFinalSettlement(e.target.value)}
-                                    placeholder="0.00"
+                                    rows={2}
                                 />
                             </div>
                         </div>
