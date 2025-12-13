@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Loader2, UserMinus, CheckCircle2, Circle, Package, Printer, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Loader2, UserMinus, CheckCircle2, Circle, Package, Printer, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
     Select,
     SelectContent,
@@ -22,19 +24,29 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
-import { ref, update } from 'firebase/database';
+import { ref, update, onValue } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
-import type { Employee, OffboardingReason, OffboardingChecklistItem, AssetReturnRecord } from '@/lib/data';
+import type { Employee, OffboardingReason, OffboardingChecklistItem, AssetReturnRecord, Asset, AssetCondition } from '@/lib/data';
 import { defaultOffboardingChecklist } from '@/lib/data';
 import { format } from 'date-fns';
-import { CollectAssetsDialog } from './collect-assets-dialog';
 
 interface OffboardEmployeeDialogProps {
     employee: Employee;
     onComplete?: () => void;
     children?: React.ReactNode;
+}
+
+interface AssetCollectionItem {
+    asset: Asset;
+    collected: boolean;
+    returnCondition: AssetCondition;
 }
 
 const offboardingReasons: { value: OffboardingReason; label: string }[] = [
@@ -57,7 +69,9 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     const [lastWorkingDay, setLastWorkingDay] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [exitNotes, setExitNotes] = useState('');
     const [finalSettlement, setFinalSettlement] = useState('');
-    const [returnedAssets, setReturnedAssets] = useState<AssetReturnRecord[]>([]);
+    const [assetsExpanded, setAssetsExpanded] = useState(false);
+    const [assetsLoading, setAssetsLoading] = useState(false);
+    const [assetItems, setAssetItems] = useState<AssetCollectionItem[]>([]);
     const [checklist, setChecklist] = useState<OffboardingChecklistItem[]>(
         defaultOffboardingChecklist.map((item, index) => ({
             ...item,
@@ -65,8 +79,56 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         }))
     );
 
+    // Load assigned assets when dialog opens
+    useEffect(() => {
+        if (!open || !companyId) return;
+
+        setAssetsLoading(true);
+        const assetsRef = ref(db, `companies/${companyId}/assets`);
+        const unsubscribe = onValue(assetsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const assignedAssets = Object.keys(data)
+                    .map(key => ({ ...data[key], id: key }))
+                    .filter((asset: Asset) => asset.assignedTo === employee.id);
+
+                setAssetItems(assignedAssets.map(asset => ({
+                    asset,
+                    collected: false,
+                    returnCondition: asset.condition || 'Good',
+                })));
+            } else {
+                setAssetItems([]);
+            }
+            setAssetsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [open, companyId, employee.id]);
+
+    // Update checklist item when assets are collected
+    useEffect(() => {
+        const collectedCount = assetItems.filter(a => a.collected).length;
+        if (collectedCount > 0 && assetItems.length > 0) {
+            setChecklist(prev => prev.map(item =>
+                item.id === 'item-0'
+                    ? {
+                        ...item,
+                        completed: collectedCount === assetItems.length,
+                        completedAt: new Date().toISOString(),
+                        completedBy: currentUser?.name || null,
+                        notes: `${collectedCount}/${assetItems.length} assets collected`,
+                    }
+                    : item
+            ));
+        }
+    }, [assetItems, currentUser?.name]);
+
     const toggleChecklistItem = (itemId: string) => {
-        if (itemId === 'item-0') return;
+        if (itemId === 'item-0') {
+            setAssetsExpanded(!assetsExpanded);
+            return;
+        }
 
         setChecklist((prev) =>
             prev.map((item) =>
@@ -82,24 +144,18 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         );
     };
 
-    const handleAssetsCollected = (assets: AssetReturnRecord[]) => {
-        setReturnedAssets(assets);
-        setChecklist((prev) =>
-            prev.map((item) =>
-                item.id === 'item-0'
-                    ? {
-                        ...item,
-                        completed: true,
-                        completedAt: new Date().toISOString(),
-                        completedBy: currentUser?.name || null,
-                        notes: `${assets.length} asset(s) collected`,
-                    }
-                    : item
-            )
-        );
+    const toggleAssetCollected = (index: number) => {
+        setAssetItems(prev => prev.map((item, i) =>
+            i === index ? { ...item, collected: !item.collected } : item
+        ));
+    };
+
+    const markAllAssetsCollected = () => {
+        setAssetItems(prev => prev.map(item => ({ ...item, collected: true })));
     };
 
     const handlePrintHandover = () => {
+        const collectedAssets = assetItems.filter(a => a.collected);
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
@@ -140,7 +196,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             </div>
           </div>
 
-          ${returnedAssets.length > 0 ? `
+          ${collectedAssets.length > 0 ? `
           <div class="section">
             <div class="section-title">Assets Returned</div>
             <table>
@@ -153,12 +209,12 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                 </tr>
               </thead>
               <tbody>
-                ${returnedAssets.map(asset => `
+                ${collectedAssets.map(item => `
                   <tr>
-                    <td>${asset.assetName}</td>
-                    <td>${asset.category}</td>
-                    <td>${asset.serialNumber || '-'}</td>
-                    <td>${asset.returnCondition}</td>
+                    <td>${item.asset.name}</td>
+                    <td>${item.asset.category}</td>
+                    <td>${item.asset.serialNumber || '-'}</td>
+                    <td>${item.returnCondition}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -223,6 +279,29 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         setLoading(true);
 
         try {
+            // Update collected assets to Available status
+            const collectedAssets = assetItems.filter(a => a.collected);
+            for (const item of collectedAssets) {
+                const assetRef = ref(db, `companies/${companyId}/assets/${item.asset.id}`);
+                await update(assetRef, {
+                    status: 'Available',
+                    condition: item.returnCondition,
+                    assignedTo: null,
+                    assignedToName: null,
+                    assignedAt: null,
+                });
+            }
+
+            // Create return records
+            const returnedAssets: AssetReturnRecord[] = collectedAssets.map(item => ({
+                assetId: item.asset.id,
+                assetName: item.asset.name,
+                category: item.asset.category,
+                serialNumber: item.asset.serialNumber || undefined,
+                returnedAt: new Date().toISOString(),
+                returnCondition: item.returnCondition,
+            }));
+
             const offboardingRecord: Record<string, unknown> = {
                 reason,
                 offboardedAt: new Date().toISOString(),
@@ -276,7 +355,8 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             setOtherReason('');
             setExitNotes('');
             setFinalSettlement('');
-            setReturnedAssets([]);
+            setAssetItems([]);
+            setAssetsExpanded(false);
             setChecklist(defaultOffboardingChecklist.map((item, index) => ({
                 ...item,
                 id: `item-${index}`,
@@ -286,6 +366,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     };
 
     const completedCount = checklist.filter((item) => item.completed).length;
+    const collectedAssetsCount = assetItems.filter(a => a.collected).length;
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -319,7 +400,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                     <Printer className="h-4 w-4 mr-2" />
                                     Print Handover Form
                                 </Button>
-                                <Button onClick={handleClose}>
+                                <Button onClick={() => handleOpenChange(false)}>
                                     Done
                                 </Button>
                             </div>
@@ -381,24 +462,87 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                 <div className="border rounded-lg p-3 space-y-2">
                                     {checklist.map((item, index) => (
                                         index === 0 ? (
-                                            <CollectAssetsDialog
-                                                key={item.id}
-                                                employee={employee}
-                                                companyId={companyId!}
-                                                onComplete={handleAssetsCollected}
-                                            >
-                                                <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors">
-                                                    {item.completed ? (
-                                                        <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                                    ) : (
-                                                        <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                                    )}
-                                                    <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
-                                                        {item.label}
-                                                    </span>
-                                                    <Package className="h-4 w-4 text-muted-foreground ml-auto" />
-                                                </div>
-                                            </CollectAssetsDialog>
+                                            // Asset Collection - Expandable Section
+                                            <Collapsible key={item.id} open={assetsExpanded} onOpenChange={setAssetsExpanded}>
+                                                <CollapsibleTrigger asChild>
+                                                    <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors">
+                                                        {item.completed ? (
+                                                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                                        ) : (
+                                                            <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                        )}
+                                                        <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
+                                                            {item.label}
+                                                        </span>
+                                                        {assetItems.length > 0 && (
+                                                            <Badge variant="secondary" className="ml-auto mr-2">
+                                                                {collectedAssetsCount}/{assetItems.length}
+                                                            </Badge>
+                                                        )}
+                                                        {assetsExpanded ? (
+                                                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent>
+                                                    <div className="ml-8 mt-2 space-y-2 border-l-2 pl-4">
+                                                        {assetsLoading ? (
+                                                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                Loading assets...
+                                                            </div>
+                                                        ) : assetItems.length === 0 ? (
+                                                            <div className="text-sm text-muted-foreground py-2">
+                                                                No assets assigned to this employee.
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <div className="flex justify-end mb-2">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        onClick={markAllAssetsCollected}
+                                                                    >
+                                                                        Mark All Collected
+                                                                    </Button>
+                                                                </div>
+                                                                {assetItems.map((item, idx) => (
+                                                                    <div
+                                                                        key={item.asset.id}
+                                                                        className={`flex items-center gap-3 p-2 rounded-md ${item.collected ? 'bg-green-50' : 'bg-muted/30'}`}
+                                                                    >
+                                                                        <Checkbox
+                                                                            checked={item.collected}
+                                                                            onCheckedChange={() => toggleAssetCollected(idx)}
+                                                                        />
+                                                                        <div className="flex-1">
+                                                                            <span className={`text-sm ${item.collected ? 'line-through text-muted-foreground' : ''}`}>
+                                                                                {item.asset.name}
+                                                                            </span>
+                                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                                <Badge variant="outline" className="text-xs">
+                                                                                    {item.asset.category}
+                                                                                </Badge>
+                                                                                {item.asset.serialNumber && (
+                                                                                    <span className="text-xs text-muted-foreground">
+                                                                                        SN: {item.asset.serialNumber}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        {item.collected && (
+                                                                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </CollapsibleContent>
+                                            </Collapsible>
                                         ) : (
                                             <div
                                                 key={item.id}
@@ -418,12 +562,6 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                     ))}
                                 </div>
                             </div>
-
-                            {returnedAssets.length > 0 && (
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
-                                    ✓ {returnedAssets.length} asset(s) collected
-                                </div>
-                            )}
 
                             <div className="space-y-2">
                                 <Label htmlFor="exitNotes">Exit Interview Notes</Label>
