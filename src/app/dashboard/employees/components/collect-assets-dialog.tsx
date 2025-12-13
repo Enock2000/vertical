@@ -169,7 +169,7 @@ export function CollectAssetsDialog({ employee, companyId, onComplete, children 
                     </DialogDescription>
                 </DialogHeader>
 
-                <div ref={printRef} className="space-y-4 py-4">
+                <div className="space-y-4 py-4">
                     {assetsLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <Loader2 className="h-6 w-6 animate-spin" />
