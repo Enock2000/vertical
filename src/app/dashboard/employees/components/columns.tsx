@@ -186,7 +186,7 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
               ) : (
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
-                    <div className="w-full text-left">Promote to Admin</div>
+                    <div className="w-full text-left">Assign as Admin</div>
                   </PromoteEmployeeDialog>
                 </DropdownMenuItem>
               )}

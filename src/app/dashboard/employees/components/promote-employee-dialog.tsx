@@ -74,17 +74,17 @@ export function PromoteEmployeeDialog({
     try {
       const employeeRef = ref(db, `employees/${employee.id}`);
       const updates: Partial<Employee> = {
-          role: 'Admin', // Promote the main role
-          adminRoleId: values.adminRoleId,
+        role: 'Admin', // Promote the main role
+        adminRoleId: values.adminRoleId,
       };
 
       // If the employee doesn't already have a 'jobTitle', use their current 'role' as the jobTitle.
       if (!employee.jobTitle) {
-          updates.jobTitle = employee.role;
+        updates.jobTitle = employee.role;
       }
 
       await update(employeeRef, updates);
-      
+
       onEmployeePromoted();
       setOpen(false);
       toast({
@@ -108,7 +108,7 @@ export function PromoteEmployeeDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Promote {employee.name} to Admin</DialogTitle>
+          <DialogTitle>Assign {employee.name} as Admin</DialogTitle>
           <DialogDescription>
             Select an administrative role to grant specific permissions.
           </DialogDescription>
@@ -147,10 +147,10 @@ export function PromoteEmployeeDialog({
                     Promoting...
                   </>
                 ) : (
-                    <>
-                        <Shield className="mr-2 h-4 w-4" />
-                        Promote to Admin
-                    </>
+                  <>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Assign as Admin
+                  </>
                 )}
               </Button>
             </DialogFooter>
