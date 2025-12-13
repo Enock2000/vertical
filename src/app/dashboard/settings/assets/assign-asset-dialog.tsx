@@ -118,7 +118,6 @@ export function AssignAssetDialog({ asset, employees, companyId, children }: Ass
                                 <SelectValue placeholder="Select an employee..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">-- No Assignment --</SelectItem>
                                 {employees.map(emp => (
                                     <SelectItem key={emp.id} value={emp.id}>
                                         {emp.name} - {emp.departmentName}
