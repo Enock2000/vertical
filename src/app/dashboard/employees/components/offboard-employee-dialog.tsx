@@ -855,23 +855,29 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                             </div>
                         </div>
 
-                        <DialogFooter>
+                        <DialogFooter className="flex justify-between sm:justify-between">
                             <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
                                 Cancel
                             </Button>
-                            <Button variant="destructive" onClick={handleOffboard} disabled={loading}>
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        <UserMinus className="h-4 w-4 mr-2" />
-                                        Confirm Offboarding
-                                    </>
-                                )}
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={handlePrintHandover} disabled={!reason}>
+                                    <Printer className="h-4 w-4 mr-2" />
+                                    Preview PDF
+                                </Button>
+                                <Button variant="destructive" onClick={handleOffboard} disabled={loading}>
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <UserMinus className="h-4 w-4 mr-2" />
+                                            Confirm Offboarding
+                                        </>
+                                    )}
+                                </Button>
+                            </div>
                         </DialogFooter>
                     </>
                 )}
