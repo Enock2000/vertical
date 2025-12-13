@@ -449,7 +449,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                         </div>
 
                         <DialogFooter>
-                            <Button variant="outline" onClick={handleClose} disabled={loading}>
+                            <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
                                 Cancel
                             </Button>
                             <Button variant="destructive" onClick={handleOffboard} disabled={loading}>
