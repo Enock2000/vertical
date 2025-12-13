@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, UserMinus, CheckCircle2, Circle } from 'lucide-react';
+import { Loader2, UserMinus, CheckCircle2, Circle, Package } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -26,9 +26,10 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
-import type { Employee, OffboardingReason, OffboardingRecord, OffboardingChecklistItem } from '@/lib/data';
+import type { Employee, OffboardingReason, OffboardingChecklistItem, AssetReturnRecord } from '@/lib/data';
 import { defaultOffboardingChecklist } from '@/lib/data';
 import { format } from 'date-fns';
+import { CollectAssetsDialog } from './collect-assets-dialog';
 
 interface OffboardEmployeeDialogProps {
     employee: Employee;
@@ -47,7 +48,7 @@ const offboardingReasons: { value: OffboardingReason; label: string }[] = [
 
 export function OffboardEmployeeDialog({ employee, onComplete, children }: OffboardEmployeeDialogProps) {
     const { toast } = useToast();
-    const { employee: currentUser } = useAuth();
+    const { employee: currentUser, companyId } = useAuth();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [reason, setReason] = useState<OffboardingReason | ''>('');
@@ -55,6 +56,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     const [lastWorkingDay, setLastWorkingDay] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [exitNotes, setExitNotes] = useState('');
     const [finalSettlement, setFinalSettlement] = useState('');
+    const [returnedAssets, setReturnedAssets] = useState<AssetReturnRecord[]>([]);
     const [checklist, setChecklist] = useState<OffboardingChecklistItem[]>(
         defaultOffboardingChecklist.map((item, index) => ({
             ...item,
@@ -63,6 +65,9 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     );
 
     const toggleChecklistItem = (itemId: string) => {
+        // Don't toggle the first item (Collect assets) - it has its own dialog
+        if (itemId === 'item-0') return;
+
         setChecklist((prev) =>
             prev.map((item) =>
                 item.id === itemId
@@ -71,6 +76,24 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                         completed: !item.completed,
                         completedAt: !item.completed ? new Date().toISOString() : null,
                         completedBy: !item.completed ? currentUser?.name || null : null,
+                    }
+                    : item
+            )
+        );
+    };
+
+    const handleAssetsCollected = (assets: AssetReturnRecord[]) => {
+        setReturnedAssets(assets);
+        // Mark the assets checklist item as completed
+        setChecklist((prev) =>
+            prev.map((item) =>
+                item.id === 'item-0'
+                    ? {
+                        ...item,
+                        completed: true,
+                        completedAt: new Date().toISOString(),
+                        completedBy: currentUser?.name || null,
+                        notes: `${assets.length} asset(s) collected`,
                     }
                     : item
             )
@@ -123,6 +146,9 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             }
             if (finalSettlement) {
                 offboardingRecord.finalSettlementAmount = parseFloat(finalSettlement);
+            }
+            if (returnedAssets.length > 0) {
+                offboardingRecord.returnedAssets = returnedAssets;
             }
 
             await update(ref(db, `employees/${employee.id}`), {
@@ -217,24 +243,56 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                     <div className="space-y-2">
                         <Label>Offboarding Checklist ({completedCount}/{checklist.length})</Label>
                         <div className="border rounded-lg p-3 space-y-2">
-                            {checklist.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                                    onClick={() => toggleChecklistItem(item.id)}
-                                >
-                                    {item.completed ? (
-                                        <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                    ) : (
-                                        <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                    )}
-                                    <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
-                                        {item.label}
-                                    </span>
-                                </div>
+                            {checklist.map((item, index) => (
+                                index === 0 ? (
+                                    // First item: Collect Assets - opens special dialog
+                                    <CollectAssetsDialog
+                                        key={item.id}
+                                        employee={employee}
+                                        companyId={companyId!}
+                                        onComplete={handleAssetsCollected}
+                                    >
+                                        <div
+                                            className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
+                                        >
+                                            {item.completed ? (
+                                                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                            ) : (
+                                                <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                            )}
+                                            <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
+                                                {item.label}
+                                            </span>
+                                            <Package className="h-4 w-4 text-muted-foreground ml-auto" />
+                                        </div>
+                                    </CollectAssetsDialog>
+                                ) : (
+                                    // Other items: regular toggle
+                                    <div
+                                        key={item.id}
+                                        className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
+                                        onClick={() => toggleChecklistItem(item.id)}
+                                    >
+                                        {item.completed ? (
+                                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
+                                        ) : (
+                                            <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                        )}
+                                        <span className={item.completed ? 'line-through text-muted-foreground' : ''}>
+                                            {item.label}
+                                        </span>
+                                    </div>
+                                )
                             ))}
                         </div>
                     </div>
+
+                    {/* Show collected assets count */}
+                    {returnedAssets.length > 0 && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-700">
+                            ✓ {returnedAssets.length} asset(s) collected and marked as returned
+                        </div>
+                    )}
 
                     {/* Exit Interview Notes */}
                     <div className="space-y-2">
@@ -283,3 +341,4 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         </Dialog>
     );
 }
+
