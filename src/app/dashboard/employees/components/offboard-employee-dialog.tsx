@@ -69,8 +69,8 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                     ? {
                         ...item,
                         completed: !item.completed,
-                        completedAt: !item.completed ? new Date().toISOString() : undefined,
-                        completedBy: !item.completed ? currentUser?.name : undefined,
+                        completedAt: !item.completed ? new Date().toISOString() : null,
+                        completedBy: !item.completed ? currentUser?.name || null : null,
                     }
                     : item
             )
@@ -99,17 +99,31 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         setLoading(true);
 
         try {
-            const offboardingRecord: OffboardingRecord = {
+            // Build the offboarding record, only including non-undefined values
+            const offboardingRecord: Record<string, unknown> = {
                 reason,
-                otherReason: reason === 'Other' ? otherReason.trim() : undefined,
                 offboardedAt: new Date().toISOString(),
                 offboardedBy: currentUser?.name || 'Admin',
                 lastWorkingDay,
-                checklist,
-                exitInterviewNotes: exitNotes.trim() || undefined,
-                finalSettlementAmount: finalSettlement ? parseFloat(finalSettlement) : undefined,
+                checklist: checklist.map(item => ({
+                    ...item,
+                    completedAt: item.completedAt || null,
+                    completedBy: item.completedBy || null,
+                    notes: item.notes || null,
+                })),
                 finalSettlementPaid: false,
             };
+
+            // Only add optional fields if they have values
+            if (reason === 'Other' && otherReason.trim()) {
+                offboardingRecord.otherReason = otherReason.trim();
+            }
+            if (exitNotes.trim()) {
+                offboardingRecord.exitInterviewNotes = exitNotes.trim();
+            }
+            if (finalSettlement) {
+                offboardingRecord.finalSettlementAmount = parseFloat(finalSettlement);
+            }
 
             await update(ref(db, `employees/${employee.id}`), {
                 status: 'Offboarded',
