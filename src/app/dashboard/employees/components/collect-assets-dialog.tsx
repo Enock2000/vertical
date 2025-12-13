@@ -97,7 +97,10 @@ export function CollectAssetsDialog({ employee, companyId, onComplete, children 
         setAssetReturns(prev => prev.map(item => ({ ...item, returned: true })));
     };
 
-    const handleConfirm = async () => {
+    const handleConfirm = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        e.preventDefault();
+
         const returnedItems = assetReturns.filter(item => item.returned);
 
         if (returnedItems.length === 0) {
@@ -263,7 +266,7 @@ export function CollectAssetsDialog({ employee, companyId, onComplete, children 
                 </div>
 
                 <DialogFooter className="gap-2">
-                    <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                    <Button type="button" variant="outline" onClick={(e) => { e.stopPropagation(); setOpen(false); }} disabled={loading}>
                         Cancel
                     </Button>
                     <Button onClick={handleConfirm} disabled={loading || returnedCount === 0}>
