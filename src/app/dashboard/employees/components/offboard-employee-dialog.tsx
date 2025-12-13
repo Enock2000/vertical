@@ -268,9 +268,8 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         }
     };
 
-    const handleClose = () => {
-        setOpen(false);
-        if (success) {
+    const handleOpenChange = (newOpen: boolean) => {
+        if (!newOpen && success) {
             onComplete?.();
             setSuccess(false);
             setReason('');
@@ -283,12 +282,13 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                 id: `item-${index}`,
             })));
         }
+        setOpen(newOpen);
     };
 
     const completedCount = checklist.filter((item) => item.completed).length;
 
     return (
-        <Dialog open={open} onOpenChange={handleClose}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 {children || (
                     <Button variant="outline" size="sm">
