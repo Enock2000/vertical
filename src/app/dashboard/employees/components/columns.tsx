@@ -29,7 +29,6 @@ import { differenceInYears } from "date-fns"
 import { PromoteEmployeeDialog } from "./promote-employee-dialog"
 import { DemoteAdminDialog } from "./demote-admin-dialog"
 import { GenerateContractDialog } from "./generate-contract-dialog"
-import { TerminateContractDialog } from "./terminate-contract-dialog"
 import { ViewEmployeeDialog } from "./view-employee-dialog"
 import { ResetEmployeePasswordDialog } from "./reset-employee-password-dialog"
 import { OffboardEmployeeDialog } from "./offboard-employee-dialog"
@@ -211,13 +210,6 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
                     <KeyRound className="mr-2 h-4 w-4" /> Reset Password
                   </div>
                 </ResetEmployeePasswordDialog>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
-                <TerminateContractDialog employee={employee} onContractTerminated={onAction}>
-                  <div className="w-full text-left flex items-center">
-                    <FileX2 className="mr-2 h-4 w-4" /> Terminate Contract
-                  </div>
-                </TerminateContractDialog>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-600 focus:text-red-600 focus:bg-destructive/10">
                 <OffboardEmployeeDialog employee={employee} onComplete={onAction}>
