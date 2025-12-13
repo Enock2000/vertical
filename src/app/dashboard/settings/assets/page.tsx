@@ -66,7 +66,7 @@ export default function AssetsPage() {
             const data = snapshot.val();
             if (data) {
                 const empList = Object.values<Employee>(data).filter(
-                    e => e.companyId === companyId && e.status !== 'Offboarded'
+                    e => e.companyId === companyId && e.status !== 'Offboarded' && e.role !== 'Admin'
                 );
                 setEmployees(empList);
             }
