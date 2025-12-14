@@ -24,6 +24,7 @@ import {
     Unlock,
     AlertCircle,
     Building2,
+    Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +35,7 @@ import { DataTable } from "./components/data-table";
 import { columns } from "./components/columns";
 import { Employee, calculatePayroll, PayrollConfig, PayrollDetails, PayrollRun, AttendanceRecord } from '@/lib/data';
 import { PayslipDialog } from './components/payslip-dialog';
+import { PayrollPreviewDialog } from './components/payroll-preview-dialog';
 import { db } from '@/lib/firebase';
 import { ref, onValue, push, update, get } from 'firebase/database';
 import {
@@ -460,10 +462,19 @@ export default function PayrollPage() {
                             </div>
                             <div className="flex gap-2">
                                 {payrollStatus === 'Draft' && (
-                                    <Button variant="outline" onClick={handleApprovePayroll} disabled={employees.length === 0}>
-                                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                                        Approve Payroll
-                                    </Button>
+                                    <PayrollPreviewDialog
+                                        employees={employees}
+                                        payrollDetailsMap={payrollDetailsMap}
+                                        previousPayrollRun={payrollRuns[0] || null}
+                                        periodLabel={periodLabel}
+                                        onApprove={handleApprovePayroll}
+                                        onProcess={handleRunPayroll}
+                                    >
+                                        <Button variant="outline" disabled={employees.length === 0}>
+                                            <Eye className="h-4 w-4 mr-2" />
+                                            Preview Payroll
+                                        </Button>
+                                    </PayrollPreviewDialog>
                                 )}
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
