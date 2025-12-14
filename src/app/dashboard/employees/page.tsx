@@ -43,6 +43,27 @@ export default function EmployeesPage() {
     [allEmployees]
   );
 
+  // Prepare filter options for DataTable
+  const departmentOptions = useMemo(
+    () => departments.map(d => ({ value: d.id, label: d.name })),
+    [departments]
+  );
+
+  const branchOptions = useMemo(
+    () => branches.map(b => ({ value: b.id || b.name, label: b.name })),
+    [branches]
+  );
+
+  const roleOptions = useMemo(() => {
+    // Get unique roles from employees
+    const uniqueRoles = new Set<string>();
+    allEmployees.forEach(e => {
+      if (e.role) uniqueRoles.add(e.role);
+      if (e.jobTitle) uniqueRoles.add(e.jobTitle);
+    });
+    return Array.from(uniqueRoles).map(r => ({ value: r, label: r }));
+  }, [allEmployees]);
+
   useEffect(() => {
     if (!companyId) return;
 
@@ -174,7 +195,13 @@ export default function EmployeesPage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="active">
-              <DataTable columns={tableColumns} data={activeEmployees} />
+              <DataTable
+                columns={tableColumns}
+                data={activeEmployees}
+                departments={departmentOptions}
+                branches={branchOptions}
+                roles={roleOptions}
+              />
             </TabsContent>
             <TabsContent value="offboarded">
               {offboardedEmployees.length === 0 ? (
@@ -183,7 +210,13 @@ export default function EmployeesPage() {
                   <p>No offboarded employees yet.</p>
                 </div>
               ) : (
-                <DataTable columns={tableColumns} data={offboardedEmployees} />
+                <DataTable
+                  columns={tableColumns}
+                  data={offboardedEmployees}
+                  departments={departmentOptions}
+                  branches={branchOptions}
+                  roles={roleOptions}
+                />
               )}
             </TabsContent>
           </Tabs>
@@ -192,3 +225,4 @@ export default function EmployeesPage() {
     </Card>
   );
 }
+
