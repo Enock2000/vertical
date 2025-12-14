@@ -185,8 +185,8 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex">
-        <div className="flex h-14 items-center border-b px-6">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-gradient-to-b from-background via-background to-primary/5 sm:flex">
+        <div className="flex h-16 items-center border-b px-6 bg-primary/5">
           <Link
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
@@ -195,15 +195,15 @@ export default function DashboardLayout({
           </Link>
         </div>
         <ScrollArea className="flex-grow">
-          <nav className="flex flex-col gap-1 p-4">
+          <nav className="flex flex-col gap-1 p-3">
             {visibleNavItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary",
                   (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
-                    ? "bg-muted text-primary"
+                    ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground font-medium"
                     : ""
                 )}
               >
@@ -213,6 +213,9 @@ export default function DashboardLayout({
             ))}
           </nav>
         </ScrollArea>
+        <div className="border-t p-4 bg-primary/5">
+          <p className="text-xs text-muted-foreground text-center">VerticalSync v2.0</p>
+        </div>
       </aside>
       <div className="flex flex-col sm:pl-60">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">

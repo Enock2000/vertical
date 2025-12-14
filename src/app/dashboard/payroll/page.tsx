@@ -313,10 +313,10 @@ export default function PayrollPage() {
     return (
         <div className="space-y-6">
             {/* Header Section */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-800 p-6 text-white shadow-xl">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-800 p-6 text-white shadow-xl">
                 <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
                 <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10 blur-3xl"></div>
-                <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-emerald-400/20 blur-3xl"></div>
+                <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-purple-400/20 blur-3xl"></div>
 
                 <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
@@ -479,7 +479,7 @@ export default function PayrollPage() {
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <Button
-                                            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+                                            className="gap-2"
                                             disabled={employees.length === 0 || isProcessing || payrollStatus === 'Paid'}
                                         >
                                             {isProcessing ? (
