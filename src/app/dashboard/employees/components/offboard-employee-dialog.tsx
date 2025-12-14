@@ -51,18 +51,37 @@ interface AssetCollectionItem {
 }
 
 interface FinalCompensation {
+    // Days worked calculation
     daysWorkedThisMonth: number;
+    totalDaysInMonth: number;
+    dailyRate: number;
     proratedSalary: number;
+    // Notice period
+    noticePeriodDays: number;
+    noticeDaysServed: number;
+    noticeDaysUnserved: number;
+    noticeDeduction: number;
+    // Leave payout
     outstandingLeaveDays: number;
     leavePayout: number;
+    // Service details
     yearsOfService: number;
+    monthsOfService: number;
+    // Gratuity
     gratuityAmount: number;
+    // Additional amounts
+    allowances: number;
+    bonus: number;
+    additionalPayout: number;
+    // Gross
     grossFinalPay: number;
+    // Deductions
     napsaDeduction: number;
     nhimaDeduction: number;
     payeDeduction: number;
     otherDeductions: number;
     totalDeductions: number;
+    // Final
     netFinalPay: number;
 }
 
@@ -92,8 +111,11 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
 
     // Compensation fields
-    const [gratuityMonths, setGratuityMonths] = useState('2');
+    const [gratuityMonths, setGratuityMonths] = useState('0');
     const [additionalPayout, setAdditionalPayout] = useState('0');
+    const [noticePeriodDays, setNoticePeriodDays] = useState('30');
+    const [noticeServed, setNoticeServed] = useState(true);
+    const [resignationDate, setResignationDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     const [checklist, setChecklist] = useState<OffboardingChecklistItem[]>(
         defaultOffboardingChecklist.map((item, index) => ({
@@ -143,48 +165,82 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
         if (!payrollConfig) return null;
 
         const lastDay = new Date(lastWorkingDay);
+        const resignation = new Date(resignationDate);
         const monthStart = new Date(lastDay.getFullYear(), lastDay.getMonth(), 1);
         const monthEnd = new Date(lastDay.getFullYear(), lastDay.getMonth() + 1, 0);
         const totalDaysInMonth = monthEnd.getDate();
-        const daysWorkedThisMonth = differenceInDays(lastDay, monthStart) + 1;
+        const daysWorkedThisMonth = Math.max(0, differenceInDays(lastDay, monthStart) + 1);
 
-        // Prorated salary
-        const dailyRate = employee.salary / totalDaysInMonth;
+        // Daily rate calculation
+        const dailyRate = employee.salary / 30; // Standard 30-day month
+
+        // 1. Prorated Salary for days worked in final month
         const proratedSalary = dailyRate * daysWorkedThisMonth;
 
-        // Outstanding leave payout
+        // 2. Notice Period Handling
+        const noticePeriod = parseInt(noticePeriodDays) || 30;
+        const actualNoticeDays = differenceInDays(lastDay, resignation);
+        const noticeDaysServed = noticeServed ? Math.min(noticePeriod, Math.max(0, actualNoticeDays)) : 0;
+        const noticeDaysUnserved = Math.max(0, noticePeriod - noticeDaysServed);
+        // Deduction if notice not served (employee owes company)
+        const noticeDeduction = noticeServed ? 0 : (dailyRate * noticeDaysUnserved);
+
+        // 3. Accrued Leave Payout
         const outstandingLeaveDays = employee.annualLeaveBalance || 0;
         const leavePayout = outstandingLeaveDays * dailyRate;
 
-        // Gratuity (based on years of service)
+        // 4. Years of Service
         const joinDate = new Date(employee.joinDate);
         const yearsOfService = differenceInYears(lastDay, joinDate);
-        const monthsForGratuity = parseFloat(gratuityMonths) || 0;
-        const gratuityAmount = monthsForGratuity > 0 ? (employee.salary * monthsForGratuity) * Math.max(1, yearsOfService) / yearsOfService : 0;
+        const monthsOfService = differenceInMonths(lastDay, joinDate);
 
-        // Additional payout
+        // 5. Gratuity/Severance (based on policy)
+        const monthsForGratuity = parseFloat(gratuityMonths) || 0;
+        // Gratuity = months of salary × years of service (common formula)
+        const gratuityAmount = yearsOfService >= 1
+            ? (employee.salary * monthsForGratuity)
+            : 0;
+
+        // 6. Other earnings
+        const allowances = employee.allowances || 0;
+        const bonus = employee.bonus || 0;
         const additional = parseFloat(additionalPayout) || 0;
 
-        // Gross final pay
-        const grossFinalPay = proratedSalary + leavePayout + gratuityAmount + additional + employee.allowances + employee.bonus;
+        // 7. Gross Final Pay (before deductions)
+        const grossBeforeNotice = proratedSalary + leavePayout + gratuityAmount + additional + allowances + bonus;
+        const grossFinalPay = grossBeforeNotice - noticeDeduction;
 
-        // Deductions using payroll config
-        const napsaDeduction = grossFinalPay * (payrollConfig.employeeNapsaRate / 100);
-        const nhimaDeduction = grossFinalPay * (payrollConfig.employeeNhimaRate / 100);
-        const taxablePay = grossFinalPay - napsaDeduction;
-        const payeDeduction = taxablePay * (payrollConfig.taxRate / 100);
+        // 8. Statutory Deductions
+        const napsaDeduction = Math.max(0, grossFinalPay * (payrollConfig.employeeNapsaRate / 100));
+        const nhimaDeduction = Math.max(0, grossFinalPay * (payrollConfig.employeeNhimaRate / 100));
+
+        // PAYE on taxable income
+        const taxablePay = Math.max(0, grossFinalPay - napsaDeduction);
+        const payeDeduction = Math.max(0, taxablePay * (payrollConfig.taxRate / 100));
+
+        // Other deductions (loans, advances, etc.)
         const otherDeductions = employee.deductions || 0;
 
         const totalDeductions = napsaDeduction + nhimaDeduction + payeDeduction + otherDeductions;
-        const netFinalPay = grossFinalPay - totalDeductions;
+        const netFinalPay = Math.max(0, grossFinalPay - totalDeductions);
 
         return {
             daysWorkedThisMonth,
+            totalDaysInMonth,
+            dailyRate,
             proratedSalary,
+            noticePeriodDays: noticePeriod,
+            noticeDaysServed,
+            noticeDaysUnserved,
+            noticeDeduction,
             outstandingLeaveDays,
             leavePayout,
             yearsOfService,
+            monthsOfService,
             gratuityAmount,
+            allowances,
+            bonus,
+            additionalPayout: additional,
             grossFinalPay,
             napsaDeduction,
             nhimaDeduction,
@@ -193,7 +249,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
             totalDeductions,
             netFinalPay,
         };
-    }, [employee, lastWorkingDay, payrollConfig, gratuityMonths, additionalPayout]);
+    }, [employee, lastWorkingDay, resignationDate, payrollConfig, gratuityMonths, additionalPayout, noticePeriodDays, noticeServed]);
 
     // Update checklist item when assets are collected
     useEffect(() => {
@@ -670,16 +726,61 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                     <div className="mt-3 p-4 border rounded-lg bg-muted/30 space-y-4">
+                                        {/* Input Fields */}
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label>Gratuity (Months of Salary)</Label>
+                                                <Label>Resignation/Termination Date</Label>
+                                                <Input
+                                                    type="date"
+                                                    value={resignationDate}
+                                                    onChange={(e) => setResignationDate(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Notice Period (Days)</Label>
+                                                <Select value={noticePeriodDays} onValueChange={setNoticePeriodDays}>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="7">7 Days</SelectItem>
+                                                        <SelectItem value="14">14 Days</SelectItem>
+                                                        <SelectItem value="30">30 Days (1 Month)</SelectItem>
+                                                        <SelectItem value="60">60 Days (2 Months)</SelectItem>
+                                                        <SelectItem value="90">90 Days (3 Months)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3 p-3 border rounded-lg bg-background">
+                                            <Checkbox
+                                                id="noticeServed"
+                                                checked={noticeServed}
+                                                onCheckedChange={(checked) => setNoticeServed(!!checked)}
+                                            />
+                                            <div>
+                                                <Label htmlFor="noticeServed" className="cursor-pointer">Notice Period Served</Label>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {noticeServed
+                                                        ? 'Employee will work through their notice period'
+                                                        : 'Employee leaving immediately - salary deduction applies'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Gratuity/Severance (Months)</Label>
                                                 <Input
                                                     type="number"
                                                     value={gratuityMonths}
                                                     onChange={(e) => setGratuityMonths(e.target.value)}
                                                     min="0"
                                                     step="0.5"
+                                                    placeholder="0"
                                                 />
+                                                <p className="text-xs text-muted-foreground">Based on company policy</p>
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Additional Payout (ZMW)</Label>
@@ -688,44 +789,142 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                                     value={additionalPayout}
                                                     onChange={(e) => setAdditionalPayout(e.target.value)}
                                                     min="0"
+                                                    placeholder="0"
                                                 />
+                                                <p className="text-xs text-muted-foreground">Bonus, incentives, etc.</p>
                                             </div>
                                         </div>
 
+                                        <Separator />
+
+                                        {/* Calculation Breakdown */}
                                         {finalCompensation && (
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span>Prorated Salary ({finalCompensation.daysWorkedThisMonth} days)</span>
-                                                    <span>{formatCurrency(finalCompensation.proratedSalary)}</span>
+                                            <div className="space-y-3 text-sm">
+                                                {/* Employee Info Summary */}
+                                                <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                                                    <div className="grid grid-cols-3 gap-2 text-xs">
+                                                        <div><span className="text-muted-foreground">Monthly Salary:</span> {formatCurrency(employee.salary)}</div>
+                                                        <div><span className="text-muted-foreground">Daily Rate:</span> {formatCurrency(finalCompensation.dailyRate)}</div>
+                                                        <div><span className="text-muted-foreground">Service:</span> {finalCompensation.yearsOfService} yrs {finalCompensation.monthsOfService % 12} mos</div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>Leave Payout ({finalCompensation.outstandingLeaveDays} days)</span>
-                                                    <span>{formatCurrency(finalCompensation.leavePayout)}</span>
+
+                                                {/* 1. Prorated Salary */}
+                                                <div className="p-3 border rounded-lg">
+                                                    <div className="flex justify-between font-medium mb-1">
+                                                        <span className="flex items-center gap-2">
+                                                            <Badge variant="outline" className="text-xs">1</Badge>
+                                                            Prorated Salary
+                                                        </span>
+                                                        <span>{formatCurrency(finalCompensation.proratedSalary)}</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {finalCompensation.daysWorkedThisMonth} days × {formatCurrency(finalCompensation.dailyRate)}/day
+                                                    </p>
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>Gratuity ({finalCompensation.yearsOfService} yrs service)</span>
-                                                    <span>{formatCurrency(finalCompensation.gratuityAmount)}</span>
+
+                                                {/* 2. Notice Period */}
+                                                {!noticeServed && finalCompensation.noticeDeduction > 0 && (
+                                                    <div className="p-3 border rounded-lg border-orange-200 bg-orange-50 dark:bg-orange-950">
+                                                        <div className="flex justify-between font-medium mb-1 text-orange-700 dark:text-orange-400">
+                                                            <span className="flex items-center gap-2">
+                                                                <Badge variant="outline" className="text-xs border-orange-300">2</Badge>
+                                                                Notice Period Deduction
+                                                            </span>
+                                                            <span>-{formatCurrency(finalCompensation.noticeDeduction)}</span>
+                                                        </div>
+                                                        <p className="text-xs text-orange-600 dark:text-orange-400">
+                                                            {finalCompensation.noticeDaysUnserved} unserved days × {formatCurrency(finalCompensation.dailyRate)}/day
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* 3. Leave Payout */}
+                                                <div className="p-3 border rounded-lg">
+                                                    <div className="flex justify-between font-medium mb-1">
+                                                        <span className="flex items-center gap-2">
+                                                            <Badge variant="outline" className="text-xs">3</Badge>
+                                                            Accrued Leave Payout
+                                                        </span>
+                                                        <span>{formatCurrency(finalCompensation.leavePayout)}</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {finalCompensation.outstandingLeaveDays} unused days × {formatCurrency(finalCompensation.dailyRate)}/day
+                                                    </p>
                                                 </div>
-                                                <Separator className="my-2" />
-                                                <div className="flex justify-between font-medium">
+
+                                                {/* 4. Gratuity */}
+                                                {finalCompensation.gratuityAmount > 0 && (
+                                                    <div className="p-3 border rounded-lg">
+                                                        <div className="flex justify-between font-medium mb-1">
+                                                            <span className="flex items-center gap-2">
+                                                                <Badge variant="outline" className="text-xs">4</Badge>
+                                                                Gratuity/Severance
+                                                            </span>
+                                                            <span>{formatCurrency(finalCompensation.gratuityAmount)}</span>
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {gratuityMonths} months × {formatCurrency(employee.salary)}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {/* Additional amounts */}
+                                                {(finalCompensation.allowances > 0 || finalCompensation.bonus > 0 || finalCompensation.additionalPayout > 0) && (
+                                                    <div className="p-3 border rounded-lg">
+                                                        <div className="flex justify-between font-medium mb-1">
+                                                            <span>Additional Earnings</span>
+                                                            <span>{formatCurrency(finalCompensation.allowances + finalCompensation.bonus + finalCompensation.additionalPayout)}</span>
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground space-y-1">
+                                                            {finalCompensation.allowances > 0 && <div>Allowances: {formatCurrency(finalCompensation.allowances)}</div>}
+                                                            {finalCompensation.bonus > 0 && <div>Bonus: {formatCurrency(finalCompensation.bonus)}</div>}
+                                                            {finalCompensation.additionalPayout > 0 && <div>Additional: {formatCurrency(finalCompensation.additionalPayout)}</div>}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <Separator />
+
+                                                {/* Gross Pay */}
+                                                <div className="flex justify-between font-semibold text-base bg-muted p-3 rounded-lg">
                                                     <span>Gross Final Pay</span>
                                                     <span>{formatCurrency(finalCompensation.grossFinalPay)}</span>
                                                 </div>
-                                                <div className="flex justify-between text-red-600">
-                                                    <span>NAPSA ({payrollConfig?.employeeNapsaRate || 5}%)</span>
-                                                    <span>-{formatCurrency(finalCompensation.napsaDeduction)}</span>
+
+                                                {/* Deductions */}
+                                                <div className="p-3 border rounded-lg border-red-200 bg-red-50 dark:bg-red-950/30">
+                                                    <div className="font-medium mb-2 text-red-700 dark:text-red-400">Statutory Deductions</div>
+                                                    <div className="space-y-1 text-red-600 dark:text-red-400">
+                                                        <div className="flex justify-between">
+                                                            <span>NAPSA ({payrollConfig?.employeeNapsaRate || 5}%)</span>
+                                                            <span>-{formatCurrency(finalCompensation.napsaDeduction)}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>NHIMA ({payrollConfig?.employeeNhimaRate || 1}%)</span>
+                                                            <span>-{formatCurrency(finalCompensation.nhimaDeduction)}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>PAYE (Est. {payrollConfig?.taxRate || 25}%)</span>
+                                                            <span>-{formatCurrency(finalCompensation.payeDeduction)}</span>
+                                                        </div>
+                                                        {finalCompensation.otherDeductions > 0 && (
+                                                            <div className="flex justify-between">
+                                                                <span>Other (Loans, etc.)</span>
+                                                                <span>-{formatCurrency(finalCompensation.otherDeductions)}</span>
+                                                            </div>
+                                                        )}
+                                                        <Separator className="my-1 bg-red-200" />
+                                                        <div className="flex justify-between font-medium">
+                                                            <span>Total Deductions</span>
+                                                            <span>-{formatCurrency(finalCompensation.totalDeductions)}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between text-red-600">
-                                                    <span>NHIMA ({payrollConfig?.employeeNhimaRate || 1}%)</span>
-                                                    <span>-{formatCurrency(finalCompensation.nhimaDeduction)}</span>
-                                                </div>
-                                                <div className="flex justify-between text-red-600">
-                                                    <span>PAYE ({payrollConfig?.taxRate || 25}%)</span>
-                                                    <span>-{formatCurrency(finalCompensation.payeDeduction)}</span>
-                                                </div>
-                                                <Separator className="my-2" />
-                                                <div className="flex justify-between font-bold text-lg text-green-600">
-                                                    <span>Net Final Payment</span>
+
+                                                {/* Net Pay */}
+                                                <div className="flex justify-between font-bold text-lg bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400 p-4 rounded-lg">
+                                                    <span>NET FINAL PAYMENT</span>
                                                     <span>{formatCurrency(finalCompensation.netFinalPay)}</span>
                                                 </div>
                                             </div>
@@ -853,7 +1052,7 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                                     rows={2}
                                 />
                             </div>
-                        </div>
+                        </div >
 
                         <DialogFooter className="flex justify-between sm:justify-between">
                             <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={loading}>
@@ -880,8 +1079,9 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
                             </div>
                         </DialogFooter>
                     </>
-                )}
-            </DialogContent>
-        </Dialog>
+                )
+                }
+            </DialogContent >
+        </Dialog >
     );
 }
