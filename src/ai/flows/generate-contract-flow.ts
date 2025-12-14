@@ -33,7 +33,68 @@ export type GenerateContractOutput = z.infer<typeof GenerateContractOutputSchema
 export async function generateContract(
   input: GenerateContractInput
 ): Promise<GenerateContractOutput> {
-  return generateContractFlow(input);
+  try {
+    return await generateContractFlow(input);
+  } catch (error) {
+    console.error('Error in generateContract:', error);
+    // Return a fallback contract template if AI fails
+    return {
+      contractText: generateFallbackContract(input),
+    };
+  }
+}
+
+// Fallback template if AI is unavailable
+function generateFallbackContract(input: GenerateContractInput): string {
+  return `
+EMPLOYMENT CONTRACT
+
+This Employment Contract ("Contract") is entered into as of ${input.contractStartDate}.
+
+BETWEEN:
+
+${input.companyName} (hereinafter referred to as the "Employer")
+
+AND
+
+${input.employeeName} (hereinafter referred to as the "Employee")
+
+1. POSITION
+The Employee is hereby employed as ${input.jobTitle}.
+
+2. COMMENCEMENT DATE
+This employment shall commence on ${input.contractStartDate}.
+
+3. CONTRACT TYPE
+This is a ${input.contractType} employment contract.
+${input.contractEndDate ? `The contract shall end on ${input.contractEndDate}.` : ''}
+
+4. REMUNERATION
+The Employee shall receive an annual gross salary of ZMW ${input.salary.toLocaleString()}, payable monthly.
+
+5. PROBATION PERIOD
+The Employee shall be on probation for the first three (3) months of employment.
+
+6. DUTIES AND RESPONSIBILITIES
+The Employee agrees to perform all duties and responsibilities assigned by the Employer.
+
+7. CONFIDENTIALITY
+The Employee agrees to maintain confidentiality regarding all company information.
+
+8. TERMINATION
+Either party may terminate this contract with one (1) month's written notice.
+
+9. GOVERNING LAW
+This contract shall be governed by the laws of the Republic of Zambia.
+
+SIGNATURES:
+
+_________________________                    Date: _______________
+Employer Representative
+
+_________________________                    Date: _______________
+${input.employeeName}
+`;
 }
 
 const generateContractPrompt = ai.definePrompt({
