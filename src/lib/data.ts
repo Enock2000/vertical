@@ -781,24 +781,43 @@ export const getAdminUserIds = async (companyId: string): Promise<string[]> => {
 };
 
 export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
+    // Defensive defaults for all numeric employee fields
+    const salary = Number(employee.salary) || 0;
+    const hourlyRate = Number(employee.hourlyRate) || 0;
+    const hoursWorked = Number(employee.hoursWorked) || 0;
+    const allowances = Number(employee.allowances) || 0;
+    const bonus = Number(employee.bonus) || 0;
+    const reimbursements = Number(employee.reimbursements) || 0;
+    const overtime = Number(employee.overtime) || 0;
+    const deductions = Number(employee.deductions) || 0;
+    const workerType = employee.workerType || 'Salaried';
+
+    // Defensive defaults for config rates
+    const employeeNapsaRate = Number(config.employeeNapsaRate) || 5;
+    const employerNapsaRate = Number(config.employerNapsaRate) || 5;
+    const employeeNhimaRate = Number(config.employeeNhimaRate) || 1;
+    const employerNhimaRate = Number(config.employerNhimaRate) || 1;
+    const taxRate = Number(config.taxRate) || 0;
+    const overtimeMultiplier = Number(config.overtimeMultiplier) || 1.5;
+
     let basePay = 0;
-    if (employee.workerType === 'Salaried') {
-        basePay = employee.salary;
-    } else if (employee.workerType === 'Hourly') {
-        basePay = employee.hourlyRate * employee.hoursWorked;
+    if (workerType === 'Salaried') {
+        basePay = salary;
+    } else if (workerType === 'Hourly') {
+        basePay = hourlyRate * hoursWorked;
     } else { // Contractor
-        basePay = employee.salary; // Assuming salary field is used for contract amount
+        basePay = salary; // Assuming salary field is used for contract amount
     }
 
-    const overtimePay = employee.workerType === 'Hourly'
-        ? employee.overtime * employee.hourlyRate * config.overtimeMultiplier
-        : employee.overtime; // For salaried, assume 'overtime' is a flat amount
+    const overtimePay = workerType === 'Hourly'
+        ? overtime * hourlyRate * overtimeMultiplier
+        : overtime; // For salaried, assume 'overtime' is a flat amount
 
-    const grossPay = basePay + overtimePay + employee.allowances + employee.bonus + employee.reimbursements;
+    const grossPay = basePay + overtimePay + allowances + bonus + reimbursements;
 
     // For contractors, no statutory deductions are made
-    if (employee.workerType === 'Contractor') {
-        const totalDeductions = employee.deductions;
+    if (workerType === 'Contractor') {
+        const totalDeductions = deductions;
         const netPay = grossPay - totalDeductions;
         return {
             basePay,
@@ -814,15 +833,15 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
         };
     }
 
-    const employeeNapsaDeduction = (grossPay * (config.employeeNapsaRate / 100));
-    const employerNapsaContribution = (grossPay * (config.employerNapsaRate / 100));
-    const employeeNhimaDeduction = (grossPay * (config.employeeNhimaRate / 100));
-    const employerNhimaContribution = (grossPay * (config.employerNhimaRate / 100));
+    const employeeNapsaDeduction = (grossPay * (employeeNapsaRate / 100));
+    const employerNapsaContribution = (grossPay * (employerNapsaRate / 100));
+    const employeeNhimaDeduction = (grossPay * (employeeNhimaRate / 100));
+    const employerNhimaContribution = (grossPay * (employerNhimaRate / 100));
 
     const taxablePay = grossPay - employeeNapsaDeduction;
-    const taxDeduction = (taxablePay * (config.taxRate / 100));
+    const taxDeduction = (taxablePay * (taxRate / 100));
 
-    const totalDeductions = employeeNapsaDeduction + employeeNhimaDeduction + taxDeduction + employee.deductions;
+    const totalDeductions = employeeNapsaDeduction + employeeNhimaDeduction + taxDeduction + deductions;
     const netPay = grossPay - totalDeductions;
 
     return {
