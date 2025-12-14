@@ -216,18 +216,31 @@ export default function PayrollPage() {
             const result = await runPayroll(companyId, adminEmployee.name);
             if (result.success && result.achFileContent) {
                 setPayrollStatus('Paid');
-                toast({
-                    title: "Payroll Processed Successfully",
-                    description: `${employees.length} employees paid. ACH file generated.`
-                });
+
                 // Trigger download
                 const link = document.createElement("a");
                 link.href = result.achFileContent;
-                const fileName = `ACH-PAYROLL-${periodKey}.csv`;
+                const fileName = result.achFileName || `ACH-PAYROLL-${periodKey}.xlsx`;
                 link.download = fileName;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+
+                // Show success with password information
+                toast({
+                    title: "✅ Payroll Processed Successfully",
+                    description: (
+                        <div className="mt-2 space-y-2">
+                            <p>{employees.length} employees paid. Enhanced ACH file generated.</p>
+                            <div className="bg-yellow-50 dark:bg-yellow-950 p-3 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">🔐 File Password (save this):</p>
+                                <code className="text-lg font-mono font-bold text-yellow-900 dark:text-yellow-100 select-all">{result.filePassword}</code>
+                            </div>
+                            <p className="text-xs text-muted-foreground">The Excel file contains: Summary, Employee Details, Bank Transfer, and Deductions sheets.</p>
+                        </div>
+                    ),
+                    duration: 30000, // Show for 30 seconds so user can copy password
+                });
             } else {
                 toast({
                     variant: "destructive",
