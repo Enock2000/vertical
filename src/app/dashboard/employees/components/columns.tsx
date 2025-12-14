@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User, KeyRound, UserMinus } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User, KeyRound, UserMinus, Copy, RefreshCw, Shield, ShieldOff, Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -150,10 +150,8 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => navigator.clipboard.writeText(employee.id)}
-              >
-                Copy employee ID
+              <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(employee.id) }}>
+                <Copy className="mr-2 h-4 w-4" /> Copy employee ID
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                 <ViewEmployeeDialog employee={employee}>
@@ -164,7 +162,7 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Update Status</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger><RefreshCw className="mr-2 h-4 w-4" /> Update Status</DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
                     <DropdownMenuItem onClick={() => handleStatusChange(employee.id, 'Active')}>Active</DropdownMenuItem>
@@ -180,13 +178,13 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
               {employee.role === 'Admin' ? (
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <DemoteAdminDialog employee={employee} onEmployeeDemoted={onAction}>
-                    <div className="w-full text-left">Demote from Admin</div>
+                    <div className="w-full text-left flex items-center"><ShieldOff className="mr-2 h-4 w-4" /> Demote from Admin</div>
                   </DemoteAdminDialog>
                 </DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                   <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
-                    <div className="w-full text-left">Assign as Admin</div>
+                    <div className="w-full text-left flex items-center"><Shield className="mr-2 h-4 w-4" /> Assign as Admin</div>
                   </PromoteEmployeeDialog>
                 </DropdownMenuItem>
               )}
@@ -201,7 +199,7 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                 <EditEmployeeDialog employee={employee} departments={departments} branches={branches} banks={banks} onEmployeeUpdated={onAction}>
-                  <div className="w-full text-left">Edit Profile</div>
+                  <div className="w-full text-left flex items-center"><Pencil className="mr-2 h-4 w-4" /> Edit Profile</div>
                 </EditEmployeeDialog>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
