@@ -7,12 +7,26 @@
         ".read": "auth.token.companyId === $companyId",
         ".write": "auth.token.companyId === $companyId",
         "applicants": {
-          ".indexOn": ["email", "userId"]
+          ".indexOn": [
+            "email",
+            "userId"
+          ]
+        },
+        "notifications": {
+          ".indexOn": [
+            "userId",
+            "read",
+            "createdAt"
+          ]
         }
       }
     },
     "employees": {
-      ".indexOn": ["companyId", "email"]
+      ".indexOn": [
+        "companyId",
+        "email",
+        "userId"
+      ]
     }
   }
 }
