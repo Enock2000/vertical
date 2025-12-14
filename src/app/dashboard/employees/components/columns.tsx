@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User, KeyRound, UserMinus, Copy, RefreshCw, Shield, ShieldOff, Pencil } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, FileSignature, FileX2, User, KeyRound, UserMinus, Copy, RefreshCw, Shield, ShieldOff, Pencil, Package, UserPlus } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,7 @@ import { GenerateContractDialog } from "./generate-contract-dialog"
 import { ViewEmployeeDialog } from "./view-employee-dialog"
 import { ResetEmployeePasswordDialog } from "./reset-employee-password-dialog"
 import { OffboardEmployeeDialog } from "./offboard-employee-dialog"
+import { AssignAssetDialog } from "./assign-asset-dialog"
 
 
 const handleStatusChange = async (employeeId: string, status: Employee['status']) => {
@@ -175,19 +176,32 @@ export const columns = (departments: Department[], branches: Branch[], banks: Ba
                 </DropdownMenuPortal>
               </DropdownMenuSub>
 
-              {employee.role === 'Admin' ? (
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <DemoteAdminDialog employee={employee} onEmployeeDemoted={onAction}>
-                    <div className="w-full text-left flex items-center"><ShieldOff className="mr-2 h-4 w-4" /> Demote from Admin</div>
-                  </DemoteAdminDialog>
-                </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
-                    <div className="w-full text-left flex items-center"><Shield className="mr-2 h-4 w-4" /> Assign as Admin</div>
-                  </PromoteEmployeeDialog>
-                </DropdownMenuItem>
-              )}
+              {/* Assign Submenu */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger><UserPlus className="mr-2 h-4 w-4" /> Assign</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    {employee.role === 'Admin' ? (
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <DemoteAdminDialog employee={employee} onEmployeeDemoted={onAction}>
+                          <div className="w-full text-left flex items-center"><ShieldOff className="mr-2 h-4 w-4" /> Demote from Admin</div>
+                        </DemoteAdminDialog>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <PromoteEmployeeDialog employee={employee} roles={roles} onEmployeePromoted={onAction}>
+                          <div className="w-full text-left flex items-center"><Shield className="mr-2 h-4 w-4" /> Assign as Admin</div>
+                        </PromoteEmployeeDialog>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <AssignAssetDialog employee={employee} onAssetAssigned={onAction}>
+                        <div className="w-full text-left flex items-center"><Package className="mr-2 h-4 w-4" /> Assign Asset</div>
+                      </AssignAssetDialog>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
 
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
