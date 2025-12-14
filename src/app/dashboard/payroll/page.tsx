@@ -23,6 +23,7 @@ import {
     Lock,
     Unlock,
     AlertCircle,
+    Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -445,6 +446,9 @@ export default function PayrollPage() {
                     <TabsTrigger value="history" className="gap-2">
                         <History className="h-4 w-4" /> Payroll History
                     </TabsTrigger>
+                    <TabsTrigger value="reports" className="gap-2">
+                        <FileText className="h-4 w-4" /> Reports
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="employees">
@@ -562,6 +566,194 @@ export default function PayrollPage() {
                             )}
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                {/* Reports Tab */}
+                <TabsContent value="reports">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        {/* Statutory Contributions Report */}
+                        <Card className="shadow-lg border-0">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-primary" />
+                                    Statutory Contributions
+                                </CardTitle>
+                                <CardDescription>NAPSA, NHIMA, and PAYE breakdown for {periodLabel}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950">
+                                        <div>
+                                            <p className="font-medium">NAPSA Contributions</p>
+                                            <p className="text-sm text-muted-foreground">Employee + Employer (5% + 5%)</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-blue-600">{currencyFormatter.format(payrollSummary.totalNapsa * 2)}</p>
+                                            <p className="text-xs text-muted-foreground">Emp: {currencyFormatter.format(payrollSummary.totalNapsa)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded-lg bg-green-50 dark:bg-green-950">
+                                        <div>
+                                            <p className="font-medium">NHIMA Contributions</p>
+                                            <p className="text-sm text-muted-foreground">Employee + Employer (1% + 1%)</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-green-600">{currencyFormatter.format(payrollSummary.totalNhima * 2)}</p>
+                                            <p className="text-xs text-muted-foreground">Emp: {currencyFormatter.format(payrollSummary.totalNhima)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950">
+                                        <div>
+                                            <p className="font-medium">PAYE (Income Tax)</p>
+                                            <p className="text-sm text-muted-foreground">Based on taxable income</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-bold text-amber-600">{currencyFormatter.format(payrollSummary.totalPaye)}</p>
+                                        </div>
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between items-center font-bold">
+                                        <span>Total Statutory</span>
+                                        <span className="text-lg">{currencyFormatter.format(payrollSummary.totalNapsa * 2 + payrollSummary.totalNhima * 2 + payrollSummary.totalPaye)}</span>
+                                    </div>
+                                </div>
+                                <Button className="w-full mt-4" variant="outline" onClick={() => {
+                                    const csv = `NAPSA Employee,${payrollSummary.totalNapsa}\nNAPSA Employer,${payrollSummary.totalNapsa}\nNHIMA Employee,${payrollSummary.totalNhima}\nNHIMA Employer,${payrollSummary.totalNhima}\nPAYE,${payrollSummary.totalPaye}`;
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `statutory-report-${periodKey}.csv`;
+                                    a.click();
+                                }}>
+                                    <Download className="h-4 w-4 mr-2" /> Export Statutory Report
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* Department Cost Report */}
+                        <Card className="shadow-lg border-0">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Building2 className="h-5 w-5 text-primary" />
+                                    Department Costs
+                                </CardTitle>
+                                <CardDescription>Payroll cost breakdown by department</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    {(() => {
+                                        const deptCosts: Record<string, { gross: number; net: number; count: number }> = {};
+                                        employees.forEach(emp => {
+                                            const details = payrollDetailsMap.get(emp.id);
+                                            if (details) {
+                                                if (!deptCosts[emp.departmentName]) {
+                                                    deptCosts[emp.departmentName] = { gross: 0, net: 0, count: 0 };
+                                                }
+                                                deptCosts[emp.departmentName].gross += details.grossPay;
+                                                deptCosts[emp.departmentName].net += details.netPay;
+                                                deptCosts[emp.departmentName].count++;
+                                            }
+                                        });
+                                        return Object.entries(deptCosts).sort((a, b) => b[1].gross - a[1].gross).map(([dept, data]) => (
+                                            <div key={dept} className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                                                <div>
+                                                    <p className="font-medium">{dept}</p>
+                                                    <p className="text-sm text-muted-foreground">{data.count} employee{data.count !== 1 ? 's' : ''}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold">{currencyFormatter.format(data.gross)}</p>
+                                                    <p className="text-xs text-muted-foreground">Net: {currencyFormatter.format(data.net)}</p>
+                                                </div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                                <Button className="w-full mt-4" variant="outline" onClick={() => {
+                                    const deptCosts: Record<string, { gross: number; net: number; count: number }> = {};
+                                    employees.forEach(emp => {
+                                        const details = payrollDetailsMap.get(emp.id);
+                                        if (details) {
+                                            if (!deptCosts[emp.departmentName]) {
+                                                deptCosts[emp.departmentName] = { gross: 0, net: 0, count: 0 };
+                                            }
+                                            deptCosts[emp.departmentName].gross += details.grossPay;
+                                            deptCosts[emp.departmentName].net += details.netPay;
+                                            deptCosts[emp.departmentName].count++;
+                                        }
+                                    });
+                                    const csv = 'Department,Employees,Gross Pay,Net Pay\n' + Object.entries(deptCosts).map(([dept, data]) => `${dept},${data.count},${data.gross},${data.net}`).join('\n');
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `department-costs-${periodKey}.csv`;
+                                    a.click();
+                                }}>
+                                    <Download className="h-4 w-4 mr-2" /> Export Department Report
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* Payroll Summary Report */}
+                        <Card className="shadow-lg border-0 md:col-span-2">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <DollarSign className="h-5 w-5 text-primary" />
+                                    Payroll Summary Report
+                                </CardTitle>
+                                <CardDescription>Complete payroll breakdown for {periodLabel}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Employee</TableHead>
+                                            <TableHead>Department</TableHead>
+                                            <TableHead className="text-right">Gross Pay</TableHead>
+                                            <TableHead className="text-right">NAPSA</TableHead>
+                                            <TableHead className="text-right">NHIMA</TableHead>
+                                            <TableHead className="text-right">PAYE</TableHead>
+                                            <TableHead className="text-right">Net Pay</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {employees.slice(0, 10).map(emp => {
+                                            const details = payrollDetailsMap.get(emp.id);
+                                            return (
+                                                <TableRow key={emp.id}>
+                                                    <TableCell className="font-medium">{emp.name}</TableCell>
+                                                    <TableCell>{emp.departmentName}</TableCell>
+                                                    <TableCell className="text-right">{details ? currencyFormatter.format(details.grossPay) : '-'}</TableCell>
+                                                    <TableCell className="text-right text-red-600">{details ? currencyFormatter.format(details.employeeNapsaDeduction) : '-'}</TableCell>
+                                                    <TableCell className="text-right text-red-600">{details ? currencyFormatter.format(details.employeeNhimaDeduction) : '-'}</TableCell>
+                                                    <TableCell className="text-right text-red-600">{details ? currencyFormatter.format(details.taxDeduction) : '-'}</TableCell>
+                                                    <TableCell className="text-right font-bold text-green-600">{details ? currencyFormatter.format(details.netPay) : '-'}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                                {employees.length > 10 && (
+                                    <p className="text-sm text-muted-foreground text-center mt-4">Showing 10 of {employees.length} employees. Export for full list.</p>
+                                )}
+                                <Button className="w-full mt-4" onClick={() => {
+                                    const csv = 'Name,Department,Gross Pay,NAPSA,NHIMA,PAYE,Other Deductions,Net Pay\n' + employees.map(emp => {
+                                        const details = payrollDetailsMap.get(emp.id);
+                                        return `"${emp.name}","${emp.departmentName}",${details?.grossPay || 0},${details?.employeeNapsaDeduction || 0},${details?.employeeNhimaDeduction || 0},${details?.taxDeduction || 0},${emp.deductions},${details?.netPay || 0}`;
+                                    }).join('\n');
+                                    const blob = new Blob([csv], { type: 'text/csv' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `payroll-summary-${periodKey}.csv`;
+                                    a.click();
+                                }}>
+                                    <Download className="h-4 w-4 mr-2" /> Export Full Payroll Report (CSV)
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>
