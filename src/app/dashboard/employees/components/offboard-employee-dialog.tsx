@@ -771,16 +771,27 @@ export function OffboardEmployeeDialog({ employee, onComplete, children }: Offbo
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label>Gratuity/Severance (Months)</Label>
-                                                <Input
-                                                    type="number"
-                                                    value={gratuityMonths}
-                                                    onChange={(e) => setGratuityMonths(e.target.value)}
-                                                    min="0"
-                                                    step="0.5"
-                                                    placeholder="0"
-                                                />
-                                                <p className="text-xs text-muted-foreground">Based on company policy</p>
+                                                <Label>Gratuity/Severance</Label>
+                                                <Select value={gratuityMonths} onValueChange={setGratuityMonths}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select months..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="0">0 Months (No Gratuity)</SelectItem>
+                                                        <SelectItem value="0.5">0.5 Month</SelectItem>
+                                                        <SelectItem value="1">1 Month</SelectItem>
+                                                        <SelectItem value="2">2 Months</SelectItem>
+                                                        <SelectItem value="3">3 Months</SelectItem>
+                                                        <SelectItem value="4">4 Months</SelectItem>
+                                                        <SelectItem value="6">6 Months</SelectItem>
+                                                        <SelectItem value="12">12 Months (1 Year)</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {finalCompensation && parseFloat(gratuityMonths) > 0
+                                                        ? `= ${formatCurrency(finalCompensation.gratuityAmount)}`
+                                                        : 'Based on company policy'}
+                                                </p>
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Additional Payout (ZMW)</Label>
