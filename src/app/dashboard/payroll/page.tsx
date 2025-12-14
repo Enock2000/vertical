@@ -565,11 +565,11 @@ export default function PayrollPage() {
                                     <TableBody>
                                         {payrollRuns.slice(0, 10).map((run) => (
                                             <TableRow key={run.id}>
-                                                <TableCell className="font-medium">{run.period}</TableCell>
-                                                <TableCell>{format(new Date(run.runDate), 'PPP')}</TableCell>
-                                                <TableCell>{Object.keys(run.employees).length}</TableCell>
-                                                <TableCell>{currencyFormatter.format(run.totalNetPay)}</TableCell>
-                                                <TableCell>{run.runBy}</TableCell>
+                                                <TableCell className="font-medium">{run.period || format(new Date(run.runDate), 'MMMM yyyy')}</TableCell>
+                                                <TableCell>{run.runDate ? format(new Date(run.runDate), 'PPP') : 'N/A'}</TableCell>
+                                                <TableCell>{run.employees ? Object.keys(run.employees).length : (run.employeeCount || 0)}</TableCell>
+                                                <TableCell>{currencyFormatter.format(run.totalNetPay || run.totalAmount || 0)}</TableCell>
+                                                <TableCell>{run.runBy || 'System'}</TableCell>
                                                 <TableCell className="text-right">
                                                     <ViewPayrollRunDialog payrollRun={run}>
                                                         <Button variant="ghost" size="sm">
