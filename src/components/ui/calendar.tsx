@@ -61,15 +61,21 @@ function Calendar({
         IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
         Dropdown: ({ value, onChange, children, ...props }: DropdownProps) => {
           const options = React.Children.toArray(children) as React.ReactElement<React.HTMLProps<HTMLOptionElement>>[];
-          const selected = options.find((child) => child.props.value === value);
+          const selected = options?.find((child) => child?.props?.value === value);
           const handleChange = (value: string) => {
             const changeEvent = {
               target: { value },
             } as React.ChangeEvent<HTMLSelectElement>;
             onChange?.(changeEvent);
           };
+
+          // Return null if no options available
+          if (!options || options.length === 0) {
+            return null;
+          }
+
           return (
-             <Select
+            <Select
               value={value?.toString()}
               onValueChange={(value) => {
                 handleChange(value);
@@ -81,8 +87,8 @@ function Calendar({
               <SelectContent position="popper">
                 <ScrollArea className="h-80">
                   {options.map((option, id: number) => (
-                    <SelectItem key={`${option.props.value}-${id}`} value={option.props.value?.toString() ?? ""}>
-                      {option.props.children}
+                    <SelectItem key={`${option?.props?.value}-${id}`} value={option?.props?.value?.toString() ?? ""}>
+                      {option?.props?.children}
                     </SelectItem>
                   ))}
                 </ScrollArea>
