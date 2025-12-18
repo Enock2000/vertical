@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { File, Loader2, Download, Calendar as CalendarIcon } from "lucide-react";
+import { File, Loader2, Download, Calendar as CalendarIcon, Users, DollarSign, Clock, Palmtree, Briefcase, Building2, Shield, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -669,104 +669,237 @@ export default function ReportingPage() {
                     </CardContent>
                 </Card>
             </TabsContent>
-            <TabsContent value="reports">
+            <TabsContent value="reports" className="space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Exportable Reports</CardTitle>
-                        <CardDescription>Download various reports in Excel format. Click any button to generate and download.</CardDescription>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-primary" />
+                                    Exportable Reports
+                                </CardTitle>
+                                <CardDescription>Download comprehensive reports in Excel format. Each card shows available records.</CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Report Name</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className="text-right">Action</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell className="font-medium">Employee Roster</TableCell>
-                                    <TableCell>A full list of all active and inactive employees.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadEmployeeRoster(employees)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Payroll History</TableCell>
-                                    <TableCell>A detailed history of all payroll runs.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadPayrollHistory(payrollRuns)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Attendance Summary</TableCell>
-                                    <TableCell>Monthly attendance summary for all employees.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadAttendanceSummary(employees, allAttendance)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Daily Attendance Status</TableCell>
-                                    <TableCell>Daily breakdown of employees who are Present, Absent, or On Leave for {format(selectedDate, 'MMM d, yyyy')}.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadDailyAttendance(employees, attendanceRecords, selectedDate)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Leave Report</TableCell>
-                                    <TableCell>Details on employees on leave and sick notes submitted.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadLeaveReport(leaveRequests, employees)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Leave Balances</TableCell>
-                                    <TableCell>Current leave balances for all employees.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadLeaveBalances(employees, leaveRequests)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Department Report</TableCell>
-                                    <TableCell>A list of all departments and employee counts.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadDepartmentReport(departments, employees, payrollConfig)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell className="font-medium">Audit Log</TableCell>
-                                    <TableCell>A log of all significant activities within the system.</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => downloadAuditLog(auditLogs)}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {/* Employee Roster */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                                            <Users className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {employees.length} records
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Employee Roster</CardTitle>
+                                    <CardDescription className="text-sm">Complete list of all employees with details</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadEmployeeRoster(employees)}
+                                        disabled={employees.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Payroll History */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-emerald-500 to-emerald-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+                                            <DollarSign className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {payrollRuns.length} records
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Payroll History</CardTitle>
+                                    <CardDescription className="text-sm">All payroll runs with gross, deductions, net pay</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadPayrollHistory(payrollRuns)}
+                                        disabled={payrollRuns.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Attendance Summary */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-purple-500 to-purple-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+                                            <Clock className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {employees.filter(e => e.status === 'Active').length} employees
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Attendance Summary</CardTitle>
+                                    <CardDescription className="text-sm">Monthly attendance stats per employee</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadAttendanceSummary(employees, allAttendance)}
+                                        disabled={employees.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Daily Attendance */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                                            <CalendarIcon className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {format(selectedDate, 'MMM d')}
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Daily Attendance</CardTitle>
+                                    <CardDescription className="text-sm">Clock-in/out records for selected day</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadDailyAttendance(employees, attendanceRecords, selectedDate)}
+                                        disabled={employees.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Leave Report */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-pink-500 to-pink-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white">
+                                            <Palmtree className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {leaveRequests.length} records
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Leave Report</CardTitle>
+                                    <CardDescription className="text-sm">All leave requests with status</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadLeaveReport(leaveRequests, employees)}
+                                        disabled={leaveRequests.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Leave Balances */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-cyan-500 to-cyan-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 text-white">
+                                            <Briefcase className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {employees.filter(e => e.status === 'Active').length} employees
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Leave Balances</CardTitle>
+                                    <CardDescription className="text-sm">Current leave balances per employee</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadLeaveBalances(employees, leaveRequests)}
+                                        disabled={employees.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Department Report */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-indigo-500 to-indigo-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+                                            <Building2 className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {departments.length} depts
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Department Report</CardTitle>
+                                    <CardDescription className="text-sm">Departments with headcounts & salary</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadDepartmentReport(departments, employees, payrollConfig)}
+                                        disabled={departments.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Audit Log */}
+                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                                <div className="h-2 bg-gradient-to-r from-slate-500 to-slate-600" />
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between">
+                                        <div className="p-3 rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 text-white">
+                                            <Shield className="h-8 w-8" />
+                                        </div>
+                                        <Badge variant="secondary" className="text-xs">
+                                            {auditLogs.length} logs
+                                        </Badge>
+                                    </div>
+                                    <CardTitle className="mt-3 text-lg">Audit Log</CardTitle>
+                                    <CardDescription className="text-sm">System activity log for compliance</CardDescription>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => downloadAuditLog(auditLogs)}
+                                        disabled={auditLogs.length === 0}
+                                    >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download Excel
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
