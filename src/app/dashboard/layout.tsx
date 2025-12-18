@@ -63,7 +63,6 @@ const navItems = [
   { href: "/dashboard/performance", icon: Trophy, label: "Performance", permission: "performance" as Permission },
   { href: "/dashboard/announcements", icon: Megaphone, label: "Announcements", permission: "announcements" as Permission },
   { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting", permission: "reporting" as Permission },
-  { href: "/dashboard/analytics", icon: BarChart3, label: "Analytics", permission: "reporting" as Permission },
   { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
   { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },

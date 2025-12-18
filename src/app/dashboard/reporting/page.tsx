@@ -12,7 +12,7 @@ import TurnoverChart from "./components/turnover-chart";
 import DepartmentHeadcountChart from "./components/department-headcount-chart";
 import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore, Goal, Enrollment, TrainingCourse } from '@/lib/data';
+import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore, Goal, Enrollment, TrainingCourse, Applicant, JobVacancy } from '@/lib/data';
 import { format, isWithinInterval } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +57,7 @@ import {
     downloadRolesReport,
     downloadAuditLog,
 } from '@/lib/export-utils';
+import { AnalyticsTab } from './components/analytics-tab';
 
 
 const availableReports = [
@@ -88,6 +89,8 @@ export default function ReportingPage() {
     const [goals, setGoals] = useState<Goal[]>([]);
     const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
     const [courses, setCourses] = useState<TrainingCourse[]>([]);
+    const [applicants, setApplicants] = useState<Applicant[]>([]);
+    const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
     const [loading, setLoading] = useState(true);
     const [submittingIds, setSubmittingIds] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -119,6 +122,8 @@ export default function ReportingPage() {
             goals: query(ref(db, `goals`), orderByChild('companyId'), equalTo(companyId)),
             enrollments: ref(db, `companies/${companyId}/enrollments`),
             courses: ref(db, `companies/${companyId}/trainingCourses`),
+            applicants: ref(db, `companies/${companyId}/applicants`),
+            jobVacancies: ref(db, `companies/${companyId}/jobVacancies`),
         };
 
         setLoading(true);
@@ -184,6 +189,8 @@ export default function ReportingPage() {
             onValue(refs.goals, onValueCallback(setGoals), onErrorCallback('goals')),
             onValue(refs.enrollments, onValueCallback(setEnrollments), onErrorCallback('enrollments')),
             onValue(refs.courses, onValueCallback(setCourses), onErrorCallback('courses')),
+            onValue(refs.applicants, onValueCallback(setApplicants), onErrorCallback('applicants')),
+            onValue(refs.jobVacancies, onValueCallback(setJobVacancies), onErrorCallback('jobVacancies')),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
@@ -286,6 +293,7 @@ export default function ReportingPage() {
             <div className="flex items-center justify-between">
                 <TabsList>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
                     <TabsTrigger value="attendance">Attendance</TabsTrigger>
                     <TabsTrigger value="roster">Roster</TabsTrigger>
                     <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
@@ -518,6 +526,19 @@ export default function ReportingPage() {
                         </Card>
                     </div>
                 )}
+            </TabsContent>
+            <TabsContent value="analytics" className="pt-4">
+                <AnalyticsTab
+                    employees={employees}
+                    departments={departments}
+                    payrollRuns={payrollRuns}
+                    leaveRequests={leaveRequests}
+                    applicants={applicants}
+                    jobVacancies={jobVacancies}
+                    allAttendance={allAttendance}
+                    performanceReviews={performanceReviews}
+                    loading={loading}
+                />
             </TabsContent>
             <TabsContent value="attendance">
                 <Card>
