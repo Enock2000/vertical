@@ -46,6 +46,17 @@ import TrainingHoursChart from './components/training-hours-chart';
 import TrainingImpactChart from './components/training-impact-chart';
 import GenderDistributionChart from './components/gender-distribution-chart';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    downloadEmployeeRoster,
+    downloadPayrollHistory,
+    downloadAttendanceSummary,
+    downloadDailyAttendance,
+    downloadLeaveReport,
+    downloadLeaveBalances,
+    downloadDepartmentReport,
+    downloadRolesReport,
+    downloadAuditLog,
+} from '@/lib/export-utils';
 
 
 const availableReports = [
@@ -109,11 +120,11 @@ export default function ReportingPage() {
             enrollments: ref(db, `companies/${companyId}/enrollments`),
             courses: ref(db, `companies/${companyId}/trainingCourses`),
         };
-        
+
         setLoading(true);
         let loadedCount = 0;
         const totalToLoad = Object.keys(refs).length;
-        
+
         const checkLoading = () => {
             loadedCount++;
             if (loadedCount === totalToLoad) {
@@ -124,25 +135,25 @@ export default function ReportingPage() {
         const onValueCallback = (setter: React.Dispatch<any>, isObject = false, filterByCompany = false) => (snapshot: any) => {
             const data = snapshot.val();
             if (isObject) {
-                 setter(data || {});
+                setter(data || {});
             } else {
-                 let list = data ? Object.values(data) : [];
-                 if (filterByCompany) {
-                     list = list.filter((item: any) => item.companyId === companyId);
-                 }
-                 if (setter === setAuditLogs || setter === setPayrollRuns) {
+                let list = data ? Object.values(data) : [];
+                if (filterByCompany) {
+                    list = list.filter((item: any) => item.companyId === companyId);
+                }
+                if (setter === setAuditLogs || setter === setPayrollRuns) {
                     list.sort((a: any, b: any) => new Date(b.timestamp || b.runDate).getTime() - new Date(a.timestamp || a.runDate).getTime());
-                 }
+                }
                 setter(list);
             }
             checkLoading();
         };
-        
+
         const onErrorCallback = (name: string) => (error: Error) => {
             console.error(`Firebase read failed for ${name}:`, error.message);
             checkLoading();
         };
-        
+
         const unsubscribes = [
             onValue(query(refs.employees, orderByChild('companyId'), equalTo(companyId)), onValueCallback(setEmployees), onErrorCallback('employees')),
             onValue(refs.auditLogs, onValueCallback(setAuditLogs), onErrorCallback('audit logs')),
@@ -177,7 +188,7 @@ export default function ReportingPage() {
 
         return () => unsubscribes.forEach(unsub => unsub());
     }, [companyId]);
-    
+
     const attendanceRecords = useMemo(() => allAttendance[selectedDateString] || {}, [allAttendance, selectedDateString]);
 
     const productivityScores = useMemo(() => {
@@ -189,15 +200,15 @@ export default function ReportingPage() {
             .filter(emp => emp.status === 'Active' || emp.status === 'Suspended' || emp.status === 'Sick')
             .map(emp => {
                 const attendanceRecord = attendanceRecords[emp.id];
-                const onLeave = leaveRequests.find(req => 
-                    req.employeeId === emp.id && 
+                const onLeave = leaveRequests.find(req =>
+                    req.employeeId === emp.id &&
                     req.status === 'Approved' &&
                     isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
                 );
                 const rosterInfo = rosterAssignments.find(r => r.date === selectedDateString && r.employeeId === emp.id);
 
                 let status: string;
-                
+
                 if (emp.status === 'Suspended') {
                     status = 'Suspended';
                 } else if (emp.status === 'Sick') {
@@ -222,7 +233,7 @@ export default function ReportingPage() {
                 };
             });
     }, [employees, attendanceRecords, leaveRequests, rosterAssignments, selectedDate, selectedDateString]);
-    
+
     const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
         if (!companyId) return;
         setSubmittingIds(prev => [...prev, employeeId]);
@@ -240,7 +251,7 @@ export default function ReportingPage() {
             setSubmittingIds(prev => prev.filter(id => id !== employeeId));
         }
     }, [companyId, toast]);
-    
+
     const enrichedAttendanceRecords = useMemo(() => {
         const isToday = format(new Date(), 'yyyy-MM-dd') === selectedDateString;
         return employees
@@ -266,7 +277,7 @@ export default function ReportingPage() {
                     currentTime: isToday ? currentTime : undefined,
                     date: selectedDateString,
                 };
-        });
+            });
     }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds, selectedDateString, currentTime]);
 
 
@@ -281,14 +292,14 @@ export default function ReportingPage() {
                     <TabsTrigger value="reports">Reports</TabsTrigger>
                     <TabsTrigger value="audit">Audit Log</TabsTrigger>
                 </TabsList>
-                 <Button size="sm" variant="outline" className="h-8 gap-1">
+                <Button size="sm" variant="outline" className="h-8 gap-1">
                     <File className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                         Export
                     </span>
                 </Button>
             </div>
-             <TabsContent value="overview" className="space-y-4 pt-4">
+            <TabsContent value="overview" className="space-y-4 pt-4">
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin" />
@@ -301,10 +312,10 @@ export default function ReportingPage() {
                                 <CardDescription>Total number of active employees over time.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <HeadcountChart employees={employees} />
+                                <HeadcountChart employees={employees} />
                             </CardContent>
                         </Card>
-                         <Card>
+                        <Card>
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle>Attendance Performance</CardTitle>
@@ -328,112 +339,112 @@ export default function ReportingPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Turnover Rate</CardTitle>
-                                 <CardDescription>Employee turnover analysis for the current year.</CardDescription>
+                                <CardDescription>Employee turnover analysis for the current year.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <TurnoverChart employees={employees} />
                             </CardContent>
                         </Card>
-                         <Card>
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Department Headcount</CardTitle>
                                 <CardDescription>Employee count by department.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <DepartmentHeadcountChart employees={employees} departments={departments} />
+                                <DepartmentHeadcountChart employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Department Distribution</CardTitle>
                                 <CardDescription>Employee distribution across departments.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <DepartmentDistributionChart employees={employees} departments={departments} />
+                                <DepartmentDistributionChart employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Gender Distribution</CardTitle>
                                 <CardDescription>Breakdown of workforce by gender.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <GenderDistributionChart employees={employees} />
+                                <GenderDistributionChart employees={employees} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Active Contracts</CardTitle>
                                 <CardDescription>Breakdown of active employee contracts.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <ActiveContractsChart employees={employees} />
+                                <ActiveContractsChart employees={employees} />
                             </CardContent>
                         </Card>
-                         <Card>
-                             <CardHeader>
+                        <Card>
+                            <CardHeader>
                                 <CardTitle>Employee Status</CardTitle>
                                 <CardDescription>Current status of employees.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <EmployeeStatusChart employees={employees} leaveRequests={leaveRequests} resignationRequests={resignationRequests} />
+                                <EmployeeStatusChart employees={employees} leaveRequests={leaveRequests} resignationRequests={resignationRequests} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Total Payroll Cost</CardTitle>
                                 <CardDescription>Monthly payroll cost trend.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <TotalPayrollChart payrollRuns={payrollRuns} />
+                                <TotalPayrollChart payrollRuns={payrollRuns} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Payroll Cost by Department</CardTitle>
                                 <CardDescription>Estimated current payroll cost per department.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <PayrollByDepartmentChart employees={employees} departments={departments} payrollConfig={payrollConfig} />
+                                <PayrollByDepartmentChart employees={employees} departments={departments} payrollConfig={payrollConfig} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Average Salary by Department</CardTitle>
                                 <CardDescription>Average salary for active employees per department.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <AverageSalaryChart employees={employees} departments={departments} />
+                                <AverageSalaryChart employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Performance Rating Distribution</CardTitle>
                                 <CardDescription>Distribution of employee performance ratings.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <PerformanceRatingChart reviews={performanceReviews} />
+                                <PerformanceRatingChart reviews={performanceReviews} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Average Productivity Score</CardTitle>
                                 <CardDescription>Productivity scores by department.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <AverageProductivityChart scores={productivityScores} />
+                                <AverageProductivityChart scores={productivityScores} />
                             </CardContent>
                         </Card>
                         <Card>
-                             <CardHeader>
+                            <CardHeader>
                                 <CardTitle>Top Performers Trend</CardTitle>
                                 <CardDescription>Quarterly count of top-rated employees.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                               <TopPerformersChart reviews={performanceReviews} />
+                                <TopPerformersChart reviews={performanceReviews} />
                             </CardContent>
                         </Card>
-                         <Card>
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Attendance Rate Trend</CardTitle>
                                 <CardDescription>Monthly employee attendance rate.</CardDescription>
@@ -487,7 +498,7 @@ export default function ReportingPage() {
                                 <EmployeesTrainedChart enrollments={enrollments} employees={employees} departments={departments} />
                             </CardContent>
                         </Card>
-                         <Card>
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Training Hours by Category</CardTitle>
                                 <CardDescription>Total training hours per skill category.</CardDescription>
@@ -496,7 +507,7 @@ export default function ReportingPage() {
                                 <TrainingHoursChart enrollments={enrollments} courses={courses} />
                             </CardContent>
                         </Card>
-                         <Card>
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Training vs. Performance Impact</CardTitle>
                                 <CardDescription>Correlation between training and performance.</CardDescription>
@@ -508,7 +519,7 @@ export default function ReportingPage() {
                     </div>
                 )}
             </TabsContent>
-             <TabsContent value="attendance">
+            <TabsContent value="attendance">
                 <Card>
                     <CardHeader>
                         <CardTitle>Daily Attendance</CardTitle>
@@ -520,24 +531,24 @@ export default function ReportingPage() {
                         <div className="flex justify-end mb-4">
                             <Popover>
                                 <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-[280px] justify-start text-left font-normal",
-                                    !selectedDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                                </Button>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-[280px] justify-start text-left font-normal",
+                                            !selectedDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(date) => date && setSelectedDate(date)}
-                                    initialFocus
-                                />
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => date && setSelectedDate(date)}
+                                        initialFocus
+                                    />
                                 </PopoverContent>
                             </Popover>
                         </div>
@@ -552,7 +563,7 @@ export default function ReportingPage() {
                 </Card>
             </TabsContent>
             <TabsContent value="roster">
-                 <Card>
+                <Card>
                     <CardHeader>
                         <CardTitle>Employee Roster</CardTitle>
                         <CardDescription>
@@ -576,32 +587,32 @@ export default function ReportingPage() {
                 </Card>
             </TabsContent>
             <TabsContent value="daily-status">
-                 <Card>
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Daily Attendance Status</CardTitle>
                             <CardDescription>Breakdown of employees who are Present, Absent, or On Leave for {format(selectedDate, 'MMMM d, yyyy')}.</CardDescription>
                         </div>
-                         <Popover>
+                        <Popover>
                             <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                "w-[280px] justify-start text-left font-normal",
-                                !selectedDate && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                            </Button>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-[280px] justify-start text-left font-normal",
+                                        !selectedDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) => date && setSelectedDate(date)}
-                                initialFocus
-                            />
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => date && setSelectedDate(date)}
+                                    initialFocus
+                                />
                             </PopoverContent>
                         </Popover>
                     </CardHeader>
@@ -635,12 +646,12 @@ export default function ReportingPage() {
                                             <TableCell>{emp.departmentName}</TableCell>
                                             <TableCell>{emp.role}</TableCell>
                                             <TableCell>
-                                                 <Badge variant={
-                                                     emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' || emp.dailyStatus === 'Late' || emp.dailyStatus === 'Early Out' ? 'default' :
-                                                     emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
-                                                     emp.dailyStatus === 'Sick' || emp.dailyStatus === 'Off Day' ? 'secondary' :
-                                                     'outline'
-                                                 }>
+                                                <Badge variant={
+                                                    emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' || emp.dailyStatus === 'Late' || emp.dailyStatus === 'Early Out' ? 'default' :
+                                                        emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
+                                                            emp.dailyStatus === 'Sick' || emp.dailyStatus === 'Off Day' ? 'secondary' :
+                                                                'outline'
+                                                }>
                                                     {emp.dailyStatus}
                                                 </Badge>
                                             </TableCell>
@@ -662,7 +673,7 @@ export default function ReportingPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Exportable Reports</CardTitle>
-                        <CardDescription>Download various reports in CSV or PDF format.</CardDescription>
+                        <CardDescription>Download various reports in Excel format. Click any button to generate and download.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -674,25 +685,93 @@ export default function ReportingPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {availableReports.map((report) => (
-                                    <TableRow key={report.name}>
-                                        <TableCell className="font-medium">{report.name}</TableCell>
-                                        <TableCell>{report.description}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" disabled>
-                                                <Download className="mr-2 h-4 w-4" />
-                                                Download
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
+                                <TableRow>
+                                    <TableCell className="font-medium">Employee Roster</TableCell>
+                                    <TableCell>A full list of all active and inactive employees.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadEmployeeRoster(employees)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Payroll History</TableCell>
+                                    <TableCell>A detailed history of all payroll runs.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadPayrollHistory(payrollRuns)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Attendance Summary</TableCell>
+                                    <TableCell>Monthly attendance summary for all employees.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadAttendanceSummary(employees, allAttendance)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Daily Attendance Status</TableCell>
+                                    <TableCell>Daily breakdown of employees who are Present, Absent, or On Leave for {format(selectedDate, 'MMM d, yyyy')}.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadDailyAttendance(employees, attendanceRecords, selectedDate)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Leave Report</TableCell>
+                                    <TableCell>Details on employees on leave and sick notes submitted.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadLeaveReport(leaveRequests, employees)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Leave Balances</TableCell>
+                                    <TableCell>Current leave balances for all employees.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadLeaveBalances(employees, leaveRequests)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Department Report</TableCell>
+                                    <TableCell>A list of all departments and employee counts.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadDepartmentReport(departments, employees, payrollConfig)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell className="font-medium">Audit Log</TableCell>
+                                    <TableCell>A log of all significant activities within the system.</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="outline" size="sm" onClick={() => downloadAuditLog(auditLogs)}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             </TableBody>
                         </Table>
                     </CardContent>
                 </Card>
             </TabsContent>
             <TabsContent value="audit">
-                 <Card>
+                <Card>
                     <CardHeader>
                         <CardTitle>Audit Log</CardTitle>
                         <CardDescription>A log of all significant activities within the system.</CardDescription>
