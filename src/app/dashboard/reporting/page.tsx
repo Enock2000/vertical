@@ -1,80 +1,67 @@
 // src/app/dashboard/reporting/page.tsx
 'use client';
 
+import * as React from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { File, Loader2, Download, Calendar as CalendarIcon, Users, DollarSign, Clock, Palmtree, Briefcase, Building2, Shield, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import HeadcountChart from "./components/headcount-chart";
-import TurnoverChart from "./components/turnover-chart";
-import DepartmentHeadcountChart from "./components/department-headcount-chart";
+import { cn } from '@/lib/utils';
+import { Loader2, Menu, X, Download, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
-import type { Employee, AuditLog, AttendanceRecord, LeaveRequest, RosterAssignment, PayrollConfig, Department, Shift, ResignationRequest, PayrollRun, PerformanceReview, DepartmentProductivityScore, Goal, Enrollment, TrainingCourse, Applicant, JobVacancy } from '@/lib/data';
-import { format, isWithinInterval } from 'date-fns';
+import { format } from 'date-fns';
 import { useAuth } from '@/app/auth-provider';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { RosterCalendar } from '../roster/components/roster-calendar';
-import { DataTable } from './components/attendance-data-table';
-import { columns } from './components/attendance-columns';
-import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import DepartmentDistributionChart from './components/department-distribution-chart';
-import ActiveContractsChart from './components/active-contracts-chart';
-import EmployeeStatusChart from './components/employee-status-chart';
-import AttendancePerformanceChart from './components/attendance-performance-chart';
-import TotalPayrollChart from './components/total-payroll-chart';
-import PayrollByDepartmentChart from './components/payroll-by-department-chart';
-import AverageSalaryChart from './components/average-salary-chart';
-import PerformanceRatingChart from './components/performance-rating-chart';
-import AverageProductivityChart from './components/average-productivity-chart';
-import { calculateProductivityScore } from '@/lib/data';
-import TopPerformersChart from './components/top-performers-chart';
-import AttendanceRateChart from './components/attendance-rate-chart';
-import LeaveTypesChart from './components/leave-types-chart';
-import TopDepartmentsAbsenteeismChart from './components/top-departments-absenteeism-chart';
-import MonthlyContributionsChart from './components/monthly-contributions-chart';
-import ContributionBreakdownChart from './components/contribution-breakdown-chart';
-import EmployeesTrainedChart from './components/employees-trained-chart';
-import TrainingHoursChart from './components/training-hours-chart';
-import TrainingImpactChart from './components/training-impact-chart';
-import GenderDistributionChart from './components/gender-distribution-chart';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// Types
+import type {
+    Employee,
+    AuditLog,
+    AttendanceRecord,
+    LeaveRequest,
+    RosterAssignment,
+    PayrollConfig,
+    Department,
+    Shift,
+    ResignationRequest,
+    PayrollRun,
+    PerformanceReview,
+    Goal,
+    Enrollment,
+    TrainingCourse,
+    Applicant,
+    JobVacancy
+} from '@/lib/data';
+
+// Components
+import { ReportingSidebar, ReportView } from './components/reporting-sidebar';
+import { DrillDownProvider, DrillDownPanel, useDrillDown, QuickStat, DetailRow } from './components/drill-down-panel';
+
+// Views
+import { ExecutiveDashboard } from './views/executive-dashboard';
+import { HRReports } from './views/hr-reports';
+import { PayrollReports } from './views/payroll-reports';
+import { RecruitmentReports } from './views/recruitment-reports';
+
+// Export utils
 import {
     downloadEmployeeRoster,
     downloadPayrollHistory,
     downloadAttendanceSummary,
-    downloadDailyAttendance,
     downloadLeaveReport,
-    downloadLeaveBalances,
     downloadDepartmentReport,
-    downloadRolesReport,
     downloadAuditLog,
 } from '@/lib/export-utils';
-import { AnalyticsTab } from './components/analytics-tab';
 
-
-const availableReports = [
-    { name: 'Employee Roster', description: 'A full list of all active and inactive employees.' },
-    { name: 'Payroll History', description: 'A detailed history of all payroll runs.' },
-    { name: 'Attendance Summary', description: 'A summary of employee attendance for a selected period.' },
-    { name: 'Daily Attendance Status', description: 'Daily breakdown of employees who are Present, Absent, or On Leave.' },
-    { name: 'Leave Report', description: 'Details on employees on leave and sick notes submitted.' },
-    { name: 'Leave Balances', description: 'Current leave balances for all employees.' },
-    { name: 'Department Report', description: 'A list of all departments and the employees within them.' },
-    { name: 'Roles Report', description: 'A list of all roles and their assigned permissions.' },
-    { name: 'Emergency Alerts', description: 'A log of all triggered emergency alerts.' },
-];
-
-export default function ReportingPage() {
+function ReportingContent() {
     const { companyId } = useAuth();
     const { toast } = useToast();
+    const { state: drillDownState, close: closeDrillDown, goBack } = useDrillDown();
+
+    const [activeView, setActiveView] = useState<ReportView>('executive-dashboard');
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Data states
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [allAttendance, setAllAttendance] = useState<Record<string, Record<string, AttendanceRecord>>>({});
@@ -92,18 +79,8 @@ export default function ReportingPage() {
     const [applicants, setApplicants] = useState<Applicant[]>([]);
     const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
     const [loading, setLoading] = useState(true);
-    const [submittingIds, setSubmittingIds] = useState<string[]>([]);
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [currentTime, setCurrentTime] = useState(new Date());
-    const [attendanceView, setAttendanceView] = useState<'day' | 'week' | 'month'>('month');
 
-    const selectedDateString = format(selectedDate, 'yyyy-MM-dd');
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
-
+    // Firebase data fetching
     useEffect(() => {
         if (!companyId) return;
 
@@ -119,7 +96,7 @@ export default function ReportingPage() {
             resignations: ref(db, `companies/${companyId}/resignationRequests`),
             payrollRuns: ref(db, `companies/${companyId}/payrollRuns`),
             reviews: ref(db, `companies/${companyId}/performanceReviews`),
-            goals: query(ref(db, `goals`), orderByChild('companyId'), equalTo(companyId)),
+            goals: query(ref(db, 'goals'), orderByChild('companyId'), equalTo(companyId)),
             enrollments: ref(db, `companies/${companyId}/enrollments`),
             courses: ref(db, `companies/${companyId}/trainingCourses`),
             applicants: ref(db, `companies/${companyId}/applicants`),
@@ -137,22 +114,25 @@ export default function ReportingPage() {
             }
         };
 
-        const onValueCallback = (setter: React.Dispatch<any>, isObject = false, filterByCompany = false) => (snapshot: any) => {
-            const data = snapshot.val();
-            if (isObject) {
-                setter(data || {});
-            } else {
-                let list = data ? Object.values(data) : [];
-                if (filterByCompany) {
-                    list = list.filter((item: any) => item.companyId === companyId);
+        const onValueCallback = (setter: React.Dispatch<any>, isObject = false, filterByCompany = false) =>
+            (snapshot: any) => {
+                const data = snapshot.val();
+                if (isObject) {
+                    setter(data || {});
+                } else {
+                    let list = data ? Object.values(data) : [];
+                    if (filterByCompany) {
+                        list = list.filter((item: any) => item.companyId === companyId);
+                    }
+                    if (setter === setAuditLogs || setter === setPayrollRuns) {
+                        list.sort((a: any, b: any) =>
+                            new Date(b.timestamp || b.runDate).getTime() - new Date(a.timestamp || a.runDate).getTime()
+                        );
+                    }
+                    setter(list);
                 }
-                if (setter === setAuditLogs || setter === setPayrollRuns) {
-                    list.sort((a: any, b: any) => new Date(b.timestamp || b.runDate).getTime() - new Date(a.timestamp || a.runDate).getTime());
-                }
-                setter(list);
-            }
-            checkLoading();
-        };
+                checkLoading();
+            };
 
         const onErrorCallback = (name: string) => (error: Error) => {
             console.error(`Firebase read failed for ${name}:`, error.message);
@@ -160,7 +140,8 @@ export default function ReportingPage() {
         };
 
         const unsubscribes = [
-            onValue(query(refs.employees, orderByChild('companyId'), equalTo(companyId)), onValueCallback(setEmployees), onErrorCallback('employees')),
+            onValue(query(refs.employees, orderByChild('companyId'), equalTo(companyId)),
+                onValueCallback(setEmployees), onErrorCallback('employees')),
             onValue(refs.auditLogs, onValueCallback(setAuditLogs), onErrorCallback('audit logs')),
             onValue(refs.attendance, onValueCallback(setAllAttendance, true), onErrorCallback('attendance')),
             onValue(refs.leave, onValueCallback(setLeaveRequests), onErrorCallback('leave')),
@@ -185,7 +166,7 @@ export default function ReportingPage() {
             onValue(refs.departments, onValueCallback(setDepartments), onErrorCallback('departments')),
             onValue(refs.resignations, onValueCallback(setResignationRequests), onErrorCallback('resignations')),
             onValue(refs.payrollRuns, onValueCallback(setPayrollRuns), onErrorCallback('payroll runs')),
-            onValue(query(ref(db, `companies/${companyId}/performanceReviews`)), onValueCallback(setPerformanceReviews), onErrorCallback('reviews')),
+            onValue(refs.reviews, onValueCallback(setPerformanceReviews), onErrorCallback('reviews')),
             onValue(refs.goals, onValueCallback(setGoals), onErrorCallback('goals')),
             onValue(refs.enrollments, onValueCallback(setEnrollments), onErrorCallback('enrollments')),
             onValue(refs.courses, onValueCallback(setCourses), onErrorCallback('courses')),
@@ -196,778 +177,270 @@ export default function ReportingPage() {
         return () => unsubscribes.forEach(unsub => unsub());
     }, [companyId]);
 
-    const attendanceRecords = useMemo(() => allAttendance[selectedDateString] || {}, [allAttendance, selectedDateString]);
+    // Handle view navigation
+    const handleViewChange = useCallback((view: ReportView) => {
+        setActiveView(view);
+        setMobileMenuOpen(false);
+    }, []);
 
-    const productivityScores = useMemo(() => {
-        return calculateProductivityScore(employees, departments, allAttendance, performanceReviews, goals, payrollConfig);
-    }, [employees, departments, allAttendance, performanceReviews, goals, payrollConfig]);
+    // Get view title
+    const getViewTitle = () => {
+        const titles: Record<ReportView, string> = {
+            'executive-dashboard': 'Executive Dashboard',
+            'hr-manager-dashboard': 'HR Manager Dashboard',
+            'finance-dashboard': 'Finance Dashboard',
+            'custom-dashboard': 'Custom Dashboard',
+            'job-requisitions': 'Job Requisitions',
+            'candidate-pipeline': 'Candidate Pipeline',
+            'source-of-hire': 'Source of Hire',
+            'time-to-hire': 'Time-to-Hire Analysis',
+            'cost-per-hire': 'Cost per Hire',
+            'employee-master': 'Employee Master',
+            'headcount': 'Headcount Report',
+            'attendance-leave': 'Attendance & Leave',
+            'performance': 'Performance Report',
+            'turnover-attrition': 'Turnover & Attrition',
+            'payroll-summary': 'Payroll Summary',
+            'tax-compliance': 'Tax & Compliance',
+            'benefits-compensation': 'Benefits & Compensation',
+            'overtime-allowances': 'Overtime & Allowances',
+            'saved-reports': 'Saved Reports',
+        };
+        return titles[activeView] || 'Reports';
+    };
 
-    const dailyStatusReport = useMemo(() => {
-        return employees
-            .filter(emp => emp.status === 'Active' || emp.status === 'Suspended' || emp.status === 'Sick')
-            .map(emp => {
-                const attendanceRecord = attendanceRecords[emp.id];
-                const onLeave = leaveRequests.find(req =>
-                    req.employeeId === emp.id &&
-                    req.status === 'Approved' &&
-                    isWithinInterval(selectedDate, { start: new Date(req.startDate), end: new Date(req.endDate) })
-                );
-                const rosterInfo = rosterAssignments.find(r => r.date === selectedDateString && r.employeeId === emp.id);
+    // Render active view
+    const renderView = () => {
+        const dashboardViews = ['executive-dashboard', 'hr-manager-dashboard', 'finance-dashboard', 'custom-dashboard'];
+        const recruitmentViews = ['job-requisitions', 'candidate-pipeline', 'source-of-hire', 'time-to-hire', 'cost-per-hire'];
+        const hrViews = ['employee-master', 'headcount', 'attendance-leave', 'performance', 'turnover-attrition'];
+        const payrollViews = ['payroll-summary', 'tax-compliance', 'benefits-compensation', 'overtime-allowances'];
 
-                let status: string;
-
-                if (emp.status === 'Suspended') {
-                    status = 'Suspended';
-                } else if (emp.status === 'Sick') {
-                    status = 'Sick';
-                } else if (onLeave) {
-                    status = 'On Leave';
-                } else if (rosterInfo?.status === 'Off Day') {
-                    status = 'Off Day';
-                } else if (attendanceRecord) {
-                    status = attendanceRecord.status;
-                } else if (rosterInfo?.status === 'On Duty') {
-                    status = 'Absent';
-                } else {
-                    // Default to absent if no other status fits, assuming they were expected to work.
-                    // This can be refined if there's a default assumption (e.g., everyone is 'On Duty' unless specified otherwise).
-                    status = 'Absent';
-                }
-
-                return {
-                    ...emp,
-                    dailyStatus: status,
-                };
-            });
-    }, [employees, attendanceRecords, leaveRequests, rosterAssignments, selectedDate, selectedDateString]);
-
-    const handleClockAction = useCallback(async (employeeId: string, action: 'clockIn' | 'clockOut') => {
-        if (!companyId) return;
-        setSubmittingIds(prev => [...prev, employeeId]);
-        try {
-            const result = await recordAttendance({ userId: employeeId, action, companyId });
-            if (result.success) {
-                toast({ title: `Successfully ${action === 'clockIn' ? 'Clocked In' : 'Clocked Out'}` });
-            } else {
-                toast({ variant: "destructive", title: "Action Failed", description: result.message });
-            }
-        } catch (error: any) {
-            console.error(`${action} error:`, error);
-            toast({ variant: "destructive", title: "Error", description: `An unexpected error occurred during ${action}.` });
-        } finally {
-            setSubmittingIds(prev => prev.filter(id => id !== employeeId));
-        }
-    }, [companyId, toast]);
-
-    const enrichedAttendanceRecords = useMemo(() => {
-        const isToday = format(new Date(), 'yyyy-MM-dd') === selectedDateString;
-        return employees
-            .filter(e => e.status === 'Active')
-            .map(employee => {
-                const record = attendanceRecords[employee.id];
-                return {
-                    ...record,
-                    id: employee.id, // Use employee ID as the key for the row
-                    employeeId: employee.id,
-                    employeeName: employee.name,
-                    role: employee.role,
-                    departmentName: employee.departmentName,
-                    avatar: employee.avatar,
-                    email: employee.email,
-                    dailyTargetHours: payrollConfig?.dailyTargetHours,
-                    onClockIn: () => handleClockAction(employee.id, 'clockIn'),
-                    onClockOut: () => handleClockAction(employee.id, 'clockOut'),
-                    isSubmitting: submittingIds.includes(employee.id),
-                    checkInTime: record?.checkInTime, // Ensure these are passed
-                    checkOutTime: record?.checkOutTime,
-                    status: isToday ? (record?.status || 'Not Clocked In') : (record?.status || 'N/A'),
-                    currentTime: isToday ? currentTime : undefined,
-                    date: selectedDateString,
-                };
-            });
-    }, [attendanceRecords, employees, payrollConfig, handleClockAction, submittingIds, selectedDateString, currentTime]);
-
-
-    return (
-        <Tabs defaultValue="overview">
-            <div className="flex items-center justify-between">
-                <TabsList>
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                    <TabsTrigger value="attendance">Attendance</TabsTrigger>
-                    <TabsTrigger value="roster">Roster</TabsTrigger>
-                    <TabsTrigger value="daily-status">Daily Status</TabsTrigger>
-                    <TabsTrigger value="reports">Reports</TabsTrigger>
-                    <TabsTrigger value="audit">Audit Log</TabsTrigger>
-                </TabsList>
-                <Button size="sm" variant="outline" className="h-8 gap-1">
-                    <File className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-rap">
-                        Export
-                    </span>
-                </Button>
-            </div>
-            <TabsContent value="overview" className="space-y-4 pt-4">
-                {loading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <Loader2 className="h-8 w-8 animate-spin" />
-                    </div>
-                ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Employee Headcount</CardTitle>
-                                <CardDescription>Total number of active employees over time.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <HeadcountChart employees={employees} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div>
-                                    <CardTitle>Attendance Performance</CardTitle>
-                                    <CardDescription>Overview of daily attendance metrics over time.</CardDescription>
-                                </div>
-                                <Select value={attendanceView} onValueChange={(value) => setAttendanceView(value as any)}>
-                                    <SelectTrigger className="w-[100px]">
-                                        <SelectValue placeholder="View" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="day">Day</SelectItem>
-                                        <SelectItem value="week">Week</SelectItem>
-                                        <SelectItem value="month">Month</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </CardHeader>
-                            <CardContent>
-                                <AttendancePerformanceChart allAttendance={allAttendance} payrollConfig={payrollConfig} view={attendanceView} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Turnover Rate</CardTitle>
-                                <CardDescription>Employee turnover analysis for the current year.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TurnoverChart employees={employees} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Department Headcount</CardTitle>
-                                <CardDescription>Employee count by department.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <DepartmentHeadcountChart employees={employees} departments={departments} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Department Distribution</CardTitle>
-                                <CardDescription>Employee distribution across departments.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <DepartmentDistributionChart employees={employees} departments={departments} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Gender Distribution</CardTitle>
-                                <CardDescription>Breakdown of workforce by gender.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <GenderDistributionChart employees={employees} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Active Contracts</CardTitle>
-                                <CardDescription>Breakdown of active employee contracts.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ActiveContractsChart employees={employees} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Employee Status</CardTitle>
-                                <CardDescription>Current status of employees.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <EmployeeStatusChart employees={employees} leaveRequests={leaveRequests} resignationRequests={resignationRequests} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Total Payroll Cost</CardTitle>
-                                <CardDescription>Monthly payroll cost trend.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TotalPayrollChart payrollRuns={payrollRuns} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Payroll Cost by Department</CardTitle>
-                                <CardDescription>Estimated current payroll cost per department.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <PayrollByDepartmentChart employees={employees} departments={departments} payrollConfig={payrollConfig} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Average Salary by Department</CardTitle>
-                                <CardDescription>Average salary for active employees per department.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <AverageSalaryChart employees={employees} departments={departments} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Performance Rating Distribution</CardTitle>
-                                <CardDescription>Distribution of employee performance ratings.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <PerformanceRatingChart reviews={performanceReviews} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Average Productivity Score</CardTitle>
-                                <CardDescription>Productivity scores by department.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <AverageProductivityChart scores={productivityScores} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Top Performers Trend</CardTitle>
-                                <CardDescription>Quarterly count of top-rated employees.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TopPerformersChart reviews={performanceReviews} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Attendance Rate Trend</CardTitle>
-                                <CardDescription>Monthly employee attendance rate.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <AttendanceRateChart allAttendance={allAttendance} employees={employees} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Leave Types Distribution</CardTitle>
-                                <CardDescription>Breakdown of approved leave types.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <LeaveTypesChart leaveRequests={leaveRequests} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Top Departments by Absenteeism</CardTitle>
-                                <CardDescription>Departments with the highest number of absences.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TopDepartmentsAbsenteeismChart allAttendance={allAttendance} departments={departments} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Monthly Statutory Contributions</CardTitle>
-                                <CardDescription>Trend of NAPSA, NHIMA, and PAYE contributions.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <MonthlyContributionsChart payrollRuns={payrollRuns} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Contribution Breakdown</CardTitle>
-                                <CardDescription>Total share of each statutory contribution.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <ContributionBreakdownChart payrollRuns={payrollRuns} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Employees Trained per Department</CardTitle>
-                                <CardDescription>Number of employees who completed training.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <EmployeesTrainedChart enrollments={enrollments} employees={employees} departments={departments} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Training Hours by Category</CardTitle>
-                                <CardDescription>Total training hours per skill category.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TrainingHoursChart enrollments={enrollments} courses={courses} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Training vs. Performance Impact</CardTitle>
-                                <CardDescription>Correlation between training and performance.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TrainingImpactChart enrollments={enrollments} courses={courses} reviews={performanceReviews} />
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-            </TabsContent>
-            <TabsContent value="analytics" className="pt-4">
-                <AnalyticsTab
+        if (dashboardViews.includes(activeView)) {
+            return (
+                <ExecutiveDashboard
                     employees={employees}
                     departments={departments}
                     payrollRuns={payrollRuns}
                     leaveRequests={leaveRequests}
                     applicants={applicants}
                     jobVacancies={jobVacancies}
-                    allAttendance={allAttendance}
                     performanceReviews={performanceReviews}
                     loading={loading}
                 />
-            </TabsContent>
-            <TabsContent value="attendance">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Daily Attendance</CardTitle>
-                        <CardDescription>
-                            Daily attendance records for {format(selectedDate, 'MMMM d, yyyy')}. Admins can manually clock employees in or out on the current day.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex justify-end mb-4">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-[280px] justify-start text-left font-normal",
-                                            !selectedDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={(date) => date && setSelectedDate(date)}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
+            );
+        }
+
+        if (recruitmentViews.includes(activeView)) {
+            return (
+                <RecruitmentReports
+                    applicants={applicants}
+                    jobVacancies={jobVacancies}
+                    departments={departments}
+                    loading={loading}
+                />
+            );
+        }
+
+        if (hrViews.includes(activeView)) {
+            return (
+                <HRReports
+                    employees={employees}
+                    departments={departments}
+                    allAttendance={allAttendance}
+                    leaveRequests={leaveRequests}
+                    performanceReviews={performanceReviews}
+                    resignationRequests={resignationRequests}
+                    loading={loading}
+                />
+            );
+        }
+
+        if (payrollViews.includes(activeView)) {
+            return (
+                <PayrollReports
+                    employees={employees}
+                    departments={departments}
+                    payrollRuns={payrollRuns}
+                    payrollConfig={payrollConfig}
+                    loading={loading}
+                />
+            );
+        }
+
+        // Saved Reports placeholder
+        return (
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+                <div className="text-center">
+                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">Saved Reports</p>
+                    <p className="text-sm">Save custom report configurations for quick access</p>
+                </div>
+            </div>
+        );
+    };
+
+    // Render drill-down content
+    const renderDrillDownContent = () => {
+        const { type, data } = drillDownState;
+
+        if (!data) return null;
+
+        switch (type) {
+            case 'employees':
+                return (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <QuickStat label="Active" value={data.employees?.filter((e: Employee) => e.status === 'Active').length || 0} />
+                            <QuickStat label="Inactive" value={data.employees?.filter((e: Employee) => e.status !== 'Active').length || 0} />
                         </div>
-                        {loading ? (
-                            <div className="flex items-center justify-center h-24">
-                                <Loader2 className="h-8 w-8 animate-spin" />
+                        <div className="space-y-2">
+                            {data.employees?.slice(0, 10).map((emp: Employee) => (
+                                <div key={emp.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                                    <div>
+                                        <p className="font-medium text-sm">{emp.name}</p>
+                                        <p className="text-xs text-muted-foreground">{emp.role}</p>
+                                    </div>
+                                    <span className="text-xs">{emp.departmentName}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+
+            case 'employee':
+                return (
+                    <div className="space-y-4">
+                        <DetailRow label="Name" value={data.name} />
+                        <DetailRow label="Email" value={data.email} />
+                        <DetailRow label="Role" value={data.role} />
+                        <DetailRow label="Department" value={data.departmentName} />
+                        <DetailRow label="Status" value={data.status} />
+                        <DetailRow label="Hire Date" value={data.hireDate ? format(new Date(data.hireDate), 'PP') : '-'} />
+                    </div>
+                );
+
+            case 'payroll':
+                return (
+                    <div className="space-y-4">
+                        <QuickStat
+                            label="Latest Run"
+                            value={data.payrollRuns?.[0] ? format(new Date(data.payrollRuns[0].runDate), 'MMMM yyyy') : 'N/A'}
+                        />
+                        {data.payrollRuns?.slice(0, 5).map((run: PayrollRun) => (
+                            <div key={run.id} className="p-3 rounded-lg bg-muted/50 space-y-2">
+                                <p className="font-medium text-sm">{format(new Date(run.runDate), 'MMMM yyyy')}</p>
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <span className="text-muted-foreground">Gross:</span>
+                                    <span>K {(run.summary?.totalGrossPay || 0).toLocaleString()}</span>
+                                    <span className="text-muted-foreground">Net:</span>
+                                    <span>K {(run.summary?.totalNetPay || 0).toLocaleString()}</span>
+                                </div>
                             </div>
-                        ) : (
-                            <DataTable columns={columns} data={enrichedAttendanceRecords} />
-                        )}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="roster">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Employee Roster</CardTitle>
-                        <CardDescription>
-                            Manage and view employee schedules, including work days, off days, and approved leave.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <div className="flex items-center justify-center h-64">
-                                <Loader2 className="h-8 w-8 animate-spin" />
-                            </div>
-                        ) : (
-                            <RosterCalendar
-                                employees={employees}
-                                leaveRequests={leaveRequests}
-                                rosterAssignments={rosterAssignments}
-                                shifts={shifts}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="daily-status">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Daily Attendance Status</CardTitle>
-                            <CardDescription>Breakdown of employees who are Present, Absent, or On Leave for {format(selectedDate, 'MMMM d, yyyy')}.</CardDescription>
+                        ))}
+                    </div>
+                );
+
+            default:
+                return (
+                    <div className="text-muted-foreground text-center py-8">
+                        <p>No details available</p>
+                    </div>
+                );
+        }
+    };
+
+    return (
+        <div className="flex h-[calc(100vh-4rem)] -mx-6 -mt-6">
+            {/* Mobile Menu Button */}
+            <Button
+                variant="ghost"
+                size="icon"
+                className="fixed top-20 left-4 z-50 lg:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+
+            {/* Sidebar - Mobile */}
+            {mobileMenuOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <div className={cn(
+                "fixed lg:relative z-40 h-full transition-transform duration-300",
+                mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            )}>
+                <ReportingSidebar
+                    activeView={activeView}
+                    onViewChange={handleViewChange}
+                    collapsed={sidebarCollapsed}
+                />
+            </div>
+
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                {/* Header */}
+                <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm px-6 py-4">
+                    <div className="flex items-center justify-between">
+                        <div className="ml-10 lg:ml-0">
+                            <h1 className="text-2xl font-bold">{getViewTitle()}</h1>
+                            <p className="text-sm text-muted-foreground">
+                                {format(new Date(), 'EEEE, MMMM d, yyyy')}
+                            </p>
                         </div>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-[280px] justify-start text-left font-normal",
-                                        !selectedDate && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={(date) => date && setSelectedDate(date)}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Employee</TableHead>
-                                    <TableHead>Department</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                        </TableCell>
-                                    </TableRow>
-                                ) : dailyStatusReport.length > 0 ? (
-                                    dailyStatusReport.map((emp) => (
-                                        <TableRow key={emp.id}>
-                                            <TableCell className="font-medium flex items-center gap-2">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={emp.avatar} alt={emp.name} />
-                                                    <AvatarFallback>{emp.name.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                {emp.name}
-                                            </TableCell>
-                                            <TableCell>{emp.departmentName}</TableCell>
-                                            <TableCell>{emp.role}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={
-                                                    emp.dailyStatus === 'Present' || emp.dailyStatus === 'Auto Clock-out' || emp.dailyStatus === 'Late' || emp.dailyStatus === 'Early Out' ? 'default' :
-                                                        emp.dailyStatus === 'Absent' || emp.dailyStatus === 'Suspended' ? 'destructive' :
-                                                            emp.dailyStatus === 'Sick' || emp.dailyStatus === 'Off Day' ? 'secondary' :
-                                                                'outline'
-                                                }>
-                                                    {emp.dailyStatus}
-                                                </Badge>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            No employees to report on.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="reports" className="space-y-4">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileText className="h-5 w-5 text-primary" />
-                                    Exportable Reports
-                                </CardTitle>
-                                <CardDescription>Download comprehensive reports in Excel format. Each card shows available records.</CardDescription>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" className="gap-2">
+                                <Download className="h-4 w-4" />
+                                <span className="hidden sm:inline">Export</span>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 overflow-auto p-6">
+                    {loading ? (
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-center">
+                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                                <p className="text-muted-foreground">Loading reports...</p>
                             </div>
                         </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {/* Employee Roster */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-blue-500 to-blue-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-                                            <Users className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {employees.length} records
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Employee Roster</CardTitle>
-                                    <CardDescription className="text-sm">Complete list of all employees with details</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadEmployeeRoster(employees)}
-                                        disabled={employees.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
+                    ) : (
+                        renderView()
+                    )}
+                </div>
+            </div>
 
-                            {/* Payroll History */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-emerald-500 to-emerald-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
-                                            <DollarSign className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {payrollRuns.length} records
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Payroll History</CardTitle>
-                                    <CardDescription className="text-sm">All payroll runs with gross, deductions, net pay</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadPayrollHistory(payrollRuns)}
-                                        disabled={payrollRuns.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
+            {/* Drill-Down Panel */}
+            <DrillDownPanel
+                isOpen={drillDownState.isOpen}
+                onClose={closeDrillDown}
+                title={drillDownState.title}
+                subtitle={drillDownState.subtitle}
+                breadcrumbs={drillDownState.breadcrumbs}
+                onBreadcrumbClick={(_, index) => {
+                    if (index < drillDownState.breadcrumbs.length - 1) {
+                        goBack();
+                    }
+                }}
+                showExport
+            >
+                {renderDrillDownContent()}
+            </DrillDownPanel>
+        </div>
+    );
+}
 
-                            {/* Attendance Summary */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-purple-500 to-purple-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-                                            <Clock className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {employees.filter(e => e.status === 'Active').length} employees
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Attendance Summary</CardTitle>
-                                    <CardDescription className="text-sm">Monthly attendance stats per employee</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadAttendanceSummary(employees, allAttendance)}
-                                        disabled={employees.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            {/* Daily Attendance */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-orange-500 to-orange-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                                            <CalendarIcon className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {format(selectedDate, 'MMM d')}
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Daily Attendance</CardTitle>
-                                    <CardDescription className="text-sm">Clock-in/out records for selected day</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadDailyAttendance(employees, attendanceRecords, selectedDate)}
-                                        disabled={employees.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            {/* Leave Report */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-pink-500 to-pink-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-pink-500 to-pink-600 text-white">
-                                            <Palmtree className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {leaveRequests.length} records
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Leave Report</CardTitle>
-                                    <CardDescription className="text-sm">All leave requests with status</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadLeaveReport(leaveRequests, employees)}
-                                        disabled={leaveRequests.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            {/* Leave Balances */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-cyan-500 to-cyan-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 text-white">
-                                            <Briefcase className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {employees.filter(e => e.status === 'Active').length} employees
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Leave Balances</CardTitle>
-                                    <CardDescription className="text-sm">Current leave balances per employee</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadLeaveBalances(employees, leaveRequests)}
-                                        disabled={employees.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            {/* Department Report */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-indigo-500 to-indigo-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
-                                            <Building2 className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {departments.length} depts
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Department Report</CardTitle>
-                                    <CardDescription className="text-sm">Departments with headcounts & salary</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadDepartmentReport(departments, employees, payrollConfig)}
-                                        disabled={departments.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
-
-                            {/* Audit Log */}
-                            <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-                                <div className="h-2 bg-gradient-to-r from-slate-500 to-slate-600" />
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="p-3 rounded-lg bg-gradient-to-br from-slate-500 to-slate-600 text-white">
-                                            <Shield className="h-8 w-8" />
-                                        </div>
-                                        <Badge variant="secondary" className="text-xs">
-                                            {auditLogs.length} logs
-                                        </Badge>
-                                    </div>
-                                    <CardTitle className="mt-3 text-lg">Audit Log</CardTitle>
-                                    <CardDescription className="text-sm">System activity log for compliance</CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => downloadAuditLog(auditLogs)}
-                                        disabled={auditLogs.length === 0}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="audit">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Audit Log</CardTitle>
-                        <CardDescription>A log of all significant activities within the system.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Timestamp</TableHead>
-                                    <TableHead>Actor</TableHead>
-                                    <TableHead>Action</TableHead>
-                                    <TableHead>Details</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                        </TableCell>
-                                    </TableRow>
-                                ) : auditLogs.length > 0 ? (
-                                    auditLogs.map((log) => (
-                                        <TableRow key={log.id}>
-                                            <TableCell>{format(new Date(log.timestamp), 'MMM d, yyyy - hh:mm:ss a')}</TableCell>
-                                            <TableCell>{log.actor}</TableCell>
-                                            <TableCell className="font-medium">{log.action}</TableCell>
-                                            <TableCell>{log.details}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
-                                            No audit logs found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-        </Tabs>
-    )
+export default function ReportingPage() {
+    return (
+        <DrillDownProvider>
+            <ReportingContent />
+        </DrillDownProvider>
+    );
 }
