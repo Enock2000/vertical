@@ -4,8 +4,15 @@
 import * as React from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { Loader2, Menu, X, Download, FileText, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Menu, X, Download, FileText, Calendar as CalendarIcon, FileSpreadsheet, Users, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { db } from '@/lib/firebase';
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 import { format } from 'date-fns';
@@ -182,6 +189,41 @@ function ReportingContent() {
         setActiveView(view);
         setMobileMenuOpen(false);
     }, []);
+
+    // Handle exports based on current view
+    const handleExport = useCallback((type: 'employees' | 'payroll' | 'attendance' | 'leave' | 'departments' | 'all') => {
+        try {
+            switch (type) {
+                case 'employees':
+                    downloadEmployeeRoster(employees);
+                    toast({ title: 'Export Complete', description: 'Employee roster downloaded successfully.' });
+                    break;
+                case 'payroll':
+                    downloadPayrollHistory(payrollRuns);
+                    toast({ title: 'Export Complete', description: 'Payroll history downloaded successfully.' });
+                    break;
+                case 'attendance':
+                    downloadAttendanceSummary(employees, allAttendance);
+                    toast({ title: 'Export Complete', description: 'Attendance summary downloaded successfully.' });
+                    break;
+                case 'leave':
+                    downloadLeaveReport(leaveRequests, employees);
+                    toast({ title: 'Export Complete', description: 'Leave report downloaded successfully.' });
+                    break;
+                case 'departments':
+                    downloadDepartmentReport(departments, employees, payrollConfig);
+                    toast({ title: 'Export Complete', description: 'Department report downloaded successfully.' });
+                    break;
+                case 'all':
+                    // Export all based on current view context
+                    downloadEmployeeRoster(employees);
+                    toast({ title: 'Export Complete', description: 'Report downloaded successfully.' });
+                    break;
+            }
+        } catch (error) {
+            toast({ title: 'Export Failed', description: 'There was an error generating the export.', variant: 'destructive' });
+        }
+    }, [employees, payrollRuns, allAttendance, leaveRequests, departments, payrollConfig, toast]);
 
     // Get view title
     const getViewTitle = () => {
@@ -394,10 +436,37 @@ function ReportingContent() {
                             </p>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="gap-2">
-                                <Download className="h-4 w-4" />
-                                <span className="hidden sm:inline">Export</span>
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="gap-2">
+                                        <Download className="h-4 w-4" />
+                                        <span className="hidden sm:inline">Export</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuItem onClick={() => handleExport('employees')}>
+                                        <Users className="mr-2 h-4 w-4" />
+                                        Employee Roster
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExport('payroll')}>
+                                        <Receipt className="mr-2 h-4 w-4" />
+                                        Payroll History
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExport('attendance')}>
+                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                        Attendance Summary
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExport('leave')}>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Leave Report
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleExport('departments')}>
+                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                        Department Report
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
                 </div>

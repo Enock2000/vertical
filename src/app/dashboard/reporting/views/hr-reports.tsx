@@ -44,6 +44,7 @@ import {
     Radar,
 } from 'recharts';
 import { format, subMonths, isWithinInterval, parseISO } from 'date-fns';
+import { downloadEmployeeRoster } from '@/lib/export-utils';
 import type {
     Employee,
     Department,
@@ -508,7 +509,7 @@ export function HRReports({
                         searchPlaceholder="Search employees..."
                         actions={[
                             { id: 'view', label: 'View', icon: Eye, onClick: (row) => openDrillDown('employee', row.name, row) },
-                            { id: 'export', label: 'Export', icon: Download, onClick: () => { } },
+                            { id: 'export', label: 'Export', icon: Download, onClick: () => downloadEmployeeRoster(employees) },
                         ]}
                     />
                 </TabsContent>

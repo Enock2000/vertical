@@ -41,6 +41,7 @@ import {
     Area,
 } from 'recharts';
 import { format } from 'date-fns';
+import { downloadPayrollHistory } from '@/lib/export-utils';
 import type { Employee, Department, PayrollRun, PayrollConfig } from '@/lib/data';
 
 interface PayrollReportsProps {
@@ -467,7 +468,7 @@ export function PayrollReports({
                         searchPlaceholder="Search payroll runs..."
                         actions={[
                             { id: 'view', label: 'View Details', icon: Eye, onClick: (row) => openDrillDown('payroll-run', `Payroll - ${format(new Date(row.runDate), 'MMMM yyyy')}`, row) },
-                            { id: 'export', label: 'Download', icon: Download, onClick: () => { } },
+                            { id: 'export', label: 'Download', icon: Download, onClick: () => downloadPayrollHistory(payrollRuns) },
                         ]}
                     />
                 </TabsContent>
