@@ -461,7 +461,20 @@ export type AttendanceRecord = {
     date: string; // YYYY-MM-DD
     checkInTime: string; // ISO 8601 string
     checkOutTime: string | null; // ISO 8601 string, null if not checked out
-    status: 'Present' | 'Late' | 'Absent' | 'Auto Clock-out' | 'Early Out';
+    status: 'Present' | 'Late' | 'Absent' | 'Auto Clock-out' | 'Early Out' | 'On Break';
+    // Break tracking
+    breakInTime?: string | null; // ISO 8601 string
+    breakOutTime?: string | null; // ISO 8601 string
+    breakDuration?: number; // Total break time in minutes
+    // Calculated fields
+    totalWorkMinutes?: number; // Total work time excluding breaks
+    overtimeMinutes?: number; // Overtime in minutes
+    lateMinutes?: number; // How many minutes late
+    earlyLeaveMinutes?: number; // How many minutes before shift end
+    // Location & device
+    location?: { lat: number; lng: number } | null;
+    deviceInfo?: string;
+    ipAddress?: string;
     // Enriched properties, not stored in DB
     departmentName?: string;
     role?: string;
@@ -630,6 +643,13 @@ export type Shift = {
     startTime: string; // e.g., "08:00"
     endTime: string; // e.g., "16:00"
     color: string; // e.g., "#3b82f6"
+    // Enhanced fields
+    type: 'Morning' | 'Afternoon' | 'Night' | 'Flexible' | 'Custom';
+    graceMinutes: number; // Late grace period in minutes (default: 15)
+    breakMinutes: number; // Expected break duration (default: 60)
+    overtimeEligible: boolean; // Whether this shift qualifies for overtime
+    weekdays: number[]; // Days of week (0-6, Sunday=0)
+    isActive: boolean;
 };
 
 export type RosterAssignment = {
