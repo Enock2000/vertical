@@ -87,6 +87,24 @@ export function ExecutiveDashboard({
 
     // Department headcount data
     const departmentData = React.useMemo(() => {
+        console.log('Departments:', departments);
+        console.log('Active Employees:', activeEmployees);
+
+        if (departments.length === 0) {
+            // Fallback: Group employees by departmentName if no departments loaded
+            const deptCounts: Record<string, number> = {};
+            activeEmployees.forEach(emp => {
+                const deptName = emp.departmentName || 'Unassigned';
+                deptCounts[deptName] = (deptCounts[deptName] || 0) + 1;
+            });
+            return Object.entries(deptCounts).map(([name, count]) => ({
+                name: name.length > 12 ? name.slice(0, 12) + '...' : name,
+                fullName: name,
+                headcount: count,
+                id: name,
+            })).sort((a, b) => b.headcount - a.headcount);
+        }
+
         return departments.map(dept => ({
             name: dept.name.length > 12 ? dept.name.slice(0, 12) + '...' : dept.name,
             fullName: dept.name,
