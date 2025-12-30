@@ -10,7 +10,9 @@ async function sendTemplatedEmail(templateName: TemplateName, to: { email: strin
     const templateRef = ref(db, `platformSettings/emailTemplates/${templateName}`);
     const templateSnap = await get(templateRef);
     if (!templateSnap.exists()) {
-        throw new Error(`Email template "${templateName}" not found.`);
+        // Template not configured - silently skip email sending
+        console.warn(`Email template "${templateName}" not configured. Skipping email.`);
+        return null;
     }
     const template = templateSnap.val();
 
@@ -28,21 +30,21 @@ async function sendTemplatedEmail(templateName: TemplateName, to: { email: strin
 
 
 export const sendWelcomePendingEmail = (company: Company) => {
-    return sendTemplatedEmail('welcomePending', 
+    return sendTemplatedEmail('welcomePending',
         [{ email: company.adminEmail, name: company.contactName }],
         { companyName: company.name, contactName: company.contactName }
     );
 };
 
 export const sendCompanyApprovedEmail = (company: Company) => {
-     return sendTemplatedEmail('companyApproved',
+    return sendTemplatedEmail('companyApproved',
         [{ email: company.adminEmail, name: company.contactName }],
         { companyName: company.name, contactName: company.contactName }
     );
 };
 
 export const sendCompanySuspendedEmail = (company: Company) => {
-     return sendTemplatedEmail('companySuspended',
+    return sendTemplatedEmail('companySuspended',
         [{ email: company.adminEmail, name: company.contactName }],
         { companyName: company.name, contactName: company.contactName }
     );
