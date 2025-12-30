@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
 import { ref, push, set } from 'firebase/database';
+import { useAuth } from '@/app/auth-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -54,6 +55,7 @@ export function RequestFeedbackDialog({
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { companyId } = useAuth();
 
   const form = useForm<RequestFeedbackFormValues>({
     resolver: zodResolver(formSchema),
@@ -65,23 +67,35 @@ export function RequestFeedbackDialog({
   });
 
   async function onSubmit(values: RequestFeedbackFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
-      // In a real application, you would create a "feedbackRequest" record
-      // and notify the selected employees to provide their feedback.
-      // For this simulation, we'll just show a success message.
-      console.log("Feedback Request Submitted:", {
-        subject: subjectEmployee.id,
-        ...values,
-      });
+      // Save feedback requests to Firebase
+      const feedbackRef = ref(db, 'feedback');
 
-      // Here is where you would typically loop through `values.feedbackProviders`
-      // and create individual feedback request records in your database,
-      // then trigger notifications (e.g., via email or an in-app system).
+      // Create a feedback entry for each selected provider
+      for (const providerId of values.feedbackProviders) {
+        const provider = employees.find(e => e.id === providerId);
+        const newFeedbackRef = push(feedbackRef);
+
+        await set(newFeedbackRef, {
+          id: newFeedbackRef.key,
+          companyId: companyId,
+          subjectEmployeeId: subjectEmployee.id,
+          providerEmployeeId: providerId,
+          providerEmployeeName: provider?.name || 'Unknown',
+          feedbackDate: new Date().toISOString(),
+          isAnonymous: values.isAnonymous,
+          content: '', // Will be filled by provider
+          prompt: values.prompt,
+          requestedFor: values.feedbackProviders,
+          status: 'Pending'
+        });
+      }
 
       toast({
         title: 'Feedback Request Sent',
-        description: `Requests for feedback about ${subjectEmployee.name} have been sent out.`,
+        description: `Requests for feedback about ${subjectEmployee.name} have been sent to ${values.feedbackProviders.length} employee(s).`,
       });
       setOpen(false);
       form.reset();
@@ -115,7 +129,7 @@ export function RequestFeedbackDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Feedback Providers</FormLabel>
-                   <Popover>
+                  <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -123,40 +137,40 @@ export function RequestFeedbackDialog({
                           role="combobox"
                           className="w-full justify-between"
                         >
-                            <UserPlus className="mr-2"/>
-                            Select Employees
-                            <span className="ml-2 rounded-md bg-secondary px-2 py-1 text-xs">
-                                {field.value.length} selected
-                            </span>
+                          <UserPlus className="mr-2" />
+                          Select Employees
+                          <span className="ml-2 rounded-md bg-secondary px-2 py-1 text-xs">
+                            {field.value.length} selected
+                          </span>
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-[300px] p-0">
-                       <Command>
-                            <CommandInput placeholder="Search employees..." />
-                            <CommandList>
-                                <CommandEmpty>No employees found.</CommandEmpty>
-                                <CommandGroup>
-                                    {employees.map((employee) => (
-                                        <CommandItem
-                                            key={employee.id}
-                                            onSelect={() => {
-                                                const selected = field.value.includes(employee.id)
-                                                    ? field.value.filter((id) => id !== employee.id)
-                                                    : [...field.value, employee.id];
-                                                field.onChange(selected);
-                                            }}
-                                        >
-                                           <Checkbox
-                                                className="mr-2"
-                                                checked={field.value.includes(employee.id)}
-                                            />
-                                            {employee.name}
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </CommandList>
-                        </Command>
+                      <Command>
+                        <CommandInput placeholder="Search employees..." />
+                        <CommandList>
+                          <CommandEmpty>No employees found.</CommandEmpty>
+                          <CommandGroup>
+                            {employees.map((employee) => (
+                              <CommandItem
+                                key={employee.id}
+                                onSelect={() => {
+                                  const selected = field.value.includes(employee.id)
+                                    ? field.value.filter((id) => id !== employee.id)
+                                    : [...field.value, employee.id];
+                                  field.onChange(selected);
+                                }}
+                              >
+                                <Checkbox
+                                  className="mr-2"
+                                  checked={field.value.includes(employee.id)}
+                                />
+                                {employee.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
@@ -180,24 +194,24 @@ export function RequestFeedbackDialog({
                 </FormItem>
               )}
             />
-             <FormField
-                control={form.control}
-                name="isAnonymous"
-                render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                            <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <FormLabel>
-                                Collect feedback anonymously
-                            </FormLabel>
-                        </div>
-                    </FormItem>
-                )}
+            <FormField
+              control={form.control}
+              name="isAnonymous"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Collect feedback anonymously
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
             />
 
             <DialogFooter>

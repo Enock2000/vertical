@@ -33,6 +33,7 @@ import { Loader2, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Employee, Certification } from '@/lib/data';
+import { useAuth } from '@/app/auth-provider';
 
 const formSchema = z.object({
   name: z.string().min(3, 'Certification name is required.'),
@@ -52,6 +53,7 @@ export function AddCertificationDialog({ children, employee }: AddCertificationD
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { companyId } = useAuth();
 
   const form = useForm<AddCertificationFormValues>({
     resolver: zodResolver(formSchema),
@@ -62,12 +64,14 @@ export function AddCertificationDialog({ children, employee }: AddCertificationD
   });
 
   async function onSubmit(values: AddCertificationFormValues) {
+    if (!companyId) return;
     setIsLoading(true);
     try {
       const certificationsRef = ref(db, 'certifications');
       const newCertRef = push(certificationsRef);
-      
+
       const newCertification: Omit<Certification, 'id'> = {
+        companyId: companyId,
         employeeId: employee.id,
         name: values.name,
         issuingBody: values.issuingBody,
@@ -76,7 +80,7 @@ export function AddCertificationDialog({ children, employee }: AddCertificationD
       };
 
       await set(newCertRef, newCertification);
-      
+
       setOpen(false);
       form.reset();
       toast({
@@ -84,14 +88,14 @@ export function AddCertificationDialog({ children, employee }: AddCertificationD
         description: `A new certification has been added for ${employee.name}.`,
       });
     } catch (error: any) {
-        console.error("Error adding certification:", error);
-        toast({
-            variant: "destructive",
-            title: "Failed to add certification",
-            description: error.message || "An unexpected error occurred."
-        })
+      console.error("Error adding certification:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to add certification",
+        description: error.message || "An unexpected error occurred."
+      })
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
