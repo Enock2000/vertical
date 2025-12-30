@@ -18,8 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { Employee, Department, Bank, Branch } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { db, getSecondaryAuth } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
 import { EmployeeForm, employeeFormSchema, type EmployeeFormValues } from './employee-form';
@@ -93,9 +93,13 @@ export function AddEmployeeDialog({
     setIsLoading(true);
 
     try {
-      // Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password!);
-      const user = userCredential.user;
+      // Use secondary auth to create user without affecting current admin session
+      const secondaryAuth = getSecondaryAuth();
+      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password!);
+      const newUserId = userCredential.user.uid;
+
+      // Sign out from secondary auth immediately (this doesn't affect main auth)
+      await signOut(secondaryAuth);
 
       const { password, ...employeeData } = values;
       const departmentName = departments.find(d => d.id === values.departmentId)?.name || '';
@@ -103,7 +107,7 @@ export function AddEmployeeDialog({
 
       const newEmployee: Employee = {
         ...employeeData,
-        id: user.uid,
+        id: newUserId,
         companyId: companyId,
         departmentName,
         branchName: branchName || '',
@@ -118,7 +122,7 @@ export function AddEmployeeDialog({
       };
 
       // Save employee data to Realtime Database
-      await set(ref(db, 'employees/' + user.uid), newEmployee);
+      await set(ref(db, 'employees/' + newUserId), newEmployee);
 
       // Send welcome email
       await sendNewEmployeeWelcomeEmail(newEmployee, company.name);

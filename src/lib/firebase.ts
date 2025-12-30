@@ -25,7 +25,7 @@ const actionCodeSettings = {
   handleCodeInApp: true,
 };
 
-// Initialize Firebase
+// Initialize Firebase - Main app
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 let auth: Auth;
@@ -42,4 +42,23 @@ if (typeof window !== 'undefined') {
 const db: Database = getDatabase(app);
 const storage: FirebaseStorage = getStorage(app);
 
+// Secondary Firebase app for creating users without affecting main auth session
+// This is used when admins create employee accounts
+let secondaryApp: FirebaseApp | null = null;
+let secondaryAuth: Auth | null = null;
+
+export function getSecondaryAuth(): Auth {
+  if (typeof window === 'undefined') {
+    throw new Error('Secondary auth can only be used in browser');
+  }
+
+  if (!secondaryApp) {
+    secondaryApp = initializeApp(firebaseConfig, 'secondary');
+    secondaryAuth = getAuth(secondaryApp);
+  }
+
+  return secondaryAuth!;
+}
+
 export { app, auth, db, storage, actionCodeSettings };
+
