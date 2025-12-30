@@ -127,12 +127,15 @@ export function ExecutiveDashboard({
         const last6Months = payrollRuns
             .slice(0, 6)
             .reverse()
-            .map(run => ({
-                month: new Date(run.runDate).toLocaleDateString('en-US', { month: 'short' }),
-                gross: run.summary?.totalGrossPay || 0,
-                net: run.summary?.totalNetPay || 0,
-                deductions: run.summary?.totalDeductions || 0,
-            }));
+            .map(run => {
+                const employees = Object.values(run.employees || {});
+                return {
+                    month: new Date(run.runDate).toLocaleDateString('en-US', { month: 'short' }),
+                    gross: employees.reduce((acc, curr) => acc + (curr.grossPay || 0), 0),
+                    net: employees.reduce((acc, curr) => acc + (curr.netPay || 0), 0),
+                    deductions: employees.reduce((acc, curr) => acc + (curr.totalDeductions || 0), 0),
+                };
+            });
         return last6Months;
     }, [payrollRuns]);
 
@@ -167,10 +170,10 @@ export function ExecutiveDashboard({
     // Recruitment pipeline
     const recruitmentPipeline = React.useMemo(() => {
         const stages = {
-            'Applied': applicants.filter(a => a.status === 'Applied').length,
+            'New': applicants.filter(a => a.status === 'New').length,
             'Screening': applicants.filter(a => a.status === 'Screening').length,
             'Interview': applicants.filter(a => a.status === 'Interview').length,
-            'Offered': applicants.filter(a => a.status === 'Offered').length,
+            'Offer': applicants.filter(a => a.status === 'Offer').length,
             'Hired': applicants.filter(a => a.status === 'Hired').length,
         };
         return Object.entries(stages).map(([name, value]) => ({ name, value }));
