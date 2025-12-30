@@ -55,10 +55,28 @@ export default function RosterPage() {
         });
 
         // Roster Assignments
-        const rosterRef = ref(db, `companies/${companyId}/rosterAssignments`);
+        const rosterRef = ref(db, `companies/${companyId}/rosters`);
         const rosterUnsub = onValue(rosterRef, snapshot => {
             const data = snapshot.val();
-            const list = data ? Object.values<RosterAssignment>(data) : [];
+            const list: RosterAssignment[] = [];
+            if (data) {
+                // Data structure is: rosters/{date}/{employeeId} = Assignment
+                Object.keys(data).forEach(date => {
+                    if (data[date]) {
+                        Object.keys(data[date]).forEach(empId => {
+                            const assignment = data[date][empId];
+                            if (assignment) {
+                                list.push({
+                                    ...assignment,
+                                    id: `${date}-${empId}`, // Generate a unique ID if needed
+                                    date: date, // Ensure date is present
+                                    employeeId: empId // Ensure employeeId is present
+                                });
+                            }
+                        });
+                    }
+                });
+            }
             setRosterAssignments(list);
             checkLoading();
         });

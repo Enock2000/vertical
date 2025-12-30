@@ -408,15 +408,6 @@ function ReportingContent() {
 
     return (
         <>
-            {/* Debug Panel - Remove after fixing */}
-            <div className="bg-yellow-100 border border-yellow-300 rounded p-3 mb-4 text-sm">
-                <p className="font-bold text-yellow-800">Debug Info (remove after fixing):</p>
-                <p>Company ID: {companyId || 'NOT SET'}</p>
-                <p>Loading: {loading ? 'Yes' : 'No'}</p>
-                <p>Employees: {employees.length} | Departments: {departments.length}</p>
-                <p>Applicants: {applicants.length} | Job Vacancies: {jobVacancies.length}</p>
-                <p>Payroll Runs: {payrollRuns.length} | Leave Requests: {leaveRequests.length}</p>
-            </div>
             <div className="flex h-[calc(100vh-4rem)] -mx-6 -mt-6">
                 {/* Mobile Menu Button */}
                 <Button

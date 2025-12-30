@@ -71,9 +71,18 @@ export function ExecutiveDashboard({
     const activeEmployees = employees.filter(e => e.status === 'Active');
     const totalEmployees = activeEmployees.length;
 
-    const thisMonthPayroll = payrollRuns.length > 0
-        ? payrollRuns.reduce((sum, run) => sum + (run.summary?.totalNetPay || 0), 0) / payrollRuns.length
-        : 0;
+    const thisMonthPayroll = React.useMemo(() => {
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        return payrollRuns
+            .filter(run => {
+                const runDate = new Date(run.runDate);
+                return runDate.getMonth() === currentMonth && runDate.getFullYear() === currentYear;
+            })
+            .reduce((sum, run) => sum + (run.totalAmount || 0), 0);
+    }, [payrollRuns]);
 
     const activeLeaves = leaveRequests.filter(l => l.status === 'Approved').length;
     const pendingLeaves = leaveRequests.filter(l => l.status === 'Pending').length;
