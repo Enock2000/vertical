@@ -8,42 +8,122 @@
 import { z } from 'zod';
 
 const GenerateContractInputSchema = z.object({
-  employeeName: z.string().describe("The full name of the employee."),
-  jobTitle: z.string().describe("The official job title for the position."),
-  companyName: z.string().describe("The legal name of the company."),
-  salary: z.number().describe("The annual gross salary."),
-  contractType: z.enum(['Permanent', 'Fixed-Term', 'Internship']).describe("The type of employment contract."),
-  contractStartDate: z.string().describe("The start date of the employment."),
-  contractEndDate: z.string().optional().describe("The end date of the employment, if applicable."),
-  companyAddress: z.string().optional().describe("The address of the company."),
-  employeeAddress: z.string().optional().describe("The address of the employee."),
-  employeeNRC: z.string().optional().describe("The employee's NRC number."),
+    employeeName: z.string().describe("The full name of the employee."),
+    jobTitle: z.string().describe("The official job title for the position."),
+    companyName: z.string().describe("The legal name of the company."),
+    salary: z.number().describe("The annual gross salary."),
+    contractType: z.enum(['Permanent', 'Fixed-Term', 'Internship']).describe("The type of employment contract."),
+    contractStartDate: z.string().describe("The start date of the employment."),
+    contractEndDate: z.string().optional().describe("The end date of the employment, if applicable."),
+    companyAddress: z.string().optional().describe("The address of the company."),
+    employeeAddress: z.string().optional().describe("The address of the employee."),
+    employeeNRC: z.string().optional().describe("The employee's NRC number."),
+    template: z.enum(['Standard', 'Simple']).optional().describe("The contract template to use."),
 });
 
 export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;
 
 export interface GenerateContractOutput {
-  contractText: string;
+    contractText: string;
 }
 
 export async function generateContract(
-  input: GenerateContractInput
+    input: GenerateContractInput
 ): Promise<GenerateContractOutput> {
-  return {
-    contractText: generateComprehensiveContract(input),
-  };
+    const template = input.template || 'Standard';
+
+    return {
+        contractText: template === 'Simple'
+            ? generateSimpleContract(input)
+            : generateComprehensiveContract(input),
+    };
+}
+
+function generateSimpleContract(input: GenerateContractInput): string {
+    const currentDate = new Date().toLocaleDateString('en-ZM', { year: 'numeric', month: 'long', day: 'numeric' });
+    const monthlySalary = (input.salary / 12).toLocaleString('en-ZM', { minimumFractionDigits: 2 });
+
+    return `
+===============================================================================
+                           EMPLOYMENT AGREEMENT
+===============================================================================
+
+Date: ${currentDate}
+
+1. PARTIES
+
+   Employer: ${input.companyName}
+   Address:  ${input.companyAddress || 'N/A'}
+
+   Employee: ${input.employeeName}
+   NRC No:   ${input.employeeNRC || 'N/A'}
+   Address:  ${input.employeeAddress || 'N/A'}
+
+2. POSITION
+
+   The Employee is appointed to the position of: ${input.jobTitle}
+
+3. DURATION
+
+   Start Date: ${input.contractStartDate}
+   ${input.contractEndDate ? `End Date:   ${input.contractEndDate}` : 'Type:       Permanent Contract'}
+
+4. SALARY
+
+   Monthly Gross Salary: ZMW ${monthlySalary}
+   Payable monthly in arrears.
+
+5. HOURS OF WORK
+
+   Standard hours: 08:00 to 17:00, Monday to Friday.
+   48 hours per week total.
+
+6. LEAVE
+
+   Annual Leave: 2 days per month (24 days/year).
+   Sick Leave:   In accordance with Zambian Employment Code Act.
+
+7. TERMINATION
+
+   Notice Period: 1 Month (after probation).
+   Probation:     3 Months.
+
+===============================================================================
+   SIGNATURES
+===============================================================================
+
+For: ${input.companyName}
+
+
+___________________________
+Authorized Signature
+
+
+Date: _____________________
+
+
+Employee: ${input.employeeName}
+
+
+___________________________
+Signature
+
+
+Date: _____________________
+===============================================================================
+`;
 }
 
 function generateComprehensiveContract(input: GenerateContractInput): string {
-  const currentDate = new Date().toLocaleDateString('en-ZM', { year: 'numeric', month: 'long', day: 'numeric' });
-  const monthlySalary = (input.salary / 12).toLocaleString('en-ZM', { minimumFractionDigits: 2 });
-  const annualSalary = input.salary.toLocaleString('en-ZM', { minimumFractionDigits: 2 });
 
-  return `
+    const currentDate = new Date().toLocaleDateString('en-ZM', { year: 'numeric', month: 'long', day: 'numeric' });
+    const monthlySalary = (input.salary / 12).toLocaleString('en-ZM', { minimumFractionDigits: 2 });
+    const annualSalary = input.salary.toLocaleString('en-ZM', { minimumFractionDigits: 2 });
+
+    return `
 ═══════════════════════════════════════════════════════════════════════════════
                               EMPLOYMENT CONTRACT
 ═══════════════════════════════════════════════════════════════════════════════
-
                     CONTRACT OF EMPLOYMENT
                            made pursuant to
             THE EMPLOYMENT CODE ACT NO. 3 OF 2019

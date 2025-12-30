@@ -30,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } from 'docx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -38,6 +39,8 @@ interface GenerateContractDialogProps {
   children: React.ReactNode;
   employee: Employee;
 }
+
+type FontStyle = 'Modern' | 'Classic' | 'Typewriter' | 'Handwriting';
 
 export function GenerateContractDialog({
   children,
@@ -50,6 +53,8 @@ export function GenerateContractDialog({
   const [isExporting, setIsExporting] = useState(false);
   const [contractText, setContractText] = useState('');
   const [activeTab, setActiveTab] = useState<'preview' | 'edit'>('preview');
+  const [selectedTemplate, setSelectedTemplate] = useState<'Standard' | 'Simple'>('Standard');
+  const [selectedFont, setSelectedFont] = useState<FontStyle>('Modern');
   const { toast } = useToast();
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +78,7 @@ export function GenerateContractDialog({
             companyAddress: company.address,
             employeeAddress: employee.address,
             employeeNRC: employee.nrcNumber,
+            template: selectedTemplate,
           });
           setContractText(result.contractText);
         } catch (error) {
@@ -89,7 +95,7 @@ export function GenerateContractDialog({
       };
       generate();
     }
-  }, [open, employee, company, toast]);
+  }, [open, employee, company, toast, selectedTemplate]);
 
   const handleSaveAndUpload = async () => {
     if (!company) return;
@@ -124,6 +130,13 @@ export function GenerateContractDialog({
   };
 
   const handlePrint = () => {
+    const fontStack = {
+      'Modern': 'Helvetica, Arial, sans-serif',
+      'Classic': "'Times New Roman', serif",
+      'Typewriter': "'Courier New', Courier, monospace",
+      'Handwriting': "'Brush Script MT', 'Comic Sans MS', cursive"
+    }[selectedFont];
+
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
@@ -132,9 +145,10 @@ export function GenerateContractDialog({
         <head>
           <title>Employment Contract - ${employee.name}</title>
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap');
             body {
-              font-family: 'Times New Roman', serif;
-              font-size: 12px;
+              font-family: ${selectedFont === 'Handwriting' ? "'Caveat', cursive" : fontStack};
+              font-size: ${selectedFont === 'Handwriting' ? '16px' : '12px'};
               line-height: 1.6;
               margin: 50px;
               white-space: pre-wrap;
@@ -169,24 +183,57 @@ export function GenerateContractDialog({
       const lineHeight = 5;
       let y = margin;
 
-      pdf.setFont('courier', 'normal');
-      pdf.setFontSize(9);
+      // Select PDF font based on selection
+      let fontName = 'helvetica';
+      let fontStyle = 'normal';
+
+      switch (selectedFont) {
+        case 'Classic':
+          fontName = 'times';
+          break;
+        case 'Typewriter':
+          fontName = 'courier';
+          break;
+        case 'Handwriting':
+          fontName = 'times';
+          fontStyle = 'italic'; // Fallback for handwriting
+          break;
+        default: // Modern
+          fontName = 'helvetica';
+      }
+
+      pdf.setFont(fontName, fontStyle);
+      pdf.setFontSize(selectedFont === 'Handwriting' ? 11 : 9);
 
       lines.forEach((line) => {
-        // Check for section headers (lines with ═)
-        if (line.includes('═══')) {
-          pdf.setFont('courier', 'bold');
+        // Sanitize line for PDF (replace unsupported characters)
+        let contentLine = line
+          .replace(/═/g, '=')
+          .replace(/☐/g, '[ ]')
+          .replace(/•/g, '-');
+
+        // Check for section headers (lines with = after replacement)
+        if (contentLine.includes('====')) {
+          pdf.setFont(fontName, 'bold');
           pdf.setFontSize(10);
-        } else if (line.match(/^SECTION \d+|^[A-Z\s]{10,}$/)) {
-          pdf.setFont('courier', 'bold');
+        } else if (contentLine.match(/^SECTION \d+|^[A-Z\s]{10,}$/)) {
+          pdf.setFont(fontName, 'bold');
           pdf.setFontSize(10);
         } else {
-          pdf.setFont('courier', 'normal');
-          pdf.setFontSize(9);
+          // Revert to selected style
+          if (selectedFont === 'Handwriting') {
+            pdf.setFont('times', 'italic');
+          } else {
+            pdf.setFont(fontName, 'normal');
+          }
+          pdf.setFontSize(selectedFont === 'Handwriting' ? 11 : 9);
         }
 
+        // ... (rest of loop)
+
+
         // Word wrap
-        const textLines = pdf.splitTextToSize(line, pageWidth - (margin * 2));
+        const textLines = pdf.splitTextToSize(contentLine, pageWidth - (margin * 2));
 
         textLines.forEach((textLine: string) => {
           if (y > pageHeight - margin) {
@@ -297,14 +344,41 @@ export function GenerateContractDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-[95vw] w-[1000px] h-[90vh] max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-0 shrink-0">
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Employment Contract
-          </DialogTitle>
-          <DialogDescription>
-            Review the employment contract for {employee.name}. Export as PDF or Word document.
-          </DialogDescription>
+        <DialogHeader className="p-6 pb-0 shrink-0 flex flex-row items-start justify-between">
+          <div className="space-y-1">
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Employment Contract
+            </DialogTitle>
+            <DialogDescription>
+              Review the employment contract for {employee.name}. Export as PDF or Word document.
+            </DialogDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">Template:</span>
+            <Select value={selectedTemplate} onValueChange={(v: 'Standard' | 'Simple') => setSelectedTemplate(v)}>
+              <SelectTrigger className="w-[140px] h-8">
+                <SelectValue placeholder="Select template" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Standard">Standard</SelectItem>
+                <SelectItem value="Simple">Simple</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <span className="text-sm font-medium ml-2">Font:</span>
+            <Select value={selectedFont} onValueChange={(v: FontStyle) => setSelectedFont(v)}>
+              <SelectTrigger className="w-[140px] h-8">
+                <SelectValue placeholder="Select font" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Modern">Modern (Sans)</SelectItem>
+                <SelectItem value="Classic">Classic (Serif)</SelectItem>
+                <SelectItem value="Typewriter">Typewriter</SelectItem>
+                <SelectItem value="Handwriting">Handwriting</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </DialogHeader>
 
         {isLoading ? (
@@ -335,10 +409,20 @@ export function GenerateContractDialog({
 
               <TabsContent value="preview" className="flex-1 min-h-0 m-0">
                 <ScrollArea className="h-full border rounded-lg bg-white dark:bg-gray-950">
+                  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&display=swap" rel="stylesheet" />
                   <div
                     ref={previewRef}
-                    className="p-6 font-mono text-xs leading-relaxed whitespace-pre-wrap"
-                    style={{ minHeight: '100%' }}
+                    className="p-6 text-xs leading-relaxed whitespace-pre-wrap"
+                    style={{
+                      minHeight: '100%',
+                      fontFamily: {
+                        'Modern': 'Helvetica, Arial, sans-serif',
+                        'Classic': "'Times New Roman', serif",
+                        'Typewriter': "'Courier New', Courier, monospace",
+                        'Handwriting': "'Caveat', cursive"
+                      }[selectedFont],
+                      fontSize: selectedFont === 'Handwriting' ? '16px' : '12px'
+                    }}
                   >
                     {contractText}
                   </div>
