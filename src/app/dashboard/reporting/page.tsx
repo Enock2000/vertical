@@ -396,117 +396,138 @@ function ReportingContent() {
         }
     };
 
+    // Debug logging
+    console.log('[Reporting] Data loaded:', {
+        companyId,
+        loading,
+        employees: employees.length,
+        departments: departments.length,
+        payrollRuns: payrollRuns.length,
+        applicants: applicants.length,
+    });
+
     return (
-        <div className="flex h-[calc(100vh-4rem)] -mx-6 -mt-6">
-            {/* Mobile Menu Button */}
-            <Button
-                variant="ghost"
-                size="icon"
-                className="fixed top-20 left-4 z-50 lg:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-
-            {/* Sidebar - Mobile */}
-            {mobileMenuOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-                    onClick={() => setMobileMenuOpen(false)}
-                />
-            )}
-
-            {/* Sidebar */}
-            <div className={cn(
-                "fixed lg:relative z-40 h-full transition-transform duration-300",
-                mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-            )}>
-                <ReportingSidebar
-                    activeView={activeView}
-                    onViewChange={handleViewChange}
-                    collapsed={sidebarCollapsed}
-                />
+        <>
+            {/* Debug Panel - Remove after fixing */}
+            <div className="bg-yellow-100 border border-yellow-300 rounded p-3 mb-4 text-sm">
+                <p className="font-bold text-yellow-800">Debug Info (remove after fixing):</p>
+                <p>Company ID: {companyId || 'NOT SET'}</p>
+                <p>Loading: {loading ? 'Yes' : 'No'}</p>
+                <p>Employees: {employees.length} | Departments: {departments.length}</p>
+                <p>Applicants: {applicants.length} | Job Vacancies: {jobVacancies.length}</p>
+                <p>Payroll Runs: {payrollRuns.length} | Leave Requests: {leaveRequests.length}</p>
             </div>
+            <div className="flex h-[calc(100vh-4rem)] -mx-6 -mt-6">
+                {/* Mobile Menu Button */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="fixed top-20 left-4 z-50 lg:hidden"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Header */}
-                <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm px-6 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="ml-10 lg:ml-0">
-                            <h1 className="text-2xl font-bold">{getViewTitle()}</h1>
-                            <p className="text-sm text-muted-foreground">
-                                {format(new Date(), 'EEEE, MMMM d, yyyy')}
-                            </p>
+                {/* Sidebar - Mobile */}
+                {mobileMenuOpen && (
+                    <div
+                        className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+                        onClick={() => setMobileMenuOpen(false)}
+                    />
+                )}
+
+                {/* Sidebar */}
+                <div className={cn(
+                    "fixed lg:relative z-40 h-full transition-transform duration-300",
+                    mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                )}>
+                    <ReportingSidebar
+                        activeView={activeView}
+                        onViewChange={handleViewChange}
+                        collapsed={sidebarCollapsed}
+                    />
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                    {/* Header */}
+                    <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur-sm px-6 py-4">
+                        <div className="flex items-center justify-between">
+                            <div className="ml-10 lg:ml-0">
+                                <h1 className="text-2xl font-bold">{getViewTitle()}</h1>
+                                <p className="text-sm text-muted-foreground">
+                                    {format(new Date(), 'EEEE, MMMM d, yyyy')}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="gap-2">
+                                            <Download className="h-4 w-4" />
+                                            <span className="hidden sm:inline">Export</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                        <DropdownMenuItem onClick={() => handleExport('employees')}>
+                                            <Users className="mr-2 h-4 w-4" />
+                                            Employee Roster
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleExport('payroll')}>
+                                            <Receipt className="mr-2 h-4 w-4" />
+                                            Payroll History
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleExport('attendance')}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Attendance Summary
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleExport('leave')}>
+                                            <FileText className="mr-2 h-4 w-4" />
+                                            Leave Report
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleExport('departments')}>
+                                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                            Department Report
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="gap-2">
-                                        <Download className="h-4 w-4" />
-                                        <span className="hidden sm:inline">Export</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuItem onClick={() => handleExport('employees')}>
-                                        <Users className="mr-2 h-4 w-4" />
-                                        Employee Roster
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExport('payroll')}>
-                                        <Receipt className="mr-2 h-4 w-4" />
-                                        Payroll History
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExport('attendance')}>
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                        Attendance Summary
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExport('leave')}>
-                                        <FileText className="mr-2 h-4 w-4" />
-                                        Leave Report
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleExport('departments')}>
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                        Department Report
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-auto p-6">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-64">
+                                <div className="text-center">
+                                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                                    <p className="text-muted-foreground">Loading reports...</p>
+                                </div>
+                            </div>
+                        ) : (
+                            renderView()
+                        )}
                     </div>
                 </div>
 
-                {/* Content Area */}
-                <div className="flex-1 overflow-auto p-6">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <div className="text-center">
-                                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                                <p className="text-muted-foreground">Loading reports...</p>
-                            </div>
-                        </div>
-                    ) : (
-                        renderView()
-                    )}
-                </div>
+                {/* Drill-Down Panel */}
+                <DrillDownPanel
+                    isOpen={drillDownState.isOpen}
+                    onClose={closeDrillDown}
+                    title={drillDownState.title}
+                    subtitle={drillDownState.subtitle}
+                    breadcrumbs={drillDownState.breadcrumbs}
+                    onBreadcrumbClick={(_, index) => {
+                        if (index < drillDownState.breadcrumbs.length - 1) {
+                            goBack();
+                        }
+                    }}
+                    showExport
+                >
+                    {renderDrillDownContent()}
+                </DrillDownPanel>
             </div>
-
-            {/* Drill-Down Panel */}
-            <DrillDownPanel
-                isOpen={drillDownState.isOpen}
-                onClose={closeDrillDown}
-                title={drillDownState.title}
-                subtitle={drillDownState.subtitle}
-                breadcrumbs={drillDownState.breadcrumbs}
-                onBreadcrumbClick={(_, index) => {
-                    if (index < drillDownState.breadcrumbs.length - 1) {
-                        goBack();
-                    }
-                }}
-                showExport
-            >
-                {renderDrillDownContent()}
-            </DrillDownPanel>
-        </div>
+        </>
     );
 }
 
