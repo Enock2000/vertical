@@ -49,7 +49,7 @@ export default function PerformancePage() {
                 checkLoading();
             };
         };
-        
+
         const onErrorCallback = (name: string) => (error: Error) => {
             console.error(`Firebase read failed for ${name}:`, error.message);
             checkLoading();
@@ -60,7 +60,7 @@ export default function PerformancePage() {
         const feedbackUnsubscribe = onValue(feedbackRef, createOnValueCallback(setFeedback), onErrorCallback('feedback'));
         const coursesUnsubscribe = onValue(coursesRef, createOnValueCallback(setCourses, true), onErrorCallback('courses'));
         const certificationsUnsubscribe = onValue(certificationsRef, createOnValueCallback(setCertifications), onErrorCallback('certifications'));
-        
+
         return () => {
             employeesUnsubscribe();
             goalsUnsubscribe();
@@ -78,6 +78,14 @@ export default function PerformancePage() {
         );
     }
 
+    // Filter to only show actual employees (exclude company profiles, admins without employee status, offboarded)
+    const filteredEmployees = employees.filter(e =>
+        e.status === 'Active' &&
+        e.role !== 'GuestAdmin' &&
+        e.status !== 'Offboarded' &&
+        e.status !== 'Applicant'
+    );
+
     return (
         <Tabs defaultValue="reviews">
             <TabsList className="mb-4">
@@ -87,16 +95,16 @@ export default function PerformancePage() {
                 <TabsTrigger value="certifications">Certifications</TabsTrigger>
             </TabsList>
             <TabsContent value="reviews">
-                <PerformanceReviewsTab employees={employees} goals={goals} />
+                <PerformanceReviewsTab employees={filteredEmployees} goals={goals} companyId={companyId!} />
             </TabsContent>
             <TabsContent value="feedback">
-                <FeedbackTab employees={employees} allFeedback={feedback} />
+                <FeedbackTab employees={filteredEmployees} allFeedback={feedback} />
             </TabsContent>
             <TabsContent value="training">
-                <TrainingCatalogTab courses={courses} employees={employees} />
+                <TrainingCatalogTab courses={courses} employees={filteredEmployees} />
             </TabsContent>
             <TabsContent value="certifications">
-                <CertificationsTab employees={employees} allCertifications={certifications} />
+                <CertificationsTab employees={filteredEmployees} allCertifications={certifications} />
             </TabsContent>
         </Tabs>
     );

@@ -49,11 +49,13 @@ type AddGoalFormValues = z.infer<typeof formSchema>;
 interface AddGoalDialogProps {
   children: React.ReactNode;
   employee: Employee;
+  companyId: string;
 }
 
 export function AddGoalDialog({
   children,
-  employee
+  employee,
+  companyId
 }: AddGoalDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,8 +74,9 @@ export function AddGoalDialog({
     try {
       const goalsRef = ref(db, 'goals');
       const newGoalRef = push(goalsRef);
-      
+
       const newGoal: Omit<Goal, 'id'> = {
+        companyId: companyId,
         employeeId: employee.id,
         title: values.title,
         description: values.description,
@@ -83,7 +86,7 @@ export function AddGoalDialog({
       };
 
       await set(newGoalRef, newGoal);
-      
+
       // Notify the employee
       await createNotification({
         userId: employee.id,
@@ -100,14 +103,14 @@ export function AddGoalDialog({
       });
 
     } catch (error: any) {
-        console.error("Error adding goal:", error);
-        toast({
-            variant: "destructive",
-            title: "Failed to add goal",
-            description: error.message || "An unexpected error occurred."
-        })
+      console.error("Error adding goal:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to add goal",
+        description: error.message || "An unexpected error occurred."
+      })
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }
 
@@ -136,7 +139,7 @@ export function AddGoalDialog({
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
@@ -191,7 +194,7 @@ export function AddGoalDialog({
                 </FormItem>
               )}
             />
-           
+
             <DialogFooter>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? (
