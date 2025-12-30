@@ -127,7 +127,11 @@ function ReportingContent() {
                 if (isObject) {
                     setter(data || {});
                 } else {
-                    let list = data ? Object.values(data) : [];
+                    // Use Object.keys to preserve Firebase keys as IDs
+                    let list = data ? Object.keys(data).map(key => ({
+                        ...data[key],
+                        id: data[key].id || key, // Use existing id or Firebase key
+                    })) : [];
                     if (filterByCompany) {
                         list = list.filter((item: any) => item.companyId === companyId);
                     }
