@@ -78,12 +78,11 @@ export default function PerformancePage() {
         );
     }
 
-    // Filter to only show actual employees (exclude company profiles, admins without employee status, offboarded)
+    // Filter to only show actual employees (exclude company profiles, admins, offboarded)
     const filteredEmployees = employees.filter(e =>
         e.status === 'Active' &&
-        e.role !== 'GuestAdmin' &&
-        e.status !== 'Offboarded' &&
-        e.status !== 'Applicant'
+        e.role !== 'Admin' &&
+        e.role !== 'GuestAdmin'
     );
 
     return (
