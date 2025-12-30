@@ -104,10 +104,10 @@ export function RecruitmentReports({
     // Pipeline funnel data
     const pipelineData = React.useMemo(() => {
         const stages = [
-            { name: 'Applied', value: applicants.filter(a => a.status === 'Applied').length, fill: FUNNEL_COLORS[0] },
+            { name: 'New', value: applicants.filter(a => a.status === 'New').length, fill: FUNNEL_COLORS[0] },
             { name: 'Screening', value: applicants.filter(a => a.status === 'Screening').length, fill: FUNNEL_COLORS[1] },
             { name: 'Interview', value: applicants.filter(a => a.status === 'Interview').length, fill: FUNNEL_COLORS[2] },
-            { name: 'Offered', value: applicants.filter(a => a.status === 'Offered').length, fill: FUNNEL_COLORS[3] },
+            { name: 'Offer', value: applicants.filter(a => a.status === 'Offer').length, fill: FUNNEL_COLORS[3] },
             { name: 'Hired', value: applicants.filter(a => a.status === 'Hired').length, fill: FUNNEL_COLORS[4] },
         ];
         return stages;

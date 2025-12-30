@@ -91,14 +91,15 @@ export function PayrollReports({
         }
 
         const latestRun = payrollRuns[0];
+        const employees = Object.values(latestRun.employees || {});
         return {
-            totalGross: latestRun.summary?.totalGrossPay || 0,
-            totalNet: latestRun.summary?.totalNetPay || 0,
-            totalDeductions: latestRun.summary?.totalDeductions || 0,
-            totalNAPSA: latestRun.summary?.totalNAPSA || 0,
-            totalNHIMA: latestRun.summary?.totalNHIMA || 0,
-            totalPAYE: latestRun.summary?.totalPAYE || 0,
-            employeeCount: latestRun.summary?.employeeCount || 0,
+            totalGross: employees.reduce((acc, curr) => acc + (curr.grossPay || 0), 0),
+            totalNet: employees.reduce((acc, curr) => acc + (curr.netPay || 0), 0),
+            totalDeductions: employees.reduce((acc, curr) => acc + (curr.totalDeductions || 0), 0),
+            totalNAPSA: employees.reduce((acc, curr) => acc + (curr.employeeNapsaDeduction || 0), 0),
+            totalNHIMA: employees.reduce((acc, curr) => acc + (curr.employeeNhimaDeduction || 0), 0),
+            totalPAYE: employees.reduce((acc, curr) => acc + (curr.taxDeduction || 0), 0),
+            employeeCount: employees.length,
         };
     }, [payrollRuns]);
 
@@ -107,12 +108,15 @@ export function PayrollReports({
         return payrollRuns
             .slice(0, 12)
             .reverse()
-            .map(run => ({
-                month: format(new Date(run.runDate), 'MMM yy'),
-                gross: run.summary?.totalGrossPay || 0,
-                net: run.summary?.totalNetPay || 0,
-                deductions: run.summary?.totalDeductions || 0,
-            }));
+            .map(run => {
+                const employees = Object.values(run.employees || {});
+                return {
+                    month: format(new Date(run.runDate), 'MMM yy'),
+                    gross: employees.reduce((acc, curr) => acc + (curr.grossPay || 0), 0),
+                    net: employees.reduce((acc, curr) => acc + (curr.netPay || 0), 0),
+                    deductions: employees.reduce((acc, curr) => acc + (curr.totalDeductions || 0), 0),
+                };
+            });
     }, [payrollRuns]);
 
     // Statutory contributions breakdown
@@ -141,11 +145,14 @@ export function PayrollReports({
 
     // Overtime trend
     const overtimeTrend = React.useMemo(() => {
-        return payrollRuns.slice(0, 6).reverse().map(run => ({
-            month: format(new Date(run.runDate), 'MMM'),
-            overtime: run.summary?.totalOvertime || 0,
-            allowances: run.summary?.totalAllowances || 0,
-        }));
+        return payrollRuns.slice(0, 6).reverse().map(run => {
+            const employees = Object.values(run.employees || {});
+            return {
+                month: format(new Date(run.runDate), 'MMM'),
+                overtime: employees.reduce((acc, curr) => acc + (curr.overtimePay || 0), 0),
+                allowances: 0, // Allowances not explicitly tracked in current interface
+            };
+        });
     }, [payrollRuns]);
 
     // KPIs based on active tab
@@ -215,11 +222,12 @@ export function PayrollReports({
                 ];
             case 'overtime':
                 const latestRun = payrollRuns[0];
+                const employees = latestRun ? Object.values(latestRun.employees || {}) : [];
                 return [
                     {
                         id: 'total-overtime',
                         label: 'Total Overtime',
-                        value: latestRun?.summary?.totalOvertime || 0,
+                        value: employees.reduce((acc, curr) => acc + (curr.overtimePay || 0), 0),
                         format: 'currency' as const,
                         icon: Clock,
                         color: 'blue' as const,
@@ -227,7 +235,7 @@ export function PayrollReports({
                     {
                         id: 'total-allowances',
                         label: 'Total Allowances',
-                        value: latestRun?.summary?.totalAllowances || 0,
+                        value: 0, // Placeholder
                         format: 'currency' as const,
                         icon: DollarSign,
                         color: 'green' as const,
@@ -256,27 +264,27 @@ export function PayrollReports({
         {
             id: 'employees',
             header: 'Employees',
-            accessor: (row) => row.summary?.employeeCount || 0,
+            accessor: (row) => Object.keys(row.employees || {}).length,
             align: 'center',
         },
         {
             id: 'gross',
             header: 'Gross Pay',
-            accessor: (row) => row.summary?.totalGrossPay || 0,
+            accessor: (row) => Object.values(row.employees || {}).reduce((acc, curr) => acc + (curr.grossPay || 0), 0),
             align: 'right',
             render: (value) => cellRenderers.currency(value),
         },
         {
             id: 'deductions',
             header: 'Deductions',
-            accessor: (row) => row.summary?.totalDeductions || 0,
+            accessor: (row) => Object.values(row.employees || {}).reduce((acc, curr) => acc + (curr.totalDeductions || 0), 0),
             align: 'right',
             render: (value) => cellRenderers.currency(value),
         },
         {
             id: 'net',
             header: 'Net Pay',
-            accessor: (row) => row.summary?.totalNetPay || 0,
+            accessor: (row) => Object.values(row.employees || {}).reduce((acc, curr) => acc + (curr.netPay || 0), 0),
             align: 'right',
             render: (value) => cellRenderers.currency(value),
         },
