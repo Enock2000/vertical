@@ -374,13 +374,19 @@ function ReportingContent() {
                             value={data.payrollRuns?.[0] ? format(new Date(data.payrollRuns[0].runDate), 'MMMM yyyy') : 'N/A'}
                         />
                         {data.payrollRuns?.slice(0, 5).map((run: PayrollRun) => (
-                            <div key={run.id} className="p-3 rounded-lg bg-muted/50 space-y-2">
-                                <p className="font-medium text-sm">{format(new Date(run.runDate), 'MMMM yyyy')}</p>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div key={run.id} className="p-4 border rounded-lg space-y-2">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-medium text-sm">{format(new Date(run.runDate), 'MMMM yyyy')}</h4>
+                                        <p className="text-xs text-muted-foreground">{format(new Date(run.runDate), 'MMM d, yyyy')}</p>
+                                    </div>
+                                    <Badge variant="outline">{Object.keys(run.employees || {}).length} employees</Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-sm pt-2">
                                     <span className="text-muted-foreground">Gross:</span>
-                                    <span>K {(run.summary?.totalGrossPay || 0).toLocaleString()}</span>
+                                    <span>K {(Object.values(run.employees || {}).reduce((acc, curr) => acc + (curr.grossPay || 0), 0)).toLocaleString()}</span>
                                     <span className="text-muted-foreground">Net:</span>
-                                    <span>K {(run.summary?.totalNetPay || 0).toLocaleString()}</span>
+                                    <span>K {(Object.values(run.employees || {}).reduce((acc, curr) => acc + (curr.netPay || 0), 0)).toLocaleString()}</span>
                                 </div>
                             </div>
                         ))}
