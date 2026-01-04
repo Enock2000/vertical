@@ -666,6 +666,22 @@ export type RosterAssignment = {
     shiftColor?: string;
 };
 
+export type ShiftSwapRequest = {
+    id: string;
+    companyId: string;
+    requesterId: string;
+    requesterName: string;
+    date: string; // YYYY-MM-DD
+    shiftId: string;
+    shiftName: string;
+    reason: string;
+    status: 'Pending' | 'Approved' | 'Rejected';
+    createdAt: string; // ISO 8601
+    reviewedBy?: string;
+    reviewNote?: string;
+    reviewedAt?: string;
+};
+
 export type Notification = {
     id: string;
     companyId: string;

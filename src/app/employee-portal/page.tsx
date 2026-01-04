@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ref, onValue, query, orderByChild, equalTo, update } from 'firebase/database';
 import { format, differenceInMinutes, differenceInSeconds, parseISO } from 'date-fns';
 import { auth, db } from '@/lib/firebase';
-import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Announcement } from '@/lib/data';
+import type { Employee, AttendanceRecord, PayrollConfig, LeaveRequest, Announcement, RosterAssignment } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { recordAttendance } from '@/ai/flows/attendance-flow';
 import { reportEmergency } from '@/ai/flows/report-emergency-flow';
@@ -33,6 +33,8 @@ import {
 import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-dialog';
 import { EmployeePayslipDialog } from './components/employee-payslip-dialog';
 import { SubmitResignationDialog } from './components/submit-resignation-dialog';
+import { ShiftSwapRequestDialog } from './components/shift-swap-request-dialog';
+import { CalendarClock, ArrowLeftRight } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -55,6 +57,7 @@ export default function EmployeePortalDashboardPage() {
     const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [upcomingRoster, setUpcomingRoster] = useState<RosterAssignment[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [actionType, setActionType] = useState<string | null>(null);
@@ -78,7 +81,7 @@ export default function EmployeePortalDashboardPage() {
     useEffect(() => {
         if (user && companyId) {
             let loadedCount = 0;
-            const totalToLoad = 4;
+            const totalToLoad = 5;
 
             const checkLoading = () => {
                 loadedCount++;
@@ -128,11 +131,32 @@ export default function EmployeePortalDashboardPage() {
                 checkLoading();
             }, onErrorCallback('announcements'));
 
+            // Upcoming Roster (next 7 days)
+            const rostersRef = ref(db, `companies/${companyId}/rosters`);
+            const rosterUnsub = onValue(rostersRef, (snapshot) => {
+                const data = snapshot.val();
+                const assignments: RosterAssignment[] = [];
+                if (data) {
+                    const today = new Date();
+                    for (let i = 0; i < 14; i++) {
+                        const d = new Date(today);
+                        d.setDate(d.getDate() + i);
+                        const dateStr = d.toISOString().split('T')[0];
+                        if (data[dateStr] && data[dateStr][user.uid]) {
+                            assignments.push({ ...data[dateStr][user.uid], date: dateStr, id: `${dateStr}-${user.uid}` });
+                        }
+                    }
+                }
+                setUpcomingRoster(assignments);
+                checkLoading();
+            }, onErrorCallback('roster'));
+
             return () => {
                 todayAttendanceUnsubscribe();
                 payrollConfigUnsubscribe();
                 leaveRequestsUnsubscribe();
                 announcementsUnsubscribe();
+                rosterUnsub();
             };
         } else if (!loadingAuth) {
             setLoadingData(false);
@@ -451,6 +475,66 @@ export default function EmployeePortalDashboardPage() {
                         ) : (
                             <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
                                 No recent announcements.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* My Roster */}
+                <Card className="lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <CalendarClock className="h-5 w-5" />
+                            My Upcoming Shifts
+                        </CardTitle>
+                        <CardDescription>Your scheduled shifts for the next 14 days</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {upcomingRoster.length > 0 ? (
+                            <div className="space-y-2">
+                                {upcomingRoster.map((assignment) => (
+                                    <div
+                                        key={assignment.id}
+                                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div
+                                                className="w-2 h-10 rounded-full"
+                                                style={{ backgroundColor: assignment.shiftColor || '#6366f1' }}
+                                            />
+                                            <div>
+                                                <p className="font-medium">{assignment.date}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {assignment.shiftName || 'On Duty'}
+                                                    {assignment.startTime && assignment.endTime && (
+                                                        <> • {assignment.startTime} - {assignment.endTime}</>
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={assignment.status === 'Off Day' ? 'secondary' : 'default'}>
+                                                {assignment.status}
+                                            </Badge>
+                                            {employee && companyId && assignment.status !== 'Off Day' && (
+                                                <ShiftSwapRequestDialog
+                                                    assignment={assignment}
+                                                    employee={employee}
+                                                    companyId={companyId}
+                                                >
+                                                    <Button variant="outline" size="sm">
+                                                        <ArrowLeftRight className="mr-1 h-3 w-3" />
+                                                        Request Swap
+                                                    </Button>
+                                                </ShiftSwapRequestDialog>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
+                                No upcoming shifts scheduled.
                             </div>
                         )}
                     </CardContent>
