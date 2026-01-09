@@ -7,9 +7,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { ref as dbRef, push, set, serverTimestamp } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadToB2 } from '@/lib/backblaze';
 import { getAdminUserIds, createNotification, type SalesDailyReport } from '@/lib/data';
 import { format } from 'date-fns';
 
@@ -31,26 +31,26 @@ const UploadSalesReportOutputSchema = z.object({
 export async function uploadSalesReport(
   formData: FormData
 ): Promise<z.infer<typeof UploadSalesReportOutputSchema>> {
-    const file = formData.get('reportFile') as File | null;
-    if (!file) {
-        return { success: false, message: 'No file provided.' };
-    }
-    
-    const rawData = {
-        companyId: formData.get('companyId') as string,
-        branchId: formData.get('branchId') as string,
-        branchName: formData.get('branchName') as string,
-        reportDate: formData.get('reportDate') as string,
-        submittedByEmployeeId: formData.get('submittedByEmployeeId') as string,
-        submittedByEmployeeName: formData.get('submittedByEmployeeName') as string,
-    }
+  const file = formData.get('reportFile') as File | null;
+  if (!file) {
+    return { success: false, message: 'No file provided.' };
+  }
 
-    const validatedFields = UploadSalesReportInputSchema.safeParse(rawData);
-    if (!validatedFields.success) {
-        return { success: false, message: 'Invalid form data.' };
-    }
-    
-    return uploadSalesReportFlow({ ...validatedFields.data, reportFile: file });
+  const rawData = {
+    companyId: formData.get('companyId') as string,
+    branchId: formData.get('branchId') as string,
+    branchName: formData.get('branchName') as string,
+    reportDate: formData.get('reportDate') as string,
+    submittedByEmployeeId: formData.get('submittedByEmployeeId') as string,
+    submittedByEmployeeName: formData.get('submittedByEmployeeName') as string,
+  }
+
+  const validatedFields = UploadSalesReportInputSchema.safeParse(rawData);
+  if (!validatedFields.success) {
+    return { success: false, message: 'Invalid form data.' };
+  }
+
+  return uploadSalesReportFlow({ ...validatedFields.data, reportFile: file });
 }
 
 const uploadSalesReportFlow = ai.defineFlow(
@@ -62,12 +62,15 @@ const uploadSalesReportFlow = ai.defineFlow(
   async ({ reportFile, ...reportData }) => {
     try {
       const reportDate = new Date(reportData.reportDate).toISOString().split('T')[0];
-      
-      // 1. Upload file to Firebase Storage
-      const fileRefPath = `sales-reports/${reportData.companyId}/${reportDate}-${reportFile.name}`;
-      const fileRef = storageRef(storage, fileRefPath);
-      const snapshot = await uploadBytes(fileRef, reportFile);
-      const fileUrl = await getDownloadURL(snapshot.ref);
+
+      // 1. Upload file to Backblaze B2
+      const filePath = `sales-reports/${reportData.companyId}/${reportDate}-${reportFile.name}`;
+      const uploadResult = await uploadToB2(reportFile, filePath);
+
+      if (!uploadResult.success || !uploadResult.url) {
+        throw new Error(uploadResult.error || 'File upload failed');
+      }
+      const fileUrl = uploadResult.url;
 
       // 2. Create a new record in the database
       const reportsRef = dbRef(db, `companies/${reportData.companyId}/salesReports`);

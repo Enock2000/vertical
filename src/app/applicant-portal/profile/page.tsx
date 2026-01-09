@@ -6,9 +6,9 @@ import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { ref as dbRef, update } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { uploadToB2 } from '@/lib/backblaze';
 import { useAuth } from '@/app/auth-provider';
 import { Loader2, Trash2, PlusCircle, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
+import { ImageUpload } from '@/components/image-upload';
 
 const educationSchema = z.object({
   id: z.string().optional(),
@@ -64,7 +65,7 @@ export default function ApplicantProfilePage() {
       workExperience: employee?.workExperience || [],
     },
   });
-  
+
   const { fields: eduFields, append: appendEdu, remove: removeEdu } = useFieldArray({
     control: form.control,
     name: 'education',
@@ -74,7 +75,7 @@ export default function ApplicantProfilePage() {
     control: form.control,
     name: 'workExperience',
   });
-  
+
   const onSubmit = async (data: ProfileFormValues) => {
     if (!employee) return;
     setIsSaving(true);
@@ -93,15 +94,19 @@ export default function ApplicantProfilePage() {
     if (!file || !user) return;
     setIsUploading(true);
     try {
-      const fileRef = storageRef(storage, `resumes/${user.uid}/${file.name}`);
-      const snapshot = await uploadBytes(fileRef, file);
-      const resumeUrl = await getDownloadURL(snapshot.ref);
-      await update(dbRef(db, `employees/${user.uid}`), { resumeUrl });
+      const filePath = `resumes/${user.uid}/${Date.now()}_${file.name}`;
+      const result = await uploadToB2(file, filePath);
+
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      await update(dbRef(db, `employees/${user.uid}`), { resumeUrl: result.url });
       toast({ title: "Resume uploaded successfully!" });
     } catch (error) {
-       toast({ variant: 'destructive', title: "Error", description: "Failed to upload resume." });
+      toast({ variant: 'destructive', title: "Error", description: "Failed to upload resume." });
     } finally {
-        setIsUploading(false);
+      setIsUploading(false);
     }
   }
 
@@ -109,7 +114,7 @@ export default function ApplicantProfilePage() {
   if (authLoading) {
     return <div className="flex items-center justify-center h-full"><Loader2 className="animate-spin" /></div>;
   }
-  
+
   if (!employee) {
     return <p>Could not load your profile.</p>
   }
@@ -124,6 +129,27 @@ export default function ApplicantProfilePage() {
               <CardDescription>Manage your personal contact information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Avatar Upload */}
+              <div className="flex items-center gap-6">
+                <ImageUpload
+                  currentImageUrl={employee.avatar}
+                  onUploadComplete={async (url) => {
+                    if (url && employee?.id) {
+                      await update(dbRef(db, `employees/${employee.id}`), { avatar: url });
+                      toast({ title: 'Profile photo updated!' });
+                    }
+                  }}
+                  uploadPath={`avatars/${employee.id}`}
+                  variant="avatar"
+                  size="lg"
+                  placeholder="Upload Photo"
+                />
+                <div>
+                  <h3 className="font-medium">Profile Photo</h3>
+                  <p className="text-sm text-muted-foreground">Click to upload a new photo</p>
+                </div>
+              </div>
+              <Separator />
               <FormField
                 control={form.control}
                 name="name"
@@ -156,19 +182,19 @@ export default function ApplicantProfilePage() {
           </Card>
 
           <Card>
-              <CardHeader>
-                  <CardTitle>Resume</CardTitle>
-                  <CardDescription>Upload and manage your resume file.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <Input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} disabled={isUploading}/>
-                  {isUploading && <p className="text-sm text-muted-foreground flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</p>}
-                   {employee.resumeUrl && !isUploading && (
-                      <p className="text-sm text-green-600">
-                          A resume is on file. You can upload a new one to replace it.
-                      </p>
-                  )}
-              </CardContent>
+            <CardHeader>
+              <CardTitle>Resume</CardTitle>
+              <CardDescription>Upload and manage your resume file.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} disabled={isUploading} />
+              {isUploading && <p className="text-sm text-muted-foreground flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</p>}
+              {employee.resumeUrl && !isUploading && (
+                <p className="text-sm text-green-600">
+                  A resume is on file. You can upload a new one to replace it.
+                </p>
+              )}
+            </CardContent>
           </Card>
 
 
@@ -184,23 +210,23 @@ export default function ApplicantProfilePage() {
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                   <FormField control={form.control} name={`education.${index}.institution`} render={({ field }) => (
-                      <FormItem><FormLabel>Institution</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
+                    <FormItem><FormLabel>Institution</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name={`education.${index}.qualification`} render={({ field }) => (
-                        <FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>Qualification</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                     <FormField control={form.control} name={`education.${index}.fieldOfStudy`} render={({ field }) => (
-                        <FormItem><FormLabel>Field of Study</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>Field of Study</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                   </div>
-                   <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name={`education.${index}.startDate`} render={({ field }) => (
-                        <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                     <FormField control={form.control} name={`education.${index}.endDate`} render={({ field }) => (
-                        <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                   </div>
                 </div>
               ))}
@@ -209,7 +235,7 @@ export default function ApplicantProfilePage() {
               </Button>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Work Experience</CardTitle>
@@ -218,38 +244,38 @@ export default function ApplicantProfilePage() {
             <CardContent className="space-y-4">
               {expFields.map((field, index) => (
                 <div key={field.id} className="p-4 border rounded-md space-y-3 relative">
-                   <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeExp(index)}>
+                  <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => removeExp(index)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name={`workExperience.${index}.company`} render={({ field }) => (
-                        <FormItem><FormLabel>Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>Company</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                     <FormField control={form.control} name={`workExperience.${index}.position`} render={({ field }) => (
-                        <FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                   </div>
-                   <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name={`workExperience.${index}.startDate`} render={({ field }) => (
-                        <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                     <FormField control={form.control} name={`workExperience.${index}.endDate`} render={({ field }) => (
-                        <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                      <FormItem><FormLabel>End Date</FormLabel><FormControl><Input type="month" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
                   </div>
                   <FormField control={form.control} name={`workExperience.${index}.responsibilities`} render={({ field }) => (
-                      <FormItem><FormLabel>Responsibilities</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
-                  )}/>
+                    <FormItem><FormLabel>Responsibilities</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
                 </div>
               ))}
-               <Button type="button" variant="outline" onClick={() => appendExp({ company: '', position: '', startDate: '', endDate: '', responsibilities: '' })}>
+              <Button type="button" variant="outline" onClick={() => appendExp({ company: '', position: '', startDate: '', endDate: '', responsibilities: '' })}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Experience
               </Button>
             </CardContent>
           </Card>
 
           <Button type="submit" disabled={isSaving}>
-              {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Profile'}
+            {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Profile'}
           </Button>
         </form>
       </Form>

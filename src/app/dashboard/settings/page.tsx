@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref as dbRef, onValue } from 'firebase/database';
+import { ref as dbRef, onValue, update } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { PayrollConfig, Bank, SubscriptionPlan } from '@/lib/data';
@@ -20,6 +20,8 @@ import { TestimonialsTab } from './components/testimonials-tab';
 import { ApiSettingsTab } from './components/api-settings-tab';
 import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ImageUpload } from '@/components/image-upload';
+import type { Company } from '@/lib/data';
 
 // Lazy load Assets page for better performance
 const AssetsPage = lazy(() => import('./assets/page'));
@@ -46,6 +48,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
   const { toast } = useToast();
 
   const form = useForm<SettingsFormValues>({
@@ -71,13 +74,15 @@ export default function SettingsPage() {
     const configRef = dbRef(db, `companies/${companyId}/payrollConfig`);
     const banksRef = dbRef(db, `companies/${companyId}/banks`);
     const plansRef = dbRef(db, 'subscriptionPlans');
+    const companyRef = dbRef(db, `companies/${companyId}`);
 
     let configLoaded = false;
     let banksLoaded = false;
     let plansLoaded = false;
+    let companyLoaded = false;
 
     const checkLoading = () => {
-      if (configLoaded && banksLoaded && plansLoaded) {
+      if (configLoaded && banksLoaded && plansLoaded && companyLoaded) {
         setLoading(false);
       }
     }
@@ -109,10 +114,17 @@ export default function SettingsPage() {
       checkLoading();
     });
 
+    const companyUnsubscribe = onValue(companyRef, (snapshot) => {
+      setCompany(snapshot.val());
+      companyLoaded = true;
+      checkLoading();
+    });
+
     return () => {
       configUnsubscribe();
       banksUnsubscribe();
       plansUnsubscribe();
+      companyUnsubscribe();
     };
   }, [companyId, form]);
 
@@ -128,6 +140,7 @@ export default function SettingsPage() {
   return (
     <Tabs defaultValue="payroll">
       <TabsList className="mb-4 flex-wrap h-auto gap-1">
+        <TabsTrigger value="organization">Organization</TabsTrigger>
         <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
         <TabsTrigger value="banks">Bank Management</TabsTrigger>
         <TabsTrigger value="assets">Asset Management</TabsTrigger>
@@ -136,6 +149,35 @@ export default function SettingsPage() {
         <TabsTrigger value="security">Security</TabsTrigger>
         <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
       </TabsList>
+      <TabsContent value="organization">
+        <Card>
+          <CardHeader>
+            <CardTitle>Company Branding</CardTitle>
+            <CardDescription>Upload your company logo to personalize the platform.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <ImageUpload
+                currentImageUrl={company?.logoUrl}
+                onUploadComplete={async (url) => {
+                  if (companyId) {
+                    await update(dbRef(db, `companies/${companyId}`), { logoUrl: url });
+                    toast({ title: 'Company logo updated!' });
+                  }
+                }}
+                uploadPath={`logos/${companyId}`}
+                variant="square"
+                size="lg"
+                placeholder="Upload Logo"
+              />
+              <div>
+                <h3 className="font-medium">Company Logo</h3>
+                <p className="text-sm text-muted-foreground">Recommended: Square image, 256x256px or larger</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
       <TabsContent value="payroll">
         <PayrollSettingsTab form={form} />
       </TabsContent>

@@ -70,6 +70,46 @@ export async function uploadToB2(file: File, path: string): Promise<UploadResult
 }
 
 /**
+ * Upload a string as a file to Backblaze B2
+ * @param content - The string content to upload
+ * @param path - The path/key in the bucket
+ * @param contentType - MIME type (default: text/plain)
+ * @returns Upload result with URL or error
+ */
+export async function uploadStringToB2(
+    content: string,
+    path: string,
+    contentType: string = 'text/plain'
+): Promise<UploadResult> {
+    try {
+        const buffer = Buffer.from(content, 'utf-8');
+
+        const command = new PutObjectCommand({
+            Bucket: B2_CONFIG.bucketName,
+            Key: path,
+            Body: buffer,
+            ContentType: contentType,
+            ACL: 'public-read',
+        });
+
+        await b2Client.send(command);
+
+        const publicUrl = `${B2_CONFIG.endpoint}/${B2_CONFIG.bucketName}/${path}`;
+
+        return {
+            success: true,
+            url: publicUrl,
+        };
+    } catch (error) {
+        console.error('B2 string upload error:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Upload failed',
+        };
+    }
+}
+
+/**
  * Get a signed URL for private file access
  * @param path - The file path in the bucket
  * @param expiresIn - URL expiration in seconds (default: 1 hour)

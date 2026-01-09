@@ -179,6 +179,7 @@ export type Asset = {
     assignedToName?: string; // Employee name for display
     assignedAt?: string;
     notes?: string;
+    imageUrl?: string; // Photo of the asset
     createdAt: string;
 };
 
@@ -288,8 +289,17 @@ export type Employee = {
     permissions?: Permission[];
     isTwoFactorEnabled?: boolean;
     requirePasswordReset?: boolean; // True if user must reset password on next login
-    // Offboarding
     offboarding?: OffboardingRecord;
+    // Employee Documents
+    documents?: EmployeeDocument[];
+};
+
+export type EmployeeDocument = {
+    id: string;
+    name: string;
+    type: 'ID Copy' | 'Certificate' | 'Contract' | 'Other';
+    url: string;
+    uploadedAt: string;
 };
 
 export type ApplicationFormQuestion = {

@@ -27,6 +27,7 @@ import { db } from '@/lib/firebase';
 import { ref, update } from 'firebase/database';
 import type { Asset, AssetCategory, AssetCondition, AssetStatus } from '@/lib/data';
 import { assetCategories } from '@/lib/data';
+import { ImageUpload } from '@/components/image-upload';
 
 interface EditAssetDialogProps {
     asset: Asset;
@@ -48,6 +49,7 @@ export function EditAssetDialog({ asset, companyId, children }: EditAssetDialogP
         condition: asset.condition,
         status: asset.status,
         notes: asset.notes || '',
+        imageUrl: asset.imageUrl || '',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -71,6 +73,7 @@ export function EditAssetDialog({ asset, companyId, children }: EditAssetDialogP
                 condition: formData.condition,
                 status: formData.status,
                 notes: formData.notes || null,
+                imageUrl: formData.imageUrl || null,
             });
 
             toast({ title: 'Asset Updated', description: `${formData.name} has been updated.` });
@@ -100,6 +103,21 @@ export function EditAssetDialog({ asset, companyId, children }: EditAssetDialogP
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Asset Image Upload */}
+                    <div className="flex items-center gap-4">
+                        <ImageUpload
+                            currentImageUrl={formData.imageUrl || null}
+                            onUploadComplete={(url) => setFormData(prev => ({ ...prev, imageUrl: url }))}
+                            uploadPath={`assets/${companyId}/${asset.id}`}
+                            variant="square"
+                            size="md"
+                            placeholder="Asset Photo"
+                        />
+                        <div>
+                            <p className="font-medium text-sm">Asset Image</p>
+                            <p className="text-xs text-muted-foreground">Upload a photo of the asset</p>
+                        </div>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Asset Name *</Label>

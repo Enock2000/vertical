@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { ref as dbRef, update } from 'firebase/database';
-import { ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { uploadStringToB2 } from '@/lib/backblaze';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -102,18 +102,21 @@ export function GenerateContractDialog({
     setIsSaving(true);
     try {
       const fileName = `Contract_${employee.name.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
-      const fileRef = storageRef(storage, `contracts/${company.id}/${employee.id}/${fileName}`);
+      const filePath = `contracts/${company.id}/${employee.id}/${fileName}`;
 
-      const snapshot = await uploadString(fileRef, contractText, 'raw');
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const result = await uploadStringToB2(contractText, filePath, 'text/plain');
+
+      if (!result.success || !result.url) {
+        throw new Error(result.error || 'Upload failed');
+      }
 
       await update(dbRef(db, `employees/${employee.id}`), {
-        contractFileUrl: downloadURL
+        contractFileUrl: result.url
       });
 
       toast({
         title: 'Contract Saved',
-        description: `The contract for ${employee.name} has been saved.`,
+        description: `The contract for ${employee.name} has been saved to cloud storage.`,
       });
       setOpen(false);
 

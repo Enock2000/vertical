@@ -41,12 +41,17 @@ import {
   Users,
   Loader2,
 } from 'lucide-react';
-import type { Employee, Asset, LeaveRequest, AttendanceRecord, PayrollConfig } from '@/lib/data';
+import type { Employee, Asset, LeaveRequest, AttendanceRecord, PayrollConfig, EmployeeDocument } from '@/lib/data';
 import { calculatePayroll } from '@/lib/data';
 import { format, differenceInYears, differenceInMonths, differenceInDays, parseISO, isThisMonth, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from 'date-fns';
 import { db } from '@/lib/firebase';
-import { ref, onValue, get } from 'firebase/database';
+import { ref, onValue, get, push, update } from 'firebase/database';
 import { useAuth } from '@/app/auth-provider';
+import { uploadToB2 } from '@/lib/backblaze';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 interface ViewEmployeeDialogProps {
   children: React.ReactNode;
@@ -82,12 +87,16 @@ const currencyFormatter = new Intl.NumberFormat('en-ZM', { style: 'currency', cu
 
 export function ViewEmployeeDialog({ children, employee }: ViewEmployeeDialogProps) {
   const { companyId } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [attendanceData, setAttendanceData] = useState<Record<string, AttendanceRecord>>({});
   const [payrollConfig, setPayrollConfig] = useState<PayrollConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState<EmployeeDocument['type']>('Other');
 
   const nameInitial = employee.name.split(' ').map(n => n[0]).join('');
 
@@ -97,7 +106,19 @@ export function ViewEmployeeDialog({ children, employee }: ViewEmployeeDialogPro
 
     setLoading(true);
     let loadCount = 0;
-    const checkLoading = () => { if (++loadCount >= 4) setLoading(false); };
+    const checkLoading = () => { if (++loadCount >= 5) setLoading(false); };
+
+    // Load documents
+    const docsRef = ref(db, `employees/${employee.id}/documents`);
+    get(docsRef).then(snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        setDocuments(Object.values(data));
+      } else {
+        setDocuments([]);
+      }
+      checkLoading();
+    });
 
     // Load assigned assets
     const assetsRef = ref(db, `companies/${companyId}/assets`);
@@ -259,6 +280,9 @@ export function ViewEmployeeDialog({ children, employee }: ViewEmployeeDialogPro
               </TabsTrigger>
               <TabsTrigger value="assets" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
                 <Package className="h-4 w-4 mr-2" /> Assets
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+                <FileText className="h-4 w-4 mr-2" /> Documents
               </TabsTrigger>
             </TabsList>
           </div>
@@ -590,6 +614,93 @@ export function ViewEmployeeDialog({ children, employee }: ViewEmployeeDialogPro
                       <Package className="h-12 w-12 mb-3 opacity-50" />
                       <p className="font-medium">No Assets Assigned</p>
                       <p className="text-sm">This employee has no company assets assigned.</p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* Documents Tab */}
+                <TabsContent value="documents" className="mt-0 space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Upload New Document</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4">
+                        <Select value={selectedDocType} onValueChange={(v) => setSelectedDocType(v as EmployeeDocument['type'])}>
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Document Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ID Copy">ID Copy</SelectItem>
+                            <SelectItem value="Certificate">Certificate</SelectItem>
+                            <SelectItem value="Contract">Contract</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                          disabled={isUploadingDoc}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file || !companyId) return;
+                            setIsUploadingDoc(true);
+                            try {
+                              const path = `documents/${companyId}/${employee.id}/${selectedDocType}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+                              const result = await uploadToB2(file, path);
+                              if (!result.success || !result.url) throw new Error(result.error || 'Upload failed');
+
+                              const docId = push(ref(db, `employees/${employee.id}/documents`)).key!;
+                              const newDoc: EmployeeDocument = {
+                                id: docId,
+                                name: file.name,
+                                type: selectedDocType,
+                                url: result.url,
+                                uploadedAt: new Date().toISOString(),
+                              };
+                              await update(ref(db, `employees/${employee.id}/documents/${docId}`), newDoc);
+                              setDocuments(prev => [...prev, newDoc]);
+                              toast({ title: 'Document uploaded!' });
+                            } catch (error) {
+                              console.error('Doc upload error:', error);
+                              toast({ variant: 'destructive', title: 'Upload Failed' });
+                            } finally {
+                              setIsUploadingDoc(false);
+                              e.target.value = '';
+                            }
+                          }}
+                        />
+                        {isUploadingDoc && <Loader2 className="h-4 w-4 animate-spin" />}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {documents.length > 0 ? (
+                    <div className="space-y-2">
+                      {documents.map(doc => (
+                        <Card key={doc.id}>
+                          <CardContent className="pt-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                <FileText className="h-4 w-4 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{doc.name}</p>
+                                <p className="text-xs text-muted-foreground">{doc.type} • {format(new Date(doc.uploadedAt), 'PPP')}</p>
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={doc.url} target="_blank" rel="noopener noreferrer">View</a>
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <FileText className="h-12 w-12 mb-3 opacity-50" />
+                      <p className="font-medium">No Documents</p>
+                      <p className="text-sm">Upload employee documents above.</p>
                     </div>
                   )}
                 </TabsContent>
