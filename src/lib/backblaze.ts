@@ -33,32 +33,31 @@ export interface UploadResult {
 }
 
 /**
- * Upload a file to Backblaze B2
+ * Upload a file to Backblaze B2 via API route (CORS-safe)
  * @param file - The file to upload
  * @param path - The path/key in the bucket (e.g., 'companies/123/verification/document.pdf')
  * @returns Upload result with URL or error
  */
 export async function uploadToB2(file: File, path: string): Promise<UploadResult> {
     try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('path', path);
 
-        const command = new PutObjectCommand({
-            Bucket: B2_CONFIG.bucketName,
-            Key: path,
-            Body: buffer,
-            ContentType: file.type,
-            ACL: 'public-read', // Make file publicly accessible
+        const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
         });
 
-        await b2Client.send(command);
+        const result = await response.json();
 
-        // Construct the public URL
-        const publicUrl = `${B2_CONFIG.endpoint}/${B2_CONFIG.bucketName}/${path}`;
+        if (!response.ok) {
+            throw new Error(result.error || 'Upload failed');
+        }
 
         return {
             success: true,
-            url: publicUrl,
+            url: result.url,
         };
     } catch (error) {
         console.error('B2 upload error:', error);

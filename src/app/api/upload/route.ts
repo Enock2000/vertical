@@ -25,37 +25,29 @@ export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File;
-        const companyId = formData.get('companyId') as string;
-        const docType = formData.get('docType') as string;
+        const path = formData.get('path') as string;
 
-        if (!file || !companyId || !docType) {
+        if (!file) {
             return NextResponse.json(
-                { error: 'Missing required fields: file, companyId, docType' },
+                { error: 'Missing required field: file' },
                 { status: 400 }
             );
         }
 
-        // Validate file size (5MB max)
-        const maxSize = 5 * 1024 * 1024;
+        // Validate file size (10MB max)
+        const maxSize = 10 * 1024 * 1024;
         if (file.size > maxSize) {
             return NextResponse.json(
-                { error: 'File size exceeds 5MB limit' },
-                { status: 400 }
-            );
-        }
-
-        // Validate file type
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        if (!allowedTypes.includes(file.type)) {
-            return NextResponse.json(
-                { error: 'Invalid file type. Only PDF, JPG, PNG allowed' },
+                { error: 'File size exceeds 10MB limit' },
                 { status: 400 }
             );
         }
 
         // Clean filename and create path
         const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const path = `verification/${companyId}/${docType}/${Date.now()}_${cleanFileName}`;
+        const filePath = path
+            ? `${path}/${Date.now()}_${cleanFileName}`
+            : `uploads/${Date.now()}_${cleanFileName}`;
 
         // Convert file to buffer
         const arrayBuffer = await file.arrayBuffer();
@@ -64,7 +56,7 @@ export async function POST(request: NextRequest) {
         // Upload to B2
         const command = new PutObjectCommand({
             Bucket: B2_CONFIG.bucketName,
-            Key: path,
+            Key: filePath,
             Body: buffer,
             ContentType: file.type,
         });
@@ -72,7 +64,7 @@ export async function POST(request: NextRequest) {
         await b2Client.send(command);
 
         // Construct public URL
-        const publicUrl = `${B2_CONFIG.endpoint}/${B2_CONFIG.bucketName}/${path}`;
+        const publicUrl = `${B2_CONFIG.endpoint}/${B2_CONFIG.bucketName}/${filePath}`;
 
         return NextResponse.json({
             success: true,
