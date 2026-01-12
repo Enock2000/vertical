@@ -99,19 +99,25 @@ export function ReportConditionDialog({ employee, children }: ReportConditionDia
             const reportsRef = ref(db, `companies/${employee.companyId}/conditionReports`);
             const newReportRef = push(reportsRef);
 
-            const newReport: Omit<ConditionReport, 'id'> = {
+            const newReport: Record<string, any> = {
                 employeeId: employee.id,
                 employeeName: employee.name,
                 companyId: employee.companyId,
                 type: values.type,
                 date: values.date,
-                reason: values.reason || undefined,
-                estimatedArrivalTime: values.type === 'Late' ? values.estimatedArrivalTime : undefined,
-                departureTime: values.type === 'EarlyDeparture' ? values.departureTime : undefined,
-                attachmentUrl,
                 createdAt: new Date().toISOString(),
                 status: 'Pending',
             };
+
+            // Only add optional fields if they have values (Firebase rejects undefined)
+            if (values.reason) newReport.reason = values.reason;
+            if (values.type === 'Late' && values.estimatedArrivalTime) {
+                newReport.estimatedArrivalTime = values.estimatedArrivalTime;
+            }
+            if (values.type === 'EarlyDeparture' && values.departureTime) {
+                newReport.departureTime = values.departureTime;
+            }
+            if (attachmentUrl) newReport.attachmentUrl = attachmentUrl;
 
             await set(newReportRef, { ...newReport, id: newReportRef.key });
 
