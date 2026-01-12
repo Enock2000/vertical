@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { update, ref as dbRef } from 'firebase/database';
-import { Check, X, ArrowLeftRight, AlertCircle, ThermometerSun, Home, Clock, LogOut, Siren } from 'lucide-react';
+import { Check, X, ArrowLeftRight, AlertCircle, ThermometerSun, Home, Clock, LogOut, Siren, Paperclip } from 'lucide-react';
 
 export default function RosterPage() {
     const { companyId } = useAuth();
@@ -306,6 +306,17 @@ export default function RosterPage() {
                                                 </p>
                                                 {report.reason && (
                                                     <p className="text-sm mt-1 italic">"{report.reason}"</p>
+                                                )}
+                                                {report.attachmentUrl && (
+                                                    <a
+                                                        href={report.attachmentUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
+                                                    >
+                                                        <Paperclip className="h-3 w-3" />
+                                                        View Attachment
+                                                    </a>
                                                 )}
                                             </div>
                                         </div>
