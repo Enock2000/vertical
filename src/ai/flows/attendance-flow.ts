@@ -48,32 +48,32 @@ const attendanceFlow = ai.defineFlow(
   async ({ userId, companyId, action }) => {
     try {
       // 1. Get request IP address from headers
-      const headersList = headers();
+      const headersList = await headers();
       const ip = (headersList.get('x-forwarded-for') ?? '127.0.0.1').split(',')[0].trim();
-      
+
       const employeeRef = ref(db, 'employees/' + userId);
       const employeeSnapshot = await get(employeeRef);
       const employee: Employee = employeeSnapshot.val();
 
       if (!employee || employee.companyId !== companyId) {
-           return { success: false, message: 'Employee not found.' };
+        return { success: false, message: 'Employee not found.' };
       }
 
       // 2. Get allowed IP from the employee's assigned branch
       if (employee.branchId) {
-          const branchRef = ref(db, `companies/${companyId}/branches/${employee.branchId}`);
-          const branchSnapshot = await get(branchRef);
-          const branch: Branch | null = branchSnapshot.val();
-          const allowedIp = branch?.ipAddress;
+        const branchRef = ref(db, `companies/${companyId}/branches/${employee.branchId}`);
+        const branchSnapshot = await get(branchRef);
+        const branch: Branch | null = branchSnapshot.val();
+        const allowedIp = branch?.ipAddress;
 
-          if (allowedIp && ip !== allowedIp) {
-            return {
-              success: false,
-              message: `Access denied. You can only clock in/out from your assigned branch IP address. Your IP: ${ip}`,
-            };
-          }
+        if (allowedIp && ip !== allowedIp) {
+          return {
+            success: false,
+            message: `Access denied. You can only clock in/out from your assigned branch IP address. Your IP: ${ip}`,
+          };
+        }
       }
-      
+
       const todayString = format(new Date(), 'yyyy-MM-dd');
       const now = new Date();
       const attendanceRef = ref(db, `companies/${companyId}/attendance/${todayString}/${userId}`);
@@ -88,48 +88,48 @@ const attendanceFlow = ai.defineFlow(
       if (action === 'clockIn') {
         // 4. Check employee status before clocking in
         if (employee.status !== 'Active') {
-            return {
-                success: false,
-                message: `Cannot clock in. Your current status is "${employee.status}". Please contact HR.`
-            }
+          return {
+            success: false,
+            message: `Cannot clock in. Your current status is "${employee.status}". Please contact HR.`
+          }
         }
-        
+
         let status: AttendanceRecord['status'] = 'Present';
         if (shiftStartTime) {
-            const shiftStartToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(shiftStartTime[0]), parseInt(shiftStartTime[1]));
-            if (now > shiftStartToday) {
-                status = 'Late';
-            }
+          const shiftStartToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(shiftStartTime[0]), parseInt(shiftStartTime[1]));
+          if (now > shiftStartToday) {
+            status = 'Late';
+          }
         }
 
         const record: Omit<AttendanceRecord, 'id'> = {
-            employeeId: userId,
-            employeeName: employee.name,
-            date: todayString,
-            checkInTime: now.toISOString(),
-            checkOutTime: null,
-            status: status,
+          employeeId: userId,
+          employeeName: employee.name,
+          date: todayString,
+          checkInTime: now.toISOString(),
+          checkOutTime: null,
+          status: status,
         };
         await set(attendanceRef, record);
         return { success: true, message: `Clocked in successfully. Status: ${status}` };
-      } 
-      
+      }
+
       if (action === 'clockOut') {
         const snapshot = await get(attendanceRef);
         if (!snapshot.exists()) {
-            return { success: false, message: 'Cannot clock out. No clock-in record found for today.' };
+          return { success: false, message: 'Cannot clock out. No clock-in record found for today.' };
         }
-        
+
         let status = snapshot.val().status as AttendanceRecord['status'];
         if (status !== 'Late') { // Don't override 'Late' status
-            status = 'Present'; // Default to present if not late
+          status = 'Present'; // Default to present if not late
         }
 
         if (shiftEndTime) {
-            const shiftEndToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(shiftEndTime[0]), parseInt(shiftEndTime[1]));
-            if (now < shiftEndToday) {
-                status = 'Early Out';
-            }
+          const shiftEndToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(shiftEndTime[0]), parseInt(shiftEndTime[1]));
+          if (now < shiftEndToday) {
+            status = 'Early Out';
+          }
         }
 
         await update(attendanceRef, { checkOutTime: now.toISOString(), status: status });
