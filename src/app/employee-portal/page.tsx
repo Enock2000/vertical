@@ -34,7 +34,8 @@ import { EmployeeLeaveRequestDialog } from './components/employee-leave-request-
 import { EmployeePayslipDialog } from './components/employee-payslip-dialog';
 import { SubmitResignationDialog } from './components/submit-resignation-dialog';
 import { ShiftSwapRequestDialog } from './components/shift-swap-request-dialog';
-import { CalendarClock, ArrowLeftRight } from 'lucide-react';
+import { ReportConditionDialog } from './components/report-condition-dialog';
+import { CalendarClock, ArrowLeftRight, AlertCircle } from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -563,6 +564,12 @@ export default function EmployeePortalDashboardPage() {
                                 Submit Resignation
                             </Button>
                         </SubmitResignationDialog>
+                        {employee && <ReportConditionDialog employee={employee}>
+                            <Button variant="secondary">
+                                <AlertCircle className="mr-2 h-4 w-4" />
+                                Report Condition
+                            </Button>
+                        </ReportConditionDialog>}
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="destructive">

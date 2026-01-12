@@ -10,13 +10,13 @@ import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RosterCalendar } from './components/roster-calendar';
 import { DailyAttendanceDashboard } from '../reporting/views/daily-attendance';
-import type { Employee, LeaveRequest, RosterAssignment, Shift, AttendanceRecord, ShiftSwapRequest } from '@/lib/data';
+import type { Employee, LeaveRequest, RosterAssignment, Shift, AttendanceRecord, ShiftSwapRequest, ConditionReport } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { update, ref as dbRef } from 'firebase/database';
-import { Check, X, ArrowLeftRight } from 'lucide-react';
+import { Check, X, ArrowLeftRight, AlertCircle, ThermometerSun, Home, Clock, LogOut, Siren } from 'lucide-react';
 
 export default function RosterPage() {
     const { companyId } = useAuth();
@@ -26,6 +26,7 @@ export default function RosterPage() {
     const [shifts, setShifts] = useState<Shift[]>([]);
     const [todayAttendance, setTodayAttendance] = useState<Record<string, AttendanceRecord>>({});
     const [swapRequests, setSwapRequests] = useState<ShiftSwapRequest[]>([]);
+    const [conditionReports, setConditionReports] = useState<ConditionReport[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
@@ -35,7 +36,7 @@ export default function RosterPage() {
         if (!companyId) return;
 
         let loadedCount = 0;
-        const totalToLoad = 6;
+        const totalToLoad = 7;
 
         const checkLoading = () => {
             loadedCount++;
@@ -115,6 +116,15 @@ export default function RosterPage() {
             checkLoading();
         });
 
+        // Condition Reports
+        const conditionsRef = ref(db, `companies/${companyId}/conditionReports`);
+        const conditionsUnsub = onValue(conditionsRef, snapshot => {
+            const data = snapshot.val();
+            const list: ConditionReport[] = data ? Object.values(data) : [];
+            setConditionReports(list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            checkLoading();
+        });
+
         return () => {
             employeesUnsub();
             leaveUnsub();
@@ -122,6 +132,7 @@ export default function RosterPage() {
             shiftsUnsub();
             attendanceUnsub();
             swapUnsub();
+            conditionsUnsub();
         };
     }, [companyId, todayString]);
 
@@ -134,6 +145,30 @@ export default function RosterPage() {
     }
 
     const pendingSwapRequests = swapRequests.filter(r => r.status === 'Pending');
+    const pendingConditions = conditionReports.filter(r => r.status === 'Pending');
+    const todayConditions = conditionReports.filter(r => r.date === todayString);
+
+    const getConditionIcon = (type: ConditionReport['type']) => {
+        switch (type) {
+            case 'Sick': return <ThermometerSun className="h-4 w-4 text-red-500" />;
+            case 'WFH': return <Home className="h-4 w-4 text-blue-500" />;
+            case 'Late': return <Clock className="h-4 w-4 text-amber-500" />;
+            case 'EarlyDeparture': return <LogOut className="h-4 w-4 text-orange-500" />;
+            case 'Emergency': return <Siren className="h-4 w-4 text-red-600" />;
+            default: return <AlertCircle className="h-4 w-4" />;
+        }
+    };
+
+    const getConditionLabel = (type: ConditionReport['type']) => {
+        switch (type) {
+            case 'Sick': return 'Sick';
+            case 'WFH': return 'Working from Home';
+            case 'Late': return 'Late Arrival';
+            case 'EarlyDeparture': return 'Early Departure';
+            case 'Emergency': return 'Emergency';
+            default: return type;
+        }
+    };
 
     const handleSwapAction = async (request: ShiftSwapRequest, action: 'Approved' | 'Rejected') => {
         try {
@@ -155,6 +190,26 @@ export default function RosterPage() {
         }
     };
 
+    const handleConditionAction = async (report: ConditionReport, action: 'Acknowledged' | 'Rejected') => {
+        try {
+            await update(dbRef(db, `companies/${companyId}/conditionReports/${report.id}`), {
+                status: action,
+                acknowledgedAt: new Date().toISOString(),
+            });
+            toast({
+                title: `Condition ${action}`,
+                description: `${report.employeeName}'s condition report has been ${action.toLowerCase()}.`,
+            });
+        } catch (error) {
+            console.error('Error updating condition report:', error);
+            toast({
+                variant: 'destructive',
+                title: 'Action Failed',
+                description: 'Could not update the report. Please try again.',
+            });
+        }
+    };
+
     return (
         <Tabs defaultValue="attendance">
             <TabsList className="mb-4">
@@ -164,6 +219,12 @@ export default function RosterPage() {
                     Swap Requests
                     {pendingSwapRequests.length > 0 && (
                         <Badge variant="destructive" className="ml-2 h-5 px-1.5">{pendingSwapRequests.length}</Badge>
+                    )}
+                </TabsTrigger>
+                <TabsTrigger value="conditions" className="relative">
+                    Condition Reports
+                    {pendingConditions.length > 0 && (
+                        <Badge variant="secondary" className="ml-2 h-5 px-1.5">{pendingConditions.length}</Badge>
                     )}
                 </TabsTrigger>
             </TabsList>
@@ -216,6 +277,59 @@ export default function RosterPage() {
                         ) : (
                             <div className="text-center py-8 text-muted-foreground">
                                 No pending swap requests.
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="conditions">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5" />
+                            Employee Condition Reports
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {todayConditions.length > 0 ? (
+                            <div className="space-y-3">
+                                {todayConditions.map((report) => (
+                                    <div key={report.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                        <div className="flex items-center gap-3">
+                                            {getConditionIcon(report.type)}
+                                            <div>
+                                                <p className="font-medium">{report.employeeName}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {getConditionLabel(report.type)}
+                                                    {report.estimatedArrivalTime && ` • ETA: ${report.estimatedArrivalTime}`}
+                                                    {report.departureTime && ` • Leaving: ${report.departureTime}`}
+                                                </p>
+                                                {report.reason && (
+                                                    <p className="text-sm mt-1 italic">"{report.reason}"</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant={report.status === 'Pending' ? 'secondary' : report.status === 'Acknowledged' ? 'default' : 'destructive'}>
+                                                {report.status}
+                                            </Badge>
+                                            {report.status === 'Pending' && (
+                                                <>
+                                                    <Button size="sm" variant="outline" onClick={() => handleConditionAction(report, 'Rejected')}>
+                                                        <X className="mr-1 h-4 w-4" /> Reject
+                                                    </Button>
+                                                    <Button size="sm" onClick={() => handleConditionAction(report, 'Acknowledged')}>
+                                                        <Check className="mr-1 h-4 w-4" /> Acknowledge
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                                No condition reports for today.
                             </div>
                         )}
                     </CardContent>

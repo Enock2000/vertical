@@ -302,6 +302,25 @@ export type EmployeeDocument = {
     uploadedAt: string;
 };
 
+export type ConditionType = 'Sick' | 'WFH' | 'Late' | 'EarlyDeparture' | 'Emergency';
+
+export type ConditionReport = {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    companyId: string;
+    type: ConditionType;
+    date: string; // ISO date (YYYY-MM-DD)
+    reason?: string;
+    estimatedArrivalTime?: string; // For late arrivals
+    departureTime?: string; // For early departure
+    attachmentUrl?: string; // Sick note, etc.
+    createdAt: string;
+    status: 'Pending' | 'Acknowledged' | 'Rejected';
+    acknowledgedBy?: string;
+    acknowledgedAt?: string;
+};
+
 export type ApplicationFormQuestion = {
     id: string;
     text: string;
