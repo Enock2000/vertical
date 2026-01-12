@@ -60,11 +60,11 @@ export function SubscriptionTab({ plans }: SubscriptionTabProps) {
         amount: plan.price,
         currency: 'ZMW',
         reference,
-        email: company.adminEmail,
+        email: company.adminEmail || '',
         customer: {
-          firstName: company.contactName.split(' ')[0] || company.contactName,
-          lastName: company.contactName.split(' ').slice(1).join(' ') || '',
-          phone: company.contactNumber,
+          firstName: company.contactName?.split(' ')[0] || company.name || 'Customer',
+          lastName: company.contactName?.split(' ').slice(1).join(' ') || '',
+          phone: company.contactNumber || '',
         },
         // Enable both card and mobile money
         channels: ['card', 'mobile-money'],
