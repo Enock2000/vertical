@@ -51,10 +51,17 @@ const sendEmailFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+      // Check API key
+      const apiKey = process.env.BREVO_API_KEY;
+      if (!apiKey) {
+        console.error('BREVO_API_KEY environment variable is not set');
+        return { success: false, messageId: 'missing-api-key' };
+      }
+
       const apiInstance = new Brevo.TransactionalEmailsApi();
       apiInstance.setApiKey(
         Brevo.TransactionalEmailsApiApiKeys.apiKey,
-        process.env.BREVO_API_KEY || ''
+        apiKey
       );
 
       const sendSmtpEmail = new Brevo.SendSmtpEmail();
@@ -72,20 +79,25 @@ const sendEmailFlow = ai.defineFlow(
         sendSmtpEmail.htmlContent = input.htmlContent;
       }
 
+      // Use environment variable for sender email (must be verified in Brevo)
       sendSmtpEmail.sender = {
-        email: 'no-reply@verticalsync.com',
-        name: 'VerticalSync Platform',
+        email: process.env.BREVO_SENDER_EMAIL || 'no-reply@verticalsync.oizm.app',
+        name: process.env.BREVO_SENDER_NAME || 'VerticalSync Platform',
       };
+
+      console.log('Sending email to:', input.to.map(t => t.email).join(', '));
 
       const result = await apiInstance.sendTransacEmail(sendSmtpEmail);
 
       const messageId = (result.body as any)?.messageId;
+      console.log('Email sent successfully, messageId:', messageId);
 
       return { success: true, messageId: messageId || 'unknown' };
 
     } catch (error: any) {
-      console.error('Error sending email via Brevo:', error.body || error.message);
-      throw new Error('Failed to send transactional email.');
+      console.error('Error sending email via Brevo:', JSON.stringify(error.body || error.message, null, 2));
+      // Return failure instead of throwing to prevent breaking the app
+      return { success: false, messageId: error.body?.code || 'error' };
     }
   }
 );
