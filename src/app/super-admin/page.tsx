@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { Loader2, Users, PlusCircle, Briefcase, CreditCard, MessageSquare, Settings, Mail } from 'lucide-react';
+import { Loader2, Users, PlusCircle, Briefcase, CreditCard, MessageSquare, Settings, Mail, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserNav } from '@/components/user-nav';
 import Logo from '@/components/logo';
@@ -147,6 +147,12 @@ export default function SuperAdminPage() {
                                 <Mail className="h-3.5 w-3.5" />
                                 <span className="sr-only sm:not-sr-only sm:whitespace-rap">
                                     Email Templates
+                                </span>
+                            </Button>
+                            <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/email-logs')}>
+                                <FileText className="h-3.5 w-3.5" />
+                                <span className="sr-only sm:not-sr-only sm:whitespace-rap">
+                                    Email Logs
                                 </span>
                             </Button>
                             <Button size="sm" variant="outline" className="gap-1" onClick={() => router.push('/super-admin/testimonials')}>

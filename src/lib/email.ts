@@ -2,11 +2,40 @@
 import { sendEmail } from '@/ai/flows/send-email-flow';
 import type { Company, Employee } from './data';
 import { db } from './firebase';
-import { ref, get } from 'firebase/database';
+import { ref, get, push, set } from 'firebase/database';
 
 type TemplateName = 'welcomePending' | 'companyApproved' | 'companySuspended' | 'newEmployeeWelcome';
 
+export interface EmailLog {
+    id: string;
+    templateName: string;
+    recipientEmail: string;
+    recipientName: string;
+    subject: string;
+    status: 'success' | 'failed' | 'skipped';
+    error?: string;
+    messageId?: string;
+    createdAt: string;
+}
+
+async function logEmailAttempt(log: Omit<EmailLog, 'id' | 'createdAt'>): Promise<void> {
+    try {
+        const logsRef = ref(db, 'platformSettings/emailLogs');
+        const newLogRef = push(logsRef);
+        await set(newLogRef, {
+            ...log,
+            id: newLogRef.key,
+            createdAt: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Email] Failed to log email attempt:', error);
+    }
+}
+
 async function sendTemplatedEmail(templateName: TemplateName, to: { email: string; name: string }[], params: Record<string, string | number>) {
+    const recipientEmail = to[0]?.email || 'unknown';
+    const recipientName = to[0]?.name || 'unknown';
+
     try {
         console.log(`[Email] Attempting to send "${templateName}" email to:`, to.map(t => t.email).join(', '));
 
@@ -15,6 +44,14 @@ async function sendTemplatedEmail(templateName: TemplateName, to: { email: strin
 
         if (!templateSnap.exists()) {
             console.warn(`[Email] Template "${templateName}" not configured in Firebase. Skipping email.`);
+            await logEmailAttempt({
+                templateName,
+                recipientEmail,
+                recipientName,
+                subject: '(template not found)',
+                status: 'skipped',
+                error: 'Template not configured in Firebase',
+            });
             return null;
         }
 
@@ -23,6 +60,14 @@ async function sendTemplatedEmail(templateName: TemplateName, to: { email: strin
 
         if (!template.htmlContent) {
             console.warn(`[Email] Template "${templateName}" has no htmlContent. Skipping email.`);
+            await logEmailAttempt({
+                templateName,
+                recipientEmail,
+                recipientName,
+                subject: template.subject || '(no subject)',
+                status: 'skipped',
+                error: 'Template has no htmlContent',
+            });
             return null;
         }
 
@@ -44,9 +89,38 @@ async function sendTemplatedEmail(templateName: TemplateName, to: { email: strin
         });
 
         console.log(`[Email] Send result for "${templateName}":`, result);
+
+        if (result?.success) {
+            await logEmailAttempt({
+                templateName,
+                recipientEmail,
+                recipientName,
+                subject,
+                status: 'success',
+                messageId: result.messageId,
+            });
+        } else {
+            await logEmailAttempt({
+                templateName,
+                recipientEmail,
+                recipientName,
+                subject,
+                status: 'failed',
+                error: result?.messageId || 'Unknown error from Brevo',
+            });
+        }
+
         return result;
-    } catch (error) {
+    } catch (error: any) {
         console.error(`[Email] Error sending "${templateName}" email:`, error);
+        await logEmailAttempt({
+            templateName,
+            recipientEmail,
+            recipientName,
+            subject: '(error)',
+            status: 'failed',
+            error: error.message || 'Unknown error',
+        });
         return null;
     }
 }
