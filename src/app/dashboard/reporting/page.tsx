@@ -40,7 +40,9 @@ import type {
     Enrollment,
     TrainingCourse,
     Applicant,
-    JobVacancy
+    JobVacancy,
+    Loan,
+    LoanRepayment,
 } from '@/lib/data';
 
 // Components
@@ -52,6 +54,7 @@ import { ExecutiveDashboard } from './views/executive-dashboard';
 import { HRReports } from './views/hr-reports';
 import { PayrollReports } from './views/payroll-reports';
 import { RecruitmentReports } from './views/recruitment-reports';
+import { LoansReports } from './views/loans-reports';
 
 // Export utils
 import {
@@ -89,6 +92,8 @@ function ReportingContent() {
     const [courses, setCourses] = useState<TrainingCourse[]>([]);
     const [applicants, setApplicants] = useState<Applicant[]>([]);
     const [jobVacancies, setJobVacancies] = useState<JobVacancy[]>([]);
+    const [loans, setLoans] = useState<Loan[]>([]);
+    const [loanRepayments, setLoanRepayments] = useState<LoanRepayment[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Firebase data fetching
@@ -112,6 +117,8 @@ function ReportingContent() {
             courses: ref(db, `companies/${companyId}/trainingCourses`),
             applicants: ref(db, `companies/${companyId}/applicants`),
             jobVacancies: ref(db, `companies/${companyId}/jobVacancies`),
+            loans: ref(db, `companies/${companyId}/loans`),
+            loanRepayments: ref(db, `companies/${companyId}/loanRepayments`),
         };
 
         setLoading(true);
@@ -187,6 +194,8 @@ function ReportingContent() {
             onValue(refs.courses, onValueCallback(setCourses), onErrorCallback('courses')),
             onValue(refs.applicants, onValueCallback(setApplicants), onErrorCallback('applicants')),
             onValue(refs.jobVacancies, onValueCallback(setJobVacancies), onErrorCallback('jobVacancies')),
+            onValue(refs.loans, onValueCallback(setLoans), onErrorCallback('loans')),
+            onValue(refs.loanRepayments, onValueCallback(setLoanRepayments), onErrorCallback('loanRepayments')),
         ];
 
         return () => unsubscribes.forEach(unsub => unsub());
@@ -254,6 +263,7 @@ function ReportingContent() {
             'tax-compliance': 'Tax & Compliance',
             'benefits-compensation': 'Benefits & Compensation',
             'overtime-allowances': 'Overtime & Allowances',
+            'loans-advances': 'Loans & Advances',
             'saved-reports': 'Saved Reports',
         };
         return titles[activeView] || 'Reports';
@@ -314,6 +324,16 @@ function ReportingContent() {
                     payrollRuns={payrollRuns}
                     payrollConfig={payrollConfig}
                     loading={loading}
+                />
+            );
+        }
+
+        if (activeView === 'loans-advances') {
+            return (
+                <LoansReports
+                    loans={loans}
+                    repayments={loanRepayments}
+                    employees={employees}
                 />
             );
         }

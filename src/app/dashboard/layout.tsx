@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   Megaphone,
   DollarSign,
+  Banknote,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
@@ -58,6 +59,7 @@ const navItems = [
   { href: "/dashboard/recruitment", icon: Briefcase, label: "Recruitment", permission: "recruitment" as Permission },
   { href: "/dashboard/payroll", icon: FileText, label: "Payroll", permission: "payroll" as Permission },
   { href: "/dashboard/finance", icon: DollarSign, label: "Finance", permission: "finance" as Permission },
+  { href: "/dashboard/loans", icon: Banknote, label: "Loans & Advances", permission: "finance" as Permission },
   { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods", permission: "payment-methods" as Permission },
   { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave", permission: "leave" as Permission },
   { href: "/dashboard/roster", icon: Clock, label: "Roster & Attendance", permission: "leave" as Permission },

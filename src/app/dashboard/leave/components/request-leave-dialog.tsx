@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,13 +34,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import type { Employee } from '@/lib/data';
+import type { Employee, Holiday } from '@/lib/data';
+import { calculateBusinessDays } from '@/lib/data';
 import { requestLeave } from '@/ai/flows/request-leave-flow';
-import { Loader2, CalendarIcon } from 'lucide-react';
+import { Loader2, CalendarIcon, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/app/auth-provider';
+import { db } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 
 const formSchema = z.object({
@@ -74,7 +77,7 @@ export function RequestLeaveDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
 
   const form = useForm<RequestLeaveFormValues>({
     resolver: zodResolver(formSchema),
@@ -84,6 +87,27 @@ export function RequestLeaveDialog({
       reason: '',
     },
   });
+
+  // Fetch company holidays
+  useEffect(() => {
+    if (!companyId) return;
+    const holidaysRef = ref(db, `companies/${companyId}/holidays`);
+    const unsubscribe = onValue(holidaysRef, (snapshot: any) => {
+      const data = snapshot.val();
+      setHolidays(data ? Object.values(data) : []);
+    });
+    return () => unsubscribe();
+  }, [companyId]);
+
+  // Watch form dateRange field for changes
+  const dateRange = form.watch('dateRange');
+
+  // Calculate business days whenever date range or holidays change
+  const calculatedDays = useMemo(() => {
+    if (!dateRange?.from || !dateRange?.to) return null;
+    return calculateBusinessDays(dateRange.from, dateRange.to, holidays);
+  }, [dateRange?.from, dateRange?.to, holidays]);
+
 
   async function onSubmit(values: RequestLeaveFormValues) {
     if (!formRef.current || !companyId) return;
@@ -248,6 +272,17 @@ export function RequestLeaveDialog({
                 </FormItem>
               )}
             />
+
+            {/* Business Days Preview */}
+            {calculatedDays !== null && (
+              <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                <Info className="h-4 w-4 text-primary flex-shrink-0" />
+                <p className="text-sm">
+                  <span className="font-semibold text-primary">{calculatedDays} business day{calculatedDays !== 1 ? 's' : ''}</span>
+                  <span className="text-muted-foreground"> (excludes weekends{holidays.length > 0 ? ' & holidays' : ''})</span>
+                </p>
+              </div>
+            )}
 
             <FormField
               control={form.control}

@@ -22,7 +22,8 @@ import {
     Timer,
     Target,
     PieChart,
-    Building2
+    Building2,
+    Banknote
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ export type ReportView =
     | 'tax-compliance'
     | 'benefits-compensation'
     | 'overtime-allowances'
+    | 'loans-advances'
     // Saved
     | 'saved-reports';
 
@@ -116,6 +118,7 @@ const navigationStructure: NavCategory[] = [
             { id: 'tax-compliance', label: 'Tax & Compliance', icon: FileText },
             { id: 'benefits-compensation', label: 'Benefits & Compensation', icon: Briefcase },
             { id: 'overtime-allowances', label: 'Overtime & Allowances', icon: Clock },
+            { id: 'loans-advances', label: 'Loans & Advances', icon: Banknote },
         ],
     },
     {

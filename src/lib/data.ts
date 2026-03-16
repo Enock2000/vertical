@@ -2,7 +2,7 @@
 
 import { db } from './firebase';
 import { ref, push, set, get, query, orderByChild, equalTo } from 'firebase/database';
-import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay } from 'date-fns';
+import { differenceInHours, startOfYear, endOfYear, eachDayOfInterval, getDay, isWeekend, parseISO, format as formatDate } from 'date-fns';
 
 export type SubscriptionPlan = {
     id: string;
@@ -469,6 +469,7 @@ export type LeaveRequest = {
     reason: string;
     status: 'Pending' | 'Approved' | 'Rejected';
     sickNoteUrl?: string;
+    leaveDays?: number; // Calculated business days excluding weekends & holidays
 };
 
 export type ResignationRequest = {
@@ -810,6 +811,87 @@ export type SalesDailyReport = {
     createdAt: string; // ISO 8601
     fileUrl?: string;
     isFileUpload?: boolean;
+};
+
+// ===== HOLIDAY TYPES =====
+export type Holiday = {
+    id: string;
+    companyId: string;
+    name: string;
+    date: string; // ISO 8601 date (YYYY-MM-DD)
+    recurring: boolean; // If true, repeats every year (match month-day only)
+};
+
+// ===== LOAN & ADVANCE TYPES =====
+export type LoanType = 'Loan' | 'Advance';
+export type LoanStatus = 'Active' | 'Fully Paid' | 'Defaulted' | 'Written Off';
+export type RepaymentSchedule = 'Monthly' | 'Per Payroll';
+export type RepaymentMethod = 'Payroll Deduction' | 'Manual Payment';
+
+export type Loan = {
+    id: string;
+    companyId: string;
+    employeeId: string;
+    employeeName: string;
+    type: LoanType;
+    amount: number;
+    outstandingBalance: number;
+    interestRate: number; // percentage, e.g. 5 means 5%
+    issueDate: string; // ISO 8601
+    dueDate: string; // ISO 8601
+    status: LoanStatus;
+    repaymentSchedule: RepaymentSchedule;
+    monthlyDeduction: number;
+    notes?: string;
+    approvedBy: string;
+    createdAt: string; // ISO 8601
+};
+
+export type LoanRepayment = {
+    id: string;
+    companyId: string;
+    loanId: string;
+    employeeId: string;
+    employeeName: string;
+    amount: number;
+    date: string; // ISO 8601
+    method: RepaymentMethod;
+    notes?: string;
+};
+
+// ===== BUSINESS DAY CALCULATOR =====
+/**
+ * Calculates the number of business days between two dates,
+ * excluding weekends (Saturday & Sunday) and company-defined holidays.
+ */
+export const calculateBusinessDays = (startDate: string | Date, endDate: string | Date, holidays: Holiday[] = []): number => {
+    const start = typeof startDate === 'string' ? parseISO(startDate) : startDate;
+    const end = typeof endDate === 'string' ? parseISO(endDate) : endDate;
+
+    if (start > end) return 0;
+
+    const allDays = eachDayOfInterval({ start, end });
+
+    // Build a Set of holiday date strings for fast lookup
+    const holidaySet = new Set<string>();
+    holidays.forEach(h => {
+        if (h.recurring) {
+            // For recurring holidays, add them for a range of relevant years
+            const md = h.date.substring(5); // "MM-DD"
+            for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+                holidaySet.add(`${y}-${md}`);
+            }
+        } else {
+            holidaySet.add(h.date);
+        }
+    });
+
+    return allDays.filter((day: Date) => {
+        if (isWeekend(day)) return false;
+        const dateStr = formatDate(day, 'yyyy-MM-dd');
+        if (holidaySet.has(dateStr)) return false;
+        return true;
+    }).length;
 };
 
 

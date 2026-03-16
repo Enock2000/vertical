@@ -11,10 +11,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { ref as dbRef, push, set } from 'firebase/database';
+import { ref as dbRef, push, set, get } from 'firebase/database';
 import { uploadToB2 } from '@/lib/backblaze';
-import type { LeaveRequest } from '@/lib/data';
-import { createNotification, getAdminUserIds } from '@/lib/data';
+import type { LeaveRequest, Holiday } from '@/lib/data';
+import { createNotification, getAdminUserIds, calculateBusinessDays } from '@/lib/data';
 
 const LeaveRequestInputSchema = z.object({
   companyId: z.string(),
@@ -70,6 +70,17 @@ const requestLeaveFlow = ai.defineFlow(
         ...requestData,
         status: 'Pending',
       };
+
+      // Fetch company holidays and calculate business days
+      try {
+        const holidaysSnap = await get(dbRef(db, `companies/${requestData.companyId}/holidays`));
+        const holidaysData = holidaysSnap.val();
+        const holidays: Holiday[] = holidaysData ? Object.values(holidaysData) : [];
+        newLeaveRequest.leaveDays = calculateBusinessDays(requestData.startDate, requestData.endDate, holidays);
+      } catch {
+        // If holidays fetch fails, fall back without holiday exclusion
+        newLeaveRequest.leaveDays = calculateBusinessDays(requestData.startDate, requestData.endDate);
+      }
 
       // 1. If sick leave, upload the sick note and add the URL
       if (requestData.leaveType === 'Sick' && sickNoteFile && sickNoteFile.name) {

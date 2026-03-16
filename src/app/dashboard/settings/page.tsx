@@ -18,6 +18,7 @@ import { useAuth } from '@/app/auth-provider';
 import { SubscriptionTab } from './components/subscription-tab';
 import { TestimonialsTab } from './components/testimonials-tab';
 import { ApiSettingsTab } from './components/api-settings-tab';
+import { HolidaysTab } from './components/holidays-tab';
 import { GoogleAuthenticatorSettings } from '@/components/google-authenticator-settings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ImageUpload } from '@/components/image-upload';
@@ -144,6 +145,7 @@ export default function SettingsPage() {
         <TabsTrigger value="payroll">Payroll & Attendance</TabsTrigger>
         <TabsTrigger value="banks">Bank Management</TabsTrigger>
         <TabsTrigger value="assets">Asset Management</TabsTrigger>
+        <TabsTrigger value="holidays">Holidays</TabsTrigger>
         <TabsTrigger value="subscription">Subscription</TabsTrigger>
         <TabsTrigger value="api">API</TabsTrigger>
         <TabsTrigger value="security">Security</TabsTrigger>
@@ -188,6 +190,9 @@ export default function SettingsPage() {
         <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
           <AssetsPage />
         </Suspense>
+      </TabsContent>
+      <TabsContent value="holidays">
+        <HolidaysTab />
       </TabsContent>
       <TabsContent value="subscription">
         <SubscriptionTab plans={subscriptionPlans} />
