@@ -74,7 +74,7 @@ export async function POST(req: Request) {
     // @ts-ignore - archiver-zip-encrypted adds zip-encrypted format
     const archive = archiver('zip-encrypted', {
       zlib: { level: 8 },
-      encryptionMethod: 'aes256',
+      encryptionMethod: 'zip20',
       password: password,
     });
 
