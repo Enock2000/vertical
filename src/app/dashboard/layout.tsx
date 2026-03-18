@@ -73,7 +73,7 @@ const navItems = [
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
   { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },
   { href: "/dashboard/files", icon: HardDrive, label: "Files", permission: "files" as Permission },
-  { href: "/dashboard/chat", icon: MessageSquare, label: "Chat Wave", permission: "chat" as Permission },
+  { href: "/dashboard/chat", icon: MessageSquare, label: "Vertical Sync Network", permission: "chat" as Permission },
   { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
 ];
 

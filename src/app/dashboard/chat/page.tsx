@@ -767,7 +767,7 @@ export default function ChatPage() {
                     <div className="flex-1 flex items-center justify-center text-muted-foreground">
                         <div className="text-center">
                             <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                            <h3 className="text-lg font-medium">Welcome to Chat Wave</h3>
+                            <h3 className="text-lg font-medium">Welcome to Vertical Sync Network</h3>
                             <p className="text-sm mt-1">Select a conversation or start a new one</p>
                         </div>
                     </div>

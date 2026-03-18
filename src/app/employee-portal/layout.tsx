@@ -36,7 +36,7 @@ const navItems = [
   { href: "/employee-portal/performance", icon: Trophy, label: "Performance" },
   { href: "/employee-portal/trainings", icon: BookOpen, label: "Trainings" },
   { href: "/employee-portal/announcements", icon: Megaphone, label: "Announcements" },
-  { href: "/employee-portal/chat", icon: MessageSquare, label: "Chat Wave" },
+  { href: "/employee-portal/chat", icon: MessageSquare, label: "Vertical Sync Network" },
   { href: "/employee-portal/security", icon: Shield, label: "Security" },
 ];
 

@@ -175,7 +175,7 @@ export function ChatWaveFloatingButton({ chatPath }: ChatWaveFloatingButtonProps
                     isOpen && 'rotate-90 opacity-0 pointer-events-none',
                 )}
                 style={{ left: 12, bottom: 24 }}
-                title="Chat Wave"
+                title="Vertical Sync Network"
             >
                 <ChatWaveIcon className="h-8 w-8 drop-shadow-sm" />
                 {/* Pulse ring */}
@@ -232,7 +232,7 @@ export function ChatWaveFloatingButton({ chatPath }: ChatWaveFloatingButtonProps
                         <>
                             <ChatWaveIcon className="h-7 w-7 shrink-0" />
                             <div className="flex-1">
-                                <p className="text-sm font-bold">Chat Wave</p>
+                                <p className="text-sm font-bold">Vertical Sync Network</p>
                                 <p className="text-[10px] opacity-80">{threads.length} conversation{threads.length !== 1 ? 's' : ''}</p>
                             </div>
                         </>
