@@ -3,7 +3,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown, MessageSquare, ShieldCheck } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, MessageSquare, ShieldCheck, HardDrive } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Company, SubscriptionPlan } from "@/lib/data"
 import { format, differenceInDays } from "date-fns"
@@ -16,6 +16,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import { db } from "@/lib/firebase"
 import { ref, update, remove, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
@@ -26,6 +27,7 @@ import { ChangeSubscriptionDialog } from "./change-subscription-dialog"
 import { sendCompanyApprovedEmail, sendCompanySuspendedEmail } from "@/lib/email"
 import { SendEmailDialog } from "./send-email-dialog"
 import { VerificationDialog } from "./verification-dialog"
+import { ChangeStorageLimitDialog } from "./change-storage-limit-dialog"
 
 export type EnrichedCompany = Company & { employeeCount: number };
 
@@ -88,7 +90,7 @@ const DeleteCompanyAlert = ({ company, onConfirm, onCancel }: { company: Company
 };
 
 
-export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<EnrichedCompany>[] => [
+export const columns = (subscriptionPlans: SubscriptionPlan[], globalStorageLimitMB: number = 5120): ColumnDef<EnrichedCompany>[] => [
     {
         accessorKey: "name",
         header: ({ column }) => {
@@ -134,6 +136,29 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
         accessorKey: "employeeCount",
         header: "Employees",
         cell: ({ row }) => <div className="text-center">{row.original.employeeCount}</div>,
+    },
+    {
+        id: 'storage',
+        header: 'Storage Used',
+        cell: ({ row }) => {
+            const company = row.original;
+            const sub = company.subscription;
+            const plan = subscriptionPlans.find(p => p.id === sub?.planId);
+            const defaultLimitMB = plan?.storageLimitMB || globalStorageLimitMB;
+            const limitMB = company.overrideStorageLimitMB ?? defaultLimitMB;
+            const usedMB = Math.max(company.storageUsedMB || 0, 0);
+            const percent = Math.min((usedMB / limitMB) * 100, 100);
+            
+            return (
+                <div className="w-[100px]">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                        <span>{usedMB < 1024 ? `${usedMB.toFixed(0)}MB` : `${(usedMB/1024).toFixed(1)}GB`}</span>
+                        <span className="text-muted-foreground">{percent.toFixed(0)}%</span>
+                    </div>
+                    <Progress value={percent} className="h-1.5" />
+                </div>
+            );
+        }
     },
     {
         accessorKey: "createdAt",
@@ -235,6 +260,13 @@ export const columns = (subscriptionPlans: SubscriptionPlan[]): ColumnDef<Enrich
                                 <ChangeSubscriptionDialog company={company} plans={subscriptionPlans}>
                                     <div className="w-full text-left">Change Subscription</div>
                                 </ChangeSubscriptionDialog>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <ChangeStorageLimitDialog company={company} plans={subscriptionPlans}>
+                                    <div className="w-full text-left flex items-center">
+                                        <HardDrive className="mr-2 h-4 w-4" /> Change Storage Limit
+                                    </div>
+                                </ChangeStorageLimitDialog>
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                 <SendEmailDialog company={company}>

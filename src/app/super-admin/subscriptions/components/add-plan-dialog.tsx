@@ -36,6 +36,7 @@ const formSchema = z.object({
   name: z.string().min(2, 'Plan name must be at least 2 characters.'),
   price: z.coerce.number().min(0, 'Price must be a positive number.'),
   jobPostings: z.coerce.number().int().min(0, 'Job postings must be a positive integer.'),
+  storageLimitMB: z.coerce.number().int().min(0, 'Storage limit must be a positive integer.'),
   features: z.string().min(3, 'Please list at least one feature.'),
 });
 
@@ -56,6 +57,7 @@ export function AddPlanDialog({ children }: AddPlanDialogProps) {
       name: '',
       price: 0,
       jobPostings: 0,
+      storageLimitMB: 5120, // 5GB default
       features: '',
     },
   });
@@ -71,6 +73,7 @@ export function AddPlanDialog({ children }: AddPlanDialogProps) {
           name: values.name,
           price: values.price,
           jobPostings: values.jobPostings,
+          storageLimitMB: values.storageLimitMB,
           features: values.features.split(',').map(f => f.trim()),
       };
 
@@ -139,6 +142,19 @@ export function AddPlanDialog({ children }: AddPlanDialogProps) {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Job Postings</FormLabel>
+                    <FormControl>
+                        <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+                 <FormField
+                control={form.control}
+                name="storageLimitMB"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Storage Limit (MB)</FormLabel>
                     <FormControl>
                         <Input type="number" {...field} />
                     </FormControl>

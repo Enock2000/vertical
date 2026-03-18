@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
-import { Loader2, Users, PlusCircle, Briefcase, CreditCard, MessageSquare, Settings, Mail, FileText } from 'lucide-react';
+import { Loader2, Users, PlusCircle, Briefcase, CreditCard, MessageSquare, Settings, Mail, FileText, HardDrive } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserNav } from '@/components/user-nav';
 import Logo from '@/components/logo';
@@ -24,6 +24,7 @@ export default function SuperAdminPage() {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
     const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+    const [globalStorageLimitMB, setGlobalStorageLimitMB] = useState(5120);
     const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
@@ -58,11 +59,15 @@ export default function SuperAdminPage() {
             plansLoaded = true; checkLoading();
         });
 
+        const settingsUnsubscribe = onValue(ref(db, 'platformSettings/globalStorageLimitMB'), (snapshot) => {
+            setGlobalStorageLimitMB(snapshot.val() || 5120);
+        });
 
         return () => {
             companiesUnsubscribe();
             employeesUnsubscribe();
             plansUnsubscribe();
+            settingsUnsubscribe();
         };
     }, []);
 
@@ -79,6 +84,15 @@ export default function SuperAdminPage() {
             return { ...company, employeeCount };
         });
     }, [companies, nonAdminEmployees]);
+
+    const totalStorageUsedMB = useMemo(() => {
+        return companies.reduce((acc, c) => acc + (c.storageUsedMB || 0), 0);
+    }, [companies]);
+
+    const formatStorageSize = (mb: number) => {
+        if (mb < 1024) return `${mb.toFixed(1)} MB`;
+        return `${(mb / 1024).toFixed(2)} GB`;
+    };
 
     if (authLoading || loadingData) {
         return (
@@ -124,6 +138,18 @@ export default function SuperAdminPage() {
                             <div className="text-2xl font-bold">{nonAdminEmployees.length}</div>
                             <p className="text-xs text-muted-foreground">
                                 across all companies
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Cloud Storage Used</CardTitle>
+                            <HardDrive className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{formatStorageSize(totalStorageUsedMB)}</div>
+                            <p className="text-xs text-muted-foreground">
+                                utilized globally
                             </p>
                         </CardContent>
                     </Card>
@@ -182,7 +208,7 @@ export default function SuperAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <DataTable columns={columns(subscriptionPlans)} data={enrichedCompanies} />
+                        <DataTable columns={columns(subscriptionPlans, globalStorageLimitMB)} data={enrichedCompanies} />
                     </CardContent>
                 </Card>
             </main>

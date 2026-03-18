@@ -148,7 +148,7 @@ export function ChangeSubscriptionDialog({ children, company, plans }: ChangeSub
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Next Billing / Trial End Date</FormLabel>
-                   <Popover>
+                   <Popover modal={true}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button

@@ -34,6 +34,7 @@ export default function SuperAdminSettingsPage() {
     const { toast } = useToast();
     const [logoUrl, setLogoUrl] = useState('');
     const [freeTrialDays, setFreeTrialDays] = useState(14);
+    const [globalStorageLimitMB, setGlobalStorageLimitMB] = useState(5120);
     const [heroImages, setHeroImages] = useState<HeroImage[]>([]);
     const [loadingData, setLoadingData] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -50,6 +51,7 @@ export default function SuperAdminSettingsPage() {
             const settings = snapshot.val();
             setLogoUrl(settings?.mainLogoUrl || '');
             setFreeTrialDays(settings?.freeTrialDays || 14);
+            setGlobalStorageLimitMB(settings?.globalStorageLimitMB || 5120);
             setHeroImages(settings?.heroImages ? Object.values(settings.heroImages) : []);
             setLoadingData(false);
         });
@@ -62,6 +64,7 @@ export default function SuperAdminSettingsPage() {
             const updates: Record<string, any> = {
                 'platformSettings/mainLogoUrl': logoUrl,
                 'platformSettings/freeTrialDays': freeTrialDays,
+                'platformSettings/globalStorageLimitMB': globalStorageLimitMB,
                 'platformSettings/heroImages': heroImages.reduce((acc, img) => {
                     acc[img.id] = img;
                     return acc;
@@ -134,15 +137,25 @@ export default function SuperAdminSettingsPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="max-w-2xl space-y-8">
-                         <div className="space-y-2">
-                            <Label htmlFor="free-trial-days">Free Trial Duration (Days)</Label>
-                            <Input 
-                                id="free-trial-days" 
-                                type="number"
-                                value={freeTrialDays} 
-                                onChange={(e) => setFreeTrialDays(Number(e.target.value))}
-                                placeholder="e.g., 14"
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="free-trial-days">Free Trial Duration (Days)</Label>
+                                <Input 
+                                    id="free-trial-days" 
+                                    type="number"
+                                    value={freeTrialDays} 
+                                    onChange={(e) => setFreeTrialDays(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="global-storage">Global Storage Limit (MB)</Label>
+                                <Input 
+                                    id="global-storage" 
+                                    type="number"
+                                    value={globalStorageLimitMB} 
+                                    onChange={(e) => setGlobalStorageLimitMB(Number(e.target.value))}
+                                />
+                            </div>
                         </div>
 
                         <Separator />

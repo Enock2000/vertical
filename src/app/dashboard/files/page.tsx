@@ -6,7 +6,7 @@ import { ref as dbRef, onValue, push, set, update, remove } from 'firebase/datab
 import { useAuth } from '@/app/auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ChevronRight, HardDrive, Home } from 'lucide-react';
-import type { DriveFile, DriveFolder, Employee } from '@/lib/data';
+import type { DriveFile, DriveFolder, Employee, SubscriptionPlan, Company } from '@/lib/data';
 import { uploadDriveFiles } from '@/lib/backblaze';
 
 import { FileGrid } from './components/file-grid';
@@ -38,6 +38,9 @@ export default function FilesPage() {
     const [allFiles, setAllFiles] = useState<DriveFile[]>([]);
     const [allFolders, setAllFolders] = useState<DriveFolder[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
+    const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+    const [company, setCompany] = useState<Company | null>(null);
+    const [globalStorageLimitMB, setGlobalStorageLimitMB] = useState(5120);
     const [loading, setLoading] = useState(true);
 
     // UI state
@@ -68,6 +71,8 @@ export default function FilesPage() {
         const filesRef = dbRef(db, `companies/${companyId}/drive/files`);
         const foldersRef = dbRef(db, `companies/${companyId}/drive/folders`);
         const employeesRef = dbRef(db, 'employees');
+        const plansRef = dbRef(db, 'subscriptionPlans');
+        const companyRef = dbRef(db, `companies/${companyId}`);
 
         let filesLoaded = false, foldersLoaded = false, employeesLoaded = false;
         const checkDone = () => { if (filesLoaded && foldersLoaded && employeesLoaded) setLoading(false); };
@@ -96,7 +101,21 @@ export default function FilesPage() {
             checkDone();
         });
 
-        return () => { unsub1(); unsub2(); unsub3(); };
+        const unsub4 = onValue(plansRef, (snap) => {
+            const data = snap.val();
+            setPlans(data ? Object.values(data) : []);
+        });
+
+        const unsub5 = onValue(companyRef, (snap) => {
+            setCompany(snap.val());
+        });
+
+        const settingsRef = dbRef(db, 'platformSettings/globalStorageLimitMB');
+        const unsub6 = onValue(settingsRef, (snap) => {
+            setGlobalStorageLimitMB(snap.val() || 5120);
+        });
+
+        return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); };
     }, [companyId]);
 
     // ─── Computed data ───
@@ -146,7 +165,14 @@ export default function FilesPage() {
     }, [allFolders, currentFolderId, searchQuery, showStarred]);
 
     const storageUsed = useMemo(() => allFiles.reduce((a, f) => a + f.size, 0), [allFiles]);
-    const storageLimit = 10 * 1024 * 1024 * 1024; // 10 GB
+    const storageLimit = useMemo(() => {
+        if (!company || !plans.length) return globalStorageLimitMB * 1024 * 1024;
+        if (company.overrideStorageLimitMB) return company.overrideStorageLimitMB * 1024 * 1024;
+        const sub = company.subscription;
+        const plan = plans.find(p => p.id === sub?.planId);
+        const limitMB = plan?.storageLimitMB || globalStorageLimitMB;
+        return limitMB * 1024 * 1024;
+    }, [company, plans, globalStorageLimitMB]);
     const storagePercent = Math.min((storageUsed / storageLimit) * 100, 100);
 
     // ─── Handlers ───
@@ -176,6 +202,17 @@ export default function FilesPage() {
 
     const handleUpload = useCallback(async (files: File[]) => {
         if (!companyId || !employee) return;
+
+        // CHECK QUOTA
+        const newFilesSize = files.reduce((acc, f) => acc + f.size, 0);
+        if (storageUsed + newFilesSize > storageLimit) {
+            toast({ 
+                variant: 'destructive', 
+                title: 'Storage Limit Exceeded', 
+                description: 'You do not have enough storage space. Please free up space or upgrade your subscription.' 
+            });
+            throw new Error('Storage Limit Exceeded');
+        }
 
         const result = await uploadDriveFiles(
             files,
@@ -214,7 +251,7 @@ export default function FilesPage() {
         }
 
         toast({ title: 'Upload Complete', description: `${result.files.length} file(s) uploaded.` });
-    }, [companyId, employee, currentFolderId, toast]);
+    }, [companyId, employee, currentFolderId, toast, storageUsed, storageLimit]);
 
     const handleCreateFolder = useCallback(async (name: string, color: string) => {
         if (!companyId || !employee) return;

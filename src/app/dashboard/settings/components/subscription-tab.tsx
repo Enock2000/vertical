@@ -7,21 +7,34 @@ import { ref, update } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, HardDrive, AlertTriangle } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { SubscriptionPlan, CompanySubscription } from '@/lib/data';
 import { useAuth } from '@/app/auth-provider';
 import { add } from 'date-fns';
 
 interface SubscriptionTabProps {
   plans: SubscriptionPlan[];
+  globalStorageLimitMB?: number;
 }
 
-export function SubscriptionTab({ plans }: SubscriptionTabProps) {
+export function SubscriptionTab({ plans, globalStorageLimitMB = 5120 }: SubscriptionTabProps) {
   const { company, companyId } = useAuth();
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
   const currentPlanId = company?.subscription?.planId;
+  const currentPlan = plans.find((p) => p.id === currentPlanId);
+  const defaultLimitMB = currentPlan?.storageLimitMB || globalStorageLimitMB;
+  const storageLimitMB = company?.overrideStorageLimitMB ?? defaultLimitMB;
+  const storageUsedMB = Math.max(company?.storageUsedMB || 0, 0);
+  const storagePercent = Math.min((storageUsedMB / storageLimitMB) * 100, 100);
+
+  const formatStorageSize = (mb: number) => {
+      if (mb < 1024) return `${mb.toFixed(1)} MB`;
+      return `${(mb / 1024).toFixed(2)} GB`;
+  };
 
   const handleChoosePlan = async (plan: SubscriptionPlan) => {
     if (!companyId || !company) return;
@@ -126,14 +139,46 @@ export function SubscriptionTab({ plans }: SubscriptionTabProps) {
   const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ZMW' });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Subscription Plans</CardTitle>
-        <CardDescription>
-          Choose a plan that fits your company's hiring needs.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="space-y-1">
+                <CardTitle>Storage Quota</CardTitle>
+                <CardDescription>Monitor your cloud file storage usage across the platform.</CardDescription>
+            </div>
+            <HardDrive className="h-5 w-5 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+            <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm font-medium">
+                    <span>{formatStorageSize(storageUsedMB)} Used</span>
+                    <span className="text-muted-foreground">{formatStorageSize(storageLimitMB)} Total</span>
+                </div>
+                <Progress 
+                    value={storagePercent} 
+                    className={`h-2 ${storagePercent > 90 ? 'bg-destructive/20 [&>div]:bg-destructive' : ''}`} 
+                />
+            </div>
+            {storagePercent >= 90 && (
+                <Alert variant="destructive" className="mt-4 bg-destructive/10 text-destructive border-none">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Storage Space Running Out</AlertTitle>
+                    <AlertDescription>
+                        You have used {storagePercent.toFixed(0)}% of your available storage capacity. Please upgrade your subscription to increase your limit, or delete unused files.
+                    </AlertDescription>
+                </Alert>
+            )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscription Plans</CardTitle>
+          <CardDescription>
+            Choose a plan that fits your company's hiring and storage needs.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => (
           <Card key={plan.id} className="flex flex-col">
             <CardHeader>
@@ -145,6 +190,7 @@ export function SubscriptionTab({ plans }: SubscriptionTabProps) {
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
               <p className="font-semibold">{plan.jobPostings} job postings included</p>
+              <p className="font-semibold text-primary">{formatStorageSize(plan.storageLimitMB || 5120)} file storage</p>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {plan.features.map((feature, index) => (
                   <li key={index} className="flex items-center gap-2">
@@ -173,5 +219,6 @@ export function SubscriptionTab({ plans }: SubscriptionTabProps) {
         ))}
       </CardContent>
     </Card>
+    </div>
   );
 }

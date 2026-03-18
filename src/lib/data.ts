@@ -9,6 +9,7 @@ export type SubscriptionPlan = {
     name: string;
     price: number; // Monthly price
     jobPostings: number; // Number of job postings allowed
+    storageLimitMB?: number; // Maximum file storage allowed
     features: string[];
 };
 
@@ -105,6 +106,8 @@ export type Company = {
     enabledModules?: Permission[];
     employeePortalDisabled?: boolean;
     apiKey?: string;
+    storageUsedMB?: number;
+    overrideStorageLimitMB?: number; // Custom upper cap overriding subscription
     // New fields
     industry?: string;
     companySize?: '1-10' | '11-100' | '100+';

@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [globalStorageLimitMB, setGlobalStorageLimitMB] = useState(5120);
   const [company, setCompany] = useState<Company | null>(null);
   const { toast } = useToast();
 
@@ -76,6 +77,7 @@ export default function SettingsPage() {
     const banksRef = dbRef(db, `companies/${companyId}/banks`);
     const plansRef = dbRef(db, 'subscriptionPlans');
     const companyRef = dbRef(db, `companies/${companyId}`);
+    const settingsRef = dbRef(db, 'platformSettings/globalStorageLimitMB');
 
     let configLoaded = false;
     let banksLoaded = false;
@@ -121,11 +123,16 @@ export default function SettingsPage() {
       checkLoading();
     });
 
+    const settingsUnsubscribe = onValue(settingsRef, (snapshot) => {
+      setGlobalStorageLimitMB(snapshot.val() || 5120);
+    });
+
     return () => {
       configUnsubscribe();
       banksUnsubscribe();
       plansUnsubscribe();
       companyUnsubscribe();
+      settingsUnsubscribe();
     };
   }, [companyId, form]);
 
@@ -195,7 +202,7 @@ export default function SettingsPage() {
         <HolidaysTab />
       </TabsContent>
       <TabsContent value="subscription">
-        <SubscriptionTab plans={subscriptionPlans} />
+        <SubscriptionTab plans={subscriptionPlans} globalStorageLimitMB={globalStorageLimitMB} />
       </TabsContent>
       <TabsContent value="api">
         <ApiSettingsTab />
