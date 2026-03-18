@@ -34,17 +34,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Missing companyId' }, { status: 400 });
         }
 
-        const maxSize = 50 * 1024 * 1024; // 50MB
         const uploadedFiles: Array<{ url: string; path: string; name: string; size: number; mimeType: string }> = [];
 
         for (const file of files) {
-            if (file.size > maxSize) {
-                return NextResponse.json(
-                    { error: `File "${file.name}" exceeds 50MB limit` },
-                    { status: 400 }
-                );
-            }
-
             const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
             const filePath = `drive/${companyId}/${Date.now()}_${cleanFileName}`;
 

@@ -100,7 +100,7 @@ export function UploadDialog({ open, onOpenChange, onUpload }: UploadDialogProps
                         Upload Files
                     </DialogTitle>
                     <DialogDescription>
-                        Drag and drop files or click to browse. Max 50MB per file.
+                        Drag and drop files or click to browse.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -132,7 +132,7 @@ export function UploadDialog({ open, onOpenChange, onUpload }: UploadDialogProps
                         {isDragging ? 'Drop files here...' : 'Click or drag files here'}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                        Supports any file type up to 50MB
+                        Supports any file type
                     </p>
                 </div>
 

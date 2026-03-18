@@ -91,8 +91,15 @@ export async function uploadDriveFiles(
             body: formData,
         });
 
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Upload failed');
+        const text = await response.text();
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch {
+            throw new Error(text || response.statusText);
+        }
+
+        if (!response.ok) throw new Error(result?.error || text || 'Upload failed');
         return { success: true, files: result.files };
     } catch (error) {
         console.error('Drive upload error:', error);
