@@ -8,13 +8,21 @@ import archiverZipEncrypted from 'archiver-zip-encrypted';
 
 archiver.registerFormat('zip-encrypted', archiverZipEncrypted);
 
+const B2_CONFIG = {
+    keyId: process.env.BACKBLAZE_KEY_ID || '005b3c970d8861d0000000002',
+    applicationKey: process.env.BACKBLAZE_APP_KEY || 'K005LedBsyGZVJKjx2YJf6MjQaE81+U',
+    endpoint: process.env.BACKBLAZE_ENDPOINT || 'https://s3.us-east-005.backblazeb2.com',
+    bucketName: process.env.BACKBLAZE_BUCKET_NAME || 'oraninve',
+    region: process.env.BACKBLAZE_REGION || 'us-east-005',
+};
+
 const s3 = new S3Client({
   credentials: {
-    accessKeyId: process.env.BACKBLAZE_KEY_ID || '0056973e8e97f0c0000000001',
-    secretAccessKey: process.env.BACKBLAZE_APP_KEY || 'K005/N46+gC2/7f1dMofh/Q4XgN0L0Q'
+    accessKeyId: B2_CONFIG.keyId,
+    secretAccessKey: B2_CONFIG.applicationKey,
   },
-  endpoint: process.env.BACKBLAZE_ENDPOINT || 'https://s3.eu-central-003.backblazeb2.com',
-  region: process.env.BACKBLAZE_REGION || 'eu-central-003',
+  endpoint: B2_CONFIG.endpoint,
+  region: B2_CONFIG.region,
   forcePathStyle: true,
 });
 
@@ -47,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Fetch the file byte stream from B2
-    const bucketName = process.env.BACKBLAZE_BUCKET_NAME || 'LencoFilez';
+    const bucketName = B2_CONFIG.bucketName;
     const command = new GetObjectCommand({
       Bucket: bucketName,
       Key: fileData.b2Path,
