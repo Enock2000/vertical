@@ -168,8 +168,16 @@ export default function FilesPage() {
     const storageLimit = useMemo(() => {
         if (!company || !plans.length) return globalStorageLimitMB * 1024 * 1024;
         if (company.overrideStorageLimitMB) return company.overrideStorageLimitMB * 1024 * 1024;
+        
         const sub = company.subscription;
-        const plan = plans.find(p => p.id === sub?.planId);
+        // Try to find plan by ID
+        let plan = plans.find(p => p.id === sub?.planId);
+        
+        // Safeguard for existing companies that might have hardcoded 'free' or mismatched planIds
+        if (!plan && sub?.planId === 'free') {
+            plan = plans.find(p => p.name.toLowerCase() === 'free');
+        }
+
         const limitMB = plan?.storageLimitMB || globalStorageLimitMB;
         return limitMB * 1024 * 1024;
     }, [company, plans, globalStorageLimitMB]);

@@ -25,7 +25,13 @@ export function SubscriptionTab({ plans, globalStorageLimitMB = 5120 }: Subscrip
   const { toast } = useToast();
 
   const currentPlanId = company?.subscription?.planId;
-  const currentPlan = plans.find((p) => p.id === currentPlanId);
+  let currentPlan = plans.find((p) => p.id === currentPlanId);
+  
+  // Safeguard for existing data
+  if (!currentPlan && currentPlanId === 'free') {
+    currentPlan = plans.find(p => p.name.toLowerCase() === 'free');
+  }
+
   const defaultLimitMB = currentPlan?.storageLimitMB || globalStorageLimitMB;
   const storageLimitMB = company?.overrideStorageLimitMB ?? defaultLimitMB;
   const storageUsedMB = Math.max(company?.storageUsedMB || 0, 0);

@@ -143,7 +143,13 @@ export const columns = (subscriptionPlans: SubscriptionPlan[], globalStorageLimi
         cell: ({ row }) => {
             const company = row.original;
             const sub = company.subscription;
-            const plan = subscriptionPlans.find(p => p.id === sub?.planId);
+            let plan = subscriptionPlans.find(p => p.id === sub?.planId);
+            
+            // Safeguard for existing data with hardcoded 'free'
+            if (!plan && sub?.planId === 'free') {
+                plan = subscriptionPlans.find(p => p.name.toLowerCase() === 'free');
+            }
+
             const defaultLimitMB = plan?.storageLimitMB || globalStorageLimitMB;
             const limitMB = company.overrideStorageLimitMB ?? defaultLimitMB;
             const usedMB = Math.max(company.storageUsedMB || 0, 0);

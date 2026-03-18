@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { ref, set, get } from 'firebase/database';
-import type { Company, Employee } from '@/lib/data';
+import type { Company, Employee, SubscriptionPlan } from '@/lib/data';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -120,6 +120,18 @@ export default function SignUpPage() {
       const freeTrialDays = platformSettingsSnap.val() || 14; // Default to 14 days
       const trialEndDate = add(new Date(), { days: freeTrialDays });
 
+      // Fetch all subscription plans to find the 'Free' plan ID
+      const plansRef = ref(db, 'subscriptionPlans');
+      const plansSnap = await get(plansRef);
+      let freePlanId = 'free'; // Fallback
+      if (plansSnap.exists()) {
+          const plans = plansSnap.val();
+          const freePlan = Object.values<SubscriptionPlan>(plans).find(
+              (p) => p.name.toLowerCase() === 'free'
+          );
+          if (freePlan) freePlanId = freePlan.id;
+      }
+
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
@@ -140,7 +152,7 @@ export default function SignUpPage() {
         companySize: companySize || undefined,
         country: country,
         subscription: {
-          planId: 'free',
+          planId: freePlanId,
           status: 'trial',
           jobPostingsRemaining: 3,
           trialEndDate: trialEndDate.toISOString(),
