@@ -69,7 +69,7 @@ export async function uploadToB2(file: File, path: string): Promise<UploadResult
 }
 
 /**
- * Upload files to B2 via the drive-specific API route
+ * Upload files via Presigned URLs directly to B2 (Bypasses Vercel limits)
  */
 export async function uploadDriveFiles(
     files: File[],
@@ -79,28 +79,46 @@ export async function uploadDriveFiles(
     employeeName: string,
 ): Promise<{ success: boolean; files?: Array<{ url: string; path: string; name: string; size: number; mimeType: string }>; error?: string }> {
     try {
-        const formData = new FormData();
-        files.forEach(f => formData.append('files', f));
-        formData.append('companyId', companyId);
-        formData.append('folderId', folderId || '');
-        formData.append('employeeId', employeeId);
-        formData.append('employeeName', employeeName);
+        const uploadedFiles = [];
 
-        const response = await fetch('/api/files/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        for (const file of files) {
+            const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const filePath = `drive/${companyId}/${Date.now()}_${cleanFileName}`;
 
-        const text = await response.text();
-        let result;
-        try {
-            result = JSON.parse(text);
-        } catch {
-            throw new Error(text || response.statusText);
+            // 1. Get Presigned URL
+            const presignRes = await fetch('/api/files/presign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type || 'application/octet-stream',
+                    filePath,
+                }),
+            });
+            const presignData = await presignRes.json();
+            if (!presignRes.ok) throw new Error(presignData.error || 'Failed to get upload URL');
+
+            // 2. Upload directly to B2
+            const uploadRes = await fetch(presignData.signedUrl, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                    'Content-Type': file.type || 'application/octet-stream',
+                },
+            });
+
+            if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name} to storage`);
+
+            uploadedFiles.push({
+                url: presignData.publicUrl,
+                path: filePath,
+                name: file.name,
+                size: file.size,
+                mimeType: file.type || 'application/octet-stream',
+            });
         }
 
-        if (!response.ok) throw new Error(result?.error || text || 'Upload failed');
-        return { success: true, files: result.files };
+        return { success: true, files: uploadedFiles };
     } catch (error) {
         console.error('Drive upload error:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Upload failed' };
