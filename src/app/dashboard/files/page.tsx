@@ -74,8 +74,8 @@ export default function FilesPage() {
         const plansRef = dbRef(db, 'subscriptionPlans');
         const companyRef = dbRef(db, `companies/${companyId}`);
 
-        let filesLoaded = false, foldersLoaded = false, employeesLoaded = false;
-        const checkDone = () => { if (filesLoaded && foldersLoaded && employeesLoaded) setLoading(false); };
+        let filesLoaded = false, foldersLoaded = false, employeesLoaded = false, plansLoaded = false, companyLoaded = false, settingsLoaded = false;
+        const checkDone = () => { if (filesLoaded && foldersLoaded && employeesLoaded && plansLoaded && companyLoaded && settingsLoaded) setLoading(false); };
 
         const unsub1 = onValue(filesRef, (snap) => {
             const data = snap.val();
@@ -104,15 +104,21 @@ export default function FilesPage() {
         const unsub4 = onValue(plansRef, (snap) => {
             const data = snap.val();
             setPlans(data ? Object.values(data) : []);
+            plansLoaded = true;
+            checkDone();
         });
 
         const unsub5 = onValue(companyRef, (snap) => {
             setCompany(snap.val());
+            companyLoaded = true;
+            checkDone();
         });
 
         const settingsRef = dbRef(db, 'platformSettings/globalStorageLimitMB');
         const unsub6 = onValue(settingsRef, (snap) => {
             setGlobalStorageLimitMB(snap.val() || 5120);
+            settingsLoaded = true;
+            checkDone();
         });
 
         return () => { unsub1(); unsub2(); unsub3(); unsub4(); unsub5(); unsub6(); };

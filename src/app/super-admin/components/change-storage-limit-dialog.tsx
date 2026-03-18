@@ -47,7 +47,7 @@ export function ChangeStorageLimitDialog({ children, company, plans }: ChangeSto
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const currentPlan = plans.find(p => p.id === company.subscription.planId);
+  const currentPlan = company.subscription ? plans.find(p => p.id === company.subscription.planId) : null;
   const defaultLimit = currentPlan?.storageLimitMB || 5120;
   
   // By default, if they don't have an override, we show the plan's default so they know what they are starting from.
@@ -63,12 +63,9 @@ export function ChangeStorageLimitDialog({ children, company, plans }: ChangeSto
     try {
       const companyRef = ref(db, `companies/${company.id}`);
       
-      // If the admin sets the limit EXACTLY back to the default plan limit, we could just remove the override.
-      // But keeping it as an explicit override is also fine.
-      const isDefault = values.overrideStorageLimitMB === defaultLimit;
-      
+      // Force the explicit override
       await update(companyRef, { 
-          overrideStorageLimitMB: isDefault ? null : values.overrideStorageLimitMB 
+          overrideStorageLimitMB: values.overrideStorageLimitMB 
       });
 
       setOpen(false);
