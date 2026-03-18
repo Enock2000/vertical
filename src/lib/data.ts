@@ -535,7 +535,8 @@ export type Permission =
     | 'compliance'
     | 'settings'
     | 'announcements'
-    | 'finance';
+    | 'finance'
+    | 'files';
 
 
 export const permissionsList: { id: Permission, label: string }[] = [
@@ -554,6 +555,7 @@ export const permissionsList: { id: Permission, label: string }[] = [
     { id: 'settings', label: 'Manage Settings' },
     { id: 'announcements', label: 'Manage Announcements' },
     { id: 'finance', label: 'Manage Finance' },
+    { id: 'files', label: 'Manage Files' },
 ];
 
 export type Role = {
@@ -857,6 +859,40 @@ export type LoanRepayment = {
     date: string; // ISO 8601
     method: RepaymentMethod;
     notes?: string;
+};
+
+// ===== DRIVE / FILE MANAGER TYPES =====
+export type DriveFile = {
+    id: string;
+    companyId: string;
+    name: string;
+    mimeType: string;
+    size: number; // bytes
+    b2Path: string; // full path in B2 bucket
+    folderId: string | null; // null = root
+    uploadedBy: string; // employee ID
+    uploadedByName: string;
+    createdAt: string; // ISO 8601
+    updatedAt: string;
+    starred: boolean;
+    shared: boolean;
+    sharedWith?: string[]; // employee IDs
+    description?: string;
+    thumbnailUrl?: string;
+    trashed?: boolean;
+    trashedAt?: string;
+};
+
+export type DriveFolder = {
+    id: string;
+    companyId: string;
+    name: string;
+    parentId: string | null; // null = root
+    color?: string;
+    createdBy: string; // employee ID
+    createdByName: string;
+    createdAt: string; // ISO 8601
+    updatedAt: string;
 };
 
 // ===== BUSINESS DAY CALCULATOR =====

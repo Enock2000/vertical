@@ -1,7 +1,7 @@
 // Backblaze B2 Configuration and Client
 // Using S3-compatible API
 
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Backblaze B2 Configuration (S3-compatible)
@@ -69,6 +69,38 @@ export async function uploadToB2(file: File, path: string): Promise<UploadResult
 }
 
 /**
+ * Upload files to B2 via the drive-specific API route
+ */
+export async function uploadDriveFiles(
+    files: File[],
+    companyId: string,
+    folderId: string | null,
+    employeeId: string,
+    employeeName: string,
+): Promise<{ success: boolean; files?: Array<{ url: string; path: string; name: string; size: number; mimeType: string }>; error?: string }> {
+    try {
+        const formData = new FormData();
+        files.forEach(f => formData.append('files', f));
+        formData.append('companyId', companyId);
+        formData.append('folderId', folderId || '');
+        formData.append('employeeId', employeeId);
+        formData.append('employeeName', employeeName);
+
+        const response = await fetch('/api/files/upload', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Upload failed');
+        return { success: true, files: result.files };
+    } catch (error) {
+        console.error('Drive upload error:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Upload failed' };
+    }
+}
+
+/**
  * Upload a string as a file to Backblaze B2
  * @param content - The string content to upload
  * @param path - The path/key in the bucket
@@ -123,6 +155,60 @@ export async function getB2SignedUrl(path: string, expiresIn: number = 3600): Pr
 }
 
 /**
+ * Delete a file from Backblaze B2
+ * @param path - The file path/key in the bucket
+ */
+export async function deleteFromB2(path: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const command = new DeleteObjectCommand({
+            Bucket: B2_CONFIG.bucketName,
+            Key: path,
+        });
+        await b2Client.send(command);
+        return { success: true };
+    } catch (error) {
+        console.error('B2 delete error:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Delete failed' };
+    }
+}
+
+/**
+ * Copy a file within B2
+ * @param sourcePath - Source file path
+ * @param destPath - Destination file path
+ */
+export async function copyInB2(sourcePath: string, destPath: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const command = new CopyObjectCommand({
+            Bucket: B2_CONFIG.bucketName,
+            CopySource: `${B2_CONFIG.bucketName}/${sourcePath}`,
+            Key: destPath,
+        });
+        await b2Client.send(command);
+        return { success: true };
+    } catch (error) {
+        console.error('B2 copy error:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Copy failed' };
+    }
+}
+
+/**
+ * Move a file within B2 (copy + delete original)
+ */
+export async function moveInB2(sourcePath: string, destPath: string): Promise<{ success: boolean; error?: string }> {
+    const copyResult = await copyInB2(sourcePath, destPath);
+    if (!copyResult.success) return copyResult;
+    return deleteFromB2(sourcePath);
+}
+
+/**
+ * Get the public URL for a file in B2
+ */
+export function getB2PublicUrl(path: string): string {
+    return `${B2_CONFIG.endpoint}/${B2_CONFIG.bucketName}/${path}`;
+}
+
+/**
  * Generate a path for verification documents
  */
 export function getVerificationDocPath(companyId: string, docType: string, fileName: string): string {
@@ -131,4 +217,12 @@ export function getVerificationDocPath(companyId: string, docType: string, fileN
     return `verification/${companyId}/${docType}/${Date.now()}_${cleanFileName}`;
 }
 
-export { B2_CONFIG };
+/**
+ * Generate a path for drive files
+ */
+export function getDriveFilePath(companyId: string, fileName: string): string {
+    const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
+    return `drive/${companyId}/${Date.now()}_${cleanFileName}`;
+}
+
+export { B2_CONFIG, b2Client };

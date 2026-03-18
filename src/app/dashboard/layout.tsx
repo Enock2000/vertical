@@ -25,6 +25,7 @@ import {
   Megaphone,
   DollarSign,
   Banknote,
+  HardDrive,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
@@ -69,6 +70,7 @@ const navItems = [
   { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
   { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },
+  { href: "/dashboard/files", icon: HardDrive, label: "Files", permission: "files" as Permission },
   { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
 ];
 
