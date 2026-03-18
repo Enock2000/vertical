@@ -1,62 +1,27 @@
-
-'use client';
-
 import type { Metadata } from 'next';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
-import { SupportChat } from '@/components/support-chat';
-import { ThemeProvider } from '@/components/theme-provider';
-import { AuthProvider, useAuth } from './auth-provider';
-import { useEffect } from 'react';
-import type { ThemeSettings } from '@/lib/data';
-import { db } from '@/lib/firebase';
-import { ref, onValue } from 'firebase/database';
+import { Providers } from './providers';
 
-
-const AppBody = ({ children }: { children: React.ReactNode }) => {
-  const { employee } = useAuth();
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (employee?.themeSettings) {
-      const { background, primary, accent } = employee.themeSettings;
-      root.style.setProperty('--background', `${background.h} ${background.s}% ${background.l}%`);
-      root.style.setProperty('--primary', `${primary.h} ${primary.s}% ${primary.l}%`);
-      root.style.setProperty('--accent', `${accent.h} ${accent.s}% ${accent.l}%`);
-    } else {
-      // Clear styles if no settings are found to revert to CSS defaults
-      root.style.removeProperty('--background');
-      root.style.removeProperty('--primary');
-      root.style.removeProperty('--accent');
-    }
-  }, [employee]);
-
-  useEffect(() => {
-    const logoUrlRef = ref(db, 'platformSettings/mainLogoUrl');
-    const unsubscribe = onValue(logoUrlRef, (snapshot) => {
-      const logoUrl = snapshot.val();
-      if (logoUrl) {
-        let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = 'icon';
-          document.getElementsByTagName('head')[0].appendChild(link);
-        }
-        link.href = logoUrl;
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  return (
-    <>
-      {children}
-      <Toaster />
-      <SupportChat />
-    </>
-  )
-}
+export const metadata: Metadata = {
+  title: 'Vertical Sync | Global HR System & People Platform',
+  description: 'Scale globally with velocity and ease. VerticalSync is an AI-powered HR platform for automated payroll, compliance, recruitment, and employee self-service.',
+  keywords: ['Vertical Sync', 'HR System', 'Payroll Software', 'Global HR', 'Employee Portal', 'Human Resources', 'Compliance Management', 'Recruitment Platform'],
+  authors: [{ name: 'Oran Investment' }],
+  creator: 'Vertical Sync',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://vshr.oraninvestments.com/',
+    title: 'Vertical Sync | Global HR System',
+    description: 'Scale globally with velocity and ease. The complete HR solution.',
+    siteName: 'Vertical Sync',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Vertical Sync | Global HR System',
+    description: 'Scale globally with velocity and ease. The complete HR solution.',
+  },
+};
 
 export default function RootLayout({
   children,
@@ -83,21 +48,35 @@ export default function RootLayout({
             `,
           }}
         />
-        <title>VerticalSync</title>
+        
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              "name": "Vertical Sync",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "description": "An AI-powered global HR system and people platform streamlining payroll, recruitment, compliance, and employee management.",
+              "producer": {
+                "@type": "Organization",
+                "name": "Oran Investment"
+              }
+            }),
+          }}
+        />
       </head>
       <body className="font-body antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <AppBody>
-              {children}
-            </AppBody>
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
