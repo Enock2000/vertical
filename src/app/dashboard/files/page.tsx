@@ -19,6 +19,7 @@ import { MoveDialog } from './components/move-dialog';
 import { FilePreviewDialog } from './components/file-preview-dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import {
     AlertDialog,
     AlertDialogAction,
