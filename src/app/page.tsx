@@ -58,6 +58,7 @@ const featuresList = [
 const navLinks = [
   { href: "/features", label: "Features" },
   { href: "/careers", label: "Jobs Centre" },
+  { href: "/applicant-signup", label: "Applicant Sign Up" },
   { href: "/who-we-serve", label: "Who We Serve" },
   { href: "/pricing", label: "Pricing" },
 ];
@@ -66,7 +67,7 @@ const fadeUp = {
   initial: { opacity: 0, y: 60 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.8, ease: "easeOut" }
+  transition: { duration: 0.8, ease: "easeOut" as const }
 };
 
 const staggerContainer = {
@@ -308,6 +309,8 @@ export default function HomePage() {
         <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 px-4 sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} VerticalSync powered by Oran Investment. All rights reserved.</p>
           <nav className="flex gap-6">
+            <Link href="/applicant-portal" className="hover:text-indigo-600">Applicant Portal</Link>
+            <Link href="/applicant-signup" className="hover:text-indigo-600">Applicant Form</Link>
             <Link href="/documentation" className="hover:text-indigo-600">Documentation</Link>
             <Link href="/docs/api" className="hover:text-indigo-600">API Docs</Link>
             <Link href="#" className="hover:text-indigo-600">Terms</Link>
