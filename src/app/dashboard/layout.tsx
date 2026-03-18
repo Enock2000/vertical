@@ -26,6 +26,7 @@ import {
   DollarSign,
   Banknote,
   HardDrive,
+  MessageSquare,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
@@ -53,6 +54,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/logo";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Permission, Role } from "@/lib/data";
+import { ChatWaveFloatingButton } from "@/components/chat-wave-button";
 
 const navItems = [
   { href: "/dashboard", icon: Home, label: "Dashboard", permission: "dashboard" as Permission },
@@ -71,6 +73,7 @@ const navItems = [
   { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
   { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },
   { href: "/dashboard/files", icon: HardDrive, label: "Files", permission: "files" as Permission },
+  { href: "/dashboard/chat", icon: MessageSquare, label: "Chat Wave", permission: "chat" as Permission },
   { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
 ];
 
@@ -289,6 +292,7 @@ export default function DashboardLayout({
         </header>
         <main className="flex-1 p-4 sm:px-6 sm:py-4">{children}</main>
       </div>
+      <ChatWaveFloatingButton chatPath="/dashboard/chat" />
     </div>
   );
 }

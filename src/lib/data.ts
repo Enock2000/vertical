@@ -536,7 +536,8 @@ export type Permission =
     | 'settings'
     | 'announcements'
     | 'finance'
-    | 'files';
+    | 'files'
+    | 'chat';
 
 
 export const permissionsList: { id: Permission, label: string }[] = [
@@ -556,6 +557,7 @@ export const permissionsList: { id: Permission, label: string }[] = [
     { id: 'announcements', label: 'Manage Announcements' },
     { id: 'finance', label: 'Manage Finance' },
     { id: 'files', label: 'Manage Files' },
+    { id: 'chat', label: 'Company Chat & Network' },
 ];
 
 export type Role = {
@@ -1119,4 +1121,83 @@ export const calculateProductivityScore = (
 };
 
 
+// ===== CHAT SYSTEM TYPES =====
 
+export type ChatThread = {
+    id: string;
+    companyId: string;
+    type: 'dm' | 'channel';
+    name?: string; // Channel name, or null for DMs
+    participants: Record<string, boolean>;
+    lastMessage?: string;
+    lastMessageAt?: string; // ISO 8601
+    lastMessageBy?: string;
+    createdBy: string;
+    createdAt: string;
+};
+
+export type ChatMessage = {
+    id: string;
+    threadId: string;
+    senderId: string;
+    senderName: string;
+    senderAvatar?: string;
+    content: string;
+    type: 'text' | 'file';
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
+    createdAt: string; // ISO 8601
+    readBy?: Record<string, string>; // userId -> timestamp
+};
+
+export type PresenceStatus = {
+    online: boolean;
+    lastSeen: string; // ISO 8601
+};
+
+// ===== GLOBAL NETWORK CHAT TYPES =====
+
+export type UserProfile = {
+    userId: string;
+    name: string;
+    jobTitle?: string;
+    companyId: string;
+    companyName: string;
+    avatar?: string;
+    discoverable: boolean;
+    blockedUsers?: Record<string, boolean>;
+};
+
+export type FriendRequest = {
+    id: string;
+    fromUserId: string;
+    fromUserName: string;
+    fromCompanyName: string;
+    fromAvatar?: string;
+    fromJobTitle?: string;
+    toUserId: string;
+    toUserName: string;
+    toAvatar?: string;
+    status: 'pending' | 'accepted' | 'declined';
+    createdAt: string; // ISO 8601
+};
+
+export type Connection = {
+    userId: string;
+    connectedUserId: string;
+    connectedUserName: string;
+    connectedCompanyName: string;
+    connectedAvatar?: string;
+    connectedAt: string; // ISO 8601
+};
+
+export type GlobalChatThread = {
+    id: string;
+    type: 'dm';
+    participants: Record<string, boolean>;
+    lastMessage?: string;
+    lastMessageAt?: string;
+    lastMessageBy?: string;
+    createdAt: string;
+};

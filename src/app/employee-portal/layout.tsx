@@ -14,6 +14,7 @@ import {
     CalendarPlus,
     FileText,
     Shield,
+    MessageSquare,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider";
@@ -24,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/logo";
 import { Loader2 } from "lucide-react";
+import { ChatWaveFloatingButton } from "@/components/chat-wave-button";
 
 const navItems = [
   { href: "/employee-portal", icon: LayoutDashboard, label: "Dashboard" },
@@ -34,6 +36,7 @@ const navItems = [
   { href: "/employee-portal/performance", icon: Trophy, label: "Performance" },
   { href: "/employee-portal/trainings", icon: BookOpen, label: "Trainings" },
   { href: "/employee-portal/announcements", icon: Megaphone, label: "Announcements" },
+  { href: "/employee-portal/chat", icon: MessageSquare, label: "Chat Wave" },
   { href: "/employee-portal/security", icon: Shield, label: "Security" },
 ];
 
@@ -130,6 +133,7 @@ export default function EmployeePortalLayout({
         </header>
         <main className="flex-1 p-4 sm:px-6 sm:py-4">{children}</main>
       </div>
+      <ChatWaveFloatingButton chatPath="/employee-portal/chat" />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 // src/components/support-chat.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '@/lib/firebase';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,6 +19,7 @@ interface Message {
 }
 
 export function SupportChat() {
+    const [isMounted, setIsMounted] = useState(false);
     const [user, loadingAuth] = useAuthState(auth);
     const [messages, setMessages] = useState<Message[]>([
         { sender: 'ai', text: "Hi! I'm VerticalSync, your AI support assistant. How can I help you today?" }
@@ -59,6 +60,12 @@ export function SupportChat() {
     };
     
     const showRegistration = !user && !isRegistered;
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) return null;
 
     return (
         <Popover onOpenChange={(open) => {
