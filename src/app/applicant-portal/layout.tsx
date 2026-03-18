@@ -9,6 +9,7 @@ import {
     User,
     PanelLeft,
     Briefcase,
+    Globe,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/auth-provider";
@@ -22,6 +23,7 @@ import { Loader2 } from "lucide-react";
 
 const navItems = [
   { href: "/applicant-portal", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/applicant-portal/network", icon: Globe, label: "Vertical Sync Network" },
   { href: "/applicant-portal/profile", icon: User, label: "My Profile" },
   { href: "/careers", icon: Briefcase, label: "All Jobs" },
 ];
