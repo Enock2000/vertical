@@ -20,13 +20,17 @@ interface ShareDialogProps {
     onOpenChange: (open: boolean) => void;
     file: DriveFile | null;
     employees: Employee[];
-    onShare: (fileId: string, employeeIds: string[]) => Promise<void>;
+    onShare: (fileId: string, employeeIds: string[], password?: string | null) => Promise<void>;
 }
 
 export function ShareDialog({ open, onOpenChange, file, employees, onShare }: ShareDialogProps) {
     const [selectedIds, setSelectedIds] = useState<string[]>(file?.sharedWith || []);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    
+    // Password state
+    const [enablePassword, setEnablePassword] = useState(!!file?.isPasswordProtected);
+    const [password, setPassword] = useState('');
 
     const toggleEmployee = (id: string) => {
         setSelectedIds((prev) =>
@@ -38,8 +42,10 @@ export function ShareDialog({ open, onOpenChange, file, employees, onShare }: Sh
         if (!file) return;
         setLoading(true);
         try {
-            await onShare(file.id, selectedIds);
+            const pwdValue = enablePassword ? (password ? password : undefined) : null;
+            await onShare(file.id, selectedIds, pwdValue);
             onOpenChange(false);
+            setPassword(''); // clear password field
         } finally {
             setLoading(false);
         }
@@ -70,10 +76,10 @@ export function ShareDialog({ open, onOpenChange, file, employees, onShare }: Sh
 
                 {/* Copy link */}
                 <div className="flex gap-2">
-                    <div className="flex-1 bg-muted rounded-md px-3 py-2 text-sm truncate font-mono">
+                    <div className="flex-1 bg-muted rounded-md px-3 py-2 text-sm truncate font-mono flex items-center">
                         {file.name}
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleCopyLink}>
+                    <Button variant="outline" size="sm" onClick={handleCopyLink} title="Copy direct public link">
                         {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                     </Button>
                 </div>
@@ -103,6 +109,32 @@ export function ShareDialog({ open, onOpenChange, file, employees, onShare }: Sh
                             )}
                         </div>
                     </ScrollArea>
+                </div>
+
+                {/* Password Protection */}
+                <div className="space-y-3 pt-2 border-t mt-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox 
+                            checked={enablePassword} 
+                            onCheckedChange={(c) => setEnablePassword(!!c)} 
+                        />
+                        <span className="text-sm font-medium">Require password to download</span>
+                    </label>
+                    
+                    {enablePassword && (
+                        <div className="pl-6 animate-in slide-in-from-top-1 duration-200">
+                            <input
+                                type="text"
+                                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                placeholder={file.isPasswordProtected ? 'Enter new password to update' : 'Enter a strong password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            {file.isPasswordProtected && !password && (
+                                <p className="text-xs text-muted-foreground mt-1">Leave blank to keep the existing password.</p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <DialogFooter>

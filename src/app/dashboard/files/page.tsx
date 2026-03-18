@@ -63,6 +63,8 @@ export default function FilesPage() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; isFolder: boolean } | null>(null);
     const [renameTarget, setRenameTarget] = useState<{ id: string; name: string; isFolder: boolean } | null>(null);
+    // Password Prompt State
+    const [passwordChallenge, setPasswordChallenge] = useState<{ file: DriveFile, action: 'download' | 'preview' } | null>(null);
 
     // ─── Firebase listeners ───
     useEffect(() => {
@@ -211,7 +213,11 @@ export default function FilesPage() {
     }, []);
 
     const handleOpenFile = useCallback((file: DriveFile) => {
-        setPreviewFile(file);
+        if (file.isPasswordProtected) {
+            setPasswordChallenge({ file, action: 'preview' });
+        } else {
+            setPreviewFile(file);
+        }
     }, []);
 
     const handleUpload = useCallback(async (files: File[]) => {
@@ -287,6 +293,11 @@ export default function FilesPage() {
     }, [companyId, employee, currentFolderId, toast]);
 
     const handleDownload = useCallback(async (file: DriveFile) => {
+        if (file.isPasswordProtected) {
+            setPasswordChallenge({ file, action: 'download' });
+            return;
+        }
+        
         try {
             const res = await fetch('/api/files/download', {
                 method: 'POST',
@@ -307,6 +318,64 @@ export default function FilesPage() {
             toast({ variant: 'destructive', title: 'Download Failed' });
         }
     }, [toast]);
+
+    const handleSecureAction = useCallback(async (password: string) => {
+        if (!passwordChallenge) return;
+        const { file, action } = passwordChallenge;
+
+        if (action === 'preview') {
+            // For preview, we still need to verify the password. We can do a quick check against the hash client-side for UX.
+            try {
+                const msgBuffer = new TextEncoder().encode(password);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                if (hashHex !== file.passwordHash) {
+                    toast({ variant: 'destructive', title: 'Incorrect Password' });
+                    return;
+                }
+                
+                setPasswordChallenge(null);
+                setPreviewFile(file);
+            } catch (err) {
+                toast({ variant: 'destructive', title: 'Error verifying password' });
+            }
+        } else if (action === 'download') {
+            // Initiate secure download
+            try {
+                // To download a stream (ZIP) via API route, we can use a direct form POST or create an object URL.
+                // Because fetch() doesn't prompt "Save As" directly, we fetch the blob and save it.
+                // For very large files this is memory intensive, but standard for SPAs.
+                toast({ title: 'Preparing secure download...' });
+                const res = await fetch('/api/files/download-secure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileId: file.id, companyId: file.companyId, password }),
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    toast({ variant: 'destructive', title: 'Download Failed', description: err.error });
+                    return;
+                }
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${file.name}.zip`; // It comes back as a protected zip
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                setPasswordChallenge(null);
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Download Failed' });
+            }
+        }
+    }, [passwordChallenge, toast]);
 
     const handleDelete = useCallback((ids: string[], isFolder: boolean) => {
         setDeleteTarget({ ids, isFolder });
@@ -358,14 +427,33 @@ export default function FilesPage() {
         setShowShareDialog(true);
     }, []);
 
-    const confirmShare = useCallback(async (fileId: string, employeeIds: string[]) => {
+    const confirmShare = useCallback(async (fileId: string, employeeIds: string[], password?: string | null) => {
         if (!companyId) return;
-        await update(dbRef(db, `companies/${companyId}/drive/files/${fileId}`), {
+
+        // Use 'any' type to allow assigning null to fields to delete them from Firebase
+        const updates: any = {
             shared: employeeIds.length > 0,
             sharedWith: employeeIds,
             updatedAt: new Date().toISOString(),
-        });
-        toast({ title: 'Shared', description: `File shared with ${employeeIds.length} employee(s).` });
+        };
+
+        if (password) {
+            // Hash the password client-side using WebCrypto before sending to Firebase
+            const msgBuffer = new TextEncoder().encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            updates.isPasswordProtected = true;
+            updates.passwordHash = hashHex;
+        } else if (password === null) {
+            // Remove password protection
+            updates.isPasswordProtected = null;
+            updates.passwordHash = null;
+        }
+
+        await update(dbRef(db, `companies/${companyId}/drive/files/${fileId}`), updates);
+        toast({ title: 'Sharing Updated', description: `File sharing settings updated.` });
     }, [companyId, toast]);
 
     const handleMoveInit = useCallback((ids: string[]) => {
@@ -613,7 +701,69 @@ export default function FilesPage() {
                     onRename={confirmRename}
                 />
             )}
+
+            {/* Password Prompt Dialog */}
+            {passwordChallenge && (
+                <PasswordDialog
+                    open={!!passwordChallenge}
+                    onOpenChange={(v) => { if (!v) setPasswordChallenge(null); }}
+                    file={passwordChallenge.file}
+                    action={passwordChallenge.action}
+                    onSubmit={handleSecureAction}
+                />
+            )}
         </div>
+    );
+}
+
+// ─── Inline Password Dialog ───
+function PasswordDialog({ open, onOpenChange, file, action, onSubmit }: {
+    open: boolean;
+    onOpenChange: (v: boolean) => void;
+    file: DriveFile;
+    action: 'preview' | 'download';
+    onSubmit: (password: string) => Promise<void>;
+}) {
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!password) return;
+        setLoading(true);
+        try {
+            await onSubmit(password);
+        } finally {
+            setLoading(false);
+            setPassword('');
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Protected File</DialogTitle>
+                    <DialogDescription>
+                        &quot;{file.name}&quot; is password protected. Please enter the password to {action} this file.
+                    </DialogDescription>
+                </DialogHeader>
+                <input
+                    type="password"
+                    className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                    autoFocus
+                />
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSubmit} disabled={!password || loading}>
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 

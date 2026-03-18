@@ -881,9 +881,11 @@ export type DriveFile = {
     updatedAt: string;
     starred: boolean;
     shared: boolean;
-    sharedWith?: string[]; // employee IDs
+    sharedWith?: string[]; // Array of employee IDs it's shared with
     description?: string;
-    thumbnailUrl?: string;
+    thumbnailUrl?: string; // Optional thumbnail URL for previewing images quickly
+    isPasswordProtected?: boolean; // Indicates if the file requires a password to access
+    passwordHash?: string; // Stored SHA-256 hash
     trashed?: boolean;
     trashedAt?: string;
 };
