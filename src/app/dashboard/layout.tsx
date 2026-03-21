@@ -1,10 +1,9 @@
 
-
 // src/app/dashboard/layout.tsx
 "use client";
 
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Users,
   Home,
@@ -27,10 +26,17 @@ import {
   Banknote,
   HardDrive,
   MessageSquare,
+  ChevronDown,
+  UserCircle,
+  Wallet,
+  CalendarClock,
+  Star,
+  ClipboardList,
+  Wrench,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/app/auth-provider"; // Import the useAuth hook
-import { auth, db } from '@/lib/firebase'; // Import auth correctly
+import { useAuth } from "@/app/auth-provider";
+import { auth, db } from '@/lib/firebase';
 import { ref, onValue } from "firebase/database";
 
 import { Button } from "@/components/ui/button";
@@ -56,25 +62,88 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { Permission, Role } from "@/lib/data";
 import { ChatWaveFloatingButton } from "@/components/chat-wave-button";
 
-const navItems = [
-  { href: "/dashboard", icon: Home, label: "Dashboard", permission: "dashboard" as Permission },
-  { href: "/dashboard/employees", icon: Users, label: "Employees", permission: "employees" as Permission },
-  { href: "/dashboard/recruitment", icon: Briefcase, label: "Recruitment", permission: "recruitment" as Permission },
-  { href: "/dashboard/payroll", icon: FileText, label: "Payroll", permission: "payroll" as Permission },
-  { href: "/dashboard/finance", icon: DollarSign, label: "Finance", permission: "finance" as Permission },
-  { href: "/dashboard/loans", icon: Banknote, label: "Loans & Advances", permission: "finance" as Permission },
-  { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods", permission: "payment-methods" as Permission },
-  { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave", permission: "leave" as Permission },
-  { href: "/dashboard/roster", icon: Clock, label: "Roster & Attendance", permission: "leave" as Permission },
-  { href: "/dashboard/performance", icon: Trophy, label: "Performance", permission: "performance" as Permission },
-  { href: "/dashboard/announcements", icon: Megaphone, label: "Announcements", permission: "announcements" as Permission },
-  { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting", permission: "reporting" as Permission },
-  { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },
-  { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
-  { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },
-  { href: "/dashboard/files", icon: HardDrive, label: "Files", permission: "files" as Permission },
-  { href: "/dashboard/chat", icon: MessageSquare, label: "Vertical Sync Network", permission: "chat" as Permission },
-  { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
+// ─── Types ───
+type NavItem = {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  permission: Permission;
+};
+
+type NavGroup = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+};
+
+// ─── Grouped Navigation Structure ───
+const navGroups: NavGroup[] = [
+  {
+    label: "Dashboard",
+    icon: Home,
+    items: [
+      { href: "/dashboard", icon: Home, label: "Dashboard", permission: "dashboard" as Permission },
+    ],
+  },
+  {
+    label: "People (Core HR)",
+    icon: UserCircle,
+    items: [
+      { href: "/dashboard/employees", icon: Users, label: "Employees", permission: "employees" as Permission },
+      { href: "/dashboard/organization", icon: Network, label: "Organization", permission: "organization" as Permission },
+      { href: "/dashboard/files", icon: HardDrive, label: "Files", permission: "files" as Permission },
+    ],
+  },
+  {
+    label: "Recruitment",
+    icon: Briefcase,
+    items: [
+      { href: "/dashboard/recruitment", icon: Briefcase, label: "Recruitment", permission: "recruitment" as Permission },
+    ],
+  },
+  {
+    label: "Payroll & Finance",
+    icon: Wallet,
+    items: [
+      { href: "/dashboard/payroll", icon: FileText, label: "Payroll", permission: "payroll" as Permission },
+      { href: "/dashboard/finance", icon: DollarSign, label: "Finance", permission: "finance" as Permission },
+      { href: "/dashboard/loans", icon: Banknote, label: "Loans & Advances", permission: "finance" as Permission },
+      { href: "/dashboard/payment-methods", icon: Landmark, label: "Payment Methods", permission: "payment-methods" as Permission },
+    ],
+  },
+  {
+    label: "Time & Leave",
+    icon: CalendarClock,
+    items: [
+      { href: "/dashboard/leave", icon: CalendarPlus, label: "Leave", permission: "leave" as Permission },
+      { href: "/dashboard/roster", icon: Clock, label: "Roster & Attendance", permission: "leave" as Permission },
+    ],
+  },
+  {
+    label: "Performance & Engagement",
+    icon: Star,
+    items: [
+      { href: "/dashboard/performance", icon: Trophy, label: "Performance", permission: "performance" as Permission },
+      { href: "/dashboard/announcements", icon: Megaphone, label: "Announcements", permission: "announcements" as Permission },
+    ],
+  },
+  {
+    label: "Reports & Compliance",
+    icon: ClipboardList,
+    items: [
+      { href: "/dashboard/reporting", icon: BarChart3, label: "Reporting", permission: "reporting" as Permission },
+      { href: "/dashboard/compliance", icon: ShieldCheck, label: "Compliance", permission: "compliance" as Permission },
+    ],
+  },
+  {
+    label: "System & Settings",
+    icon: Wrench,
+    items: [
+      { href: "/dashboard/settings", icon: Settings, label: "Settings", permission: "settings" as Permission },
+      { href: "/dashboard/chat", icon: MessageSquare, label: "Vertical Sync Network", permission: "chat" as Permission },
+      { href: "/dashboard/verification", icon: ShieldCheck, label: "Verification", permission: "settings" as Permission },
+    ],
+  },
 ];
 
 const AccessDenied = ({ title, description, isTrialExpired = false }: { title: string, description: string, isTrialExpired?: boolean }) => (
@@ -94,6 +163,173 @@ const AccessDenied = ({ title, description, isTrialExpired = false }: { title: s
   </div>
 )
 
+// ─── Collapsible Nav Group Component ───
+function SidebarGroup({
+  group,
+  visibleItems,
+  pathname,
+  expanded,
+  onToggle,
+}: {
+  group: NavGroup;
+  visibleItems: NavItem[];
+  pathname: string;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (visibleItems.length === 0) return null;
+
+  // Dashboard group is special — single item, no dropdown
+  if (group.label === "Dashboard") {
+    const item = visibleItems[0];
+    return (
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary",
+          pathname === item.href
+            ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground font-medium"
+            : ""
+        )}
+      >
+        <item.icon className="h-4 w-4" />
+        {item.label}
+      </Link>
+    );
+  }
+
+  const isAnyChildActive = visibleItems.some(
+    item => (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
+  );
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all hover:bg-primary/10 hover:text-primary",
+          isAnyChildActive ? "text-primary font-semibold" : "text-muted-foreground"
+        )}
+      >
+        <group.icon className="h-4 w-4 shrink-0" />
+        <span className="flex-1 text-left truncate">{group.label}</span>
+        <ChevronDown
+          className={cn(
+            "h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+            expanded ? "rotate-0" : "-rotate-90"
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-in-out",
+          expanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="ml-4 border-l border-border/50 pl-2 mt-0.5 space-y-0.5">
+          {visibleItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary",
+                (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground font-medium"
+                  : ""
+              )}
+            >
+              <item.icon className="h-3.5 w-3.5" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mobile Collapsible Nav Group ───
+function MobileSidebarGroup({
+  group,
+  visibleItems,
+  pathname,
+  expanded,
+  onToggle,
+}: {
+  group: NavGroup;
+  visibleItems: NavItem[];
+  pathname: string;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (visibleItems.length === 0) return null;
+
+  if (group.label === "Dashboard") {
+    const item = visibleItems[0];
+    return (
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center gap-4 px-2.5 text-lg",
+          pathname === item.href ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <item.icon className="h-5 w-5" />
+        {item.label}
+      </Link>
+    );
+  }
+
+  const isAnyChildActive = visibleItems.some(
+    item => (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
+  );
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center gap-4 px-2.5 text-lg transition-colors",
+          isAnyChildActive ? "text-foreground font-semibold" : "text-muted-foreground hover:text-foreground"
+        )}
+      >
+        <group.icon className="h-5 w-5 shrink-0" />
+        <span className="flex-1 text-left">{group.label}</span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 transition-transform duration-200",
+            expanded ? "rotate-0" : "-rotate-90"
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          "overflow-hidden transition-all duration-200 ease-in-out",
+          expanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        )}
+      >
+        <div className="ml-7 border-l border-border/50 pl-3 mt-2 space-y-3">
+          {visibleItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 text-base",
+                (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
+                  ? "text-foreground font-semibold"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -104,13 +340,40 @@ export default function DashboardLayout({
   const { user, employee, company, loading, companyId } = useAuth();
   const [adminRole, setAdminRole] = useState<Role | null>(null);
 
+  // ─── Expand/collapse state per group ───
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+    // Initially expand the group whose child matches the current path
+    const initial: Record<string, boolean> = {};
+    navGroups.forEach(group => {
+      initial[group.label] = group.items.some(
+        item => typeof window !== 'undefined' && (window.location.pathname.startsWith(item.href) && item.href !== "/dashboard")
+      );
+    });
+    return initial;
+  });
+
+  // Auto-expand group when pathname changes
+  useEffect(() => {
+    setExpandedGroups(prev => {
+      const next = { ...prev };
+      navGroups.forEach(group => {
+        if (group.items.some(item => (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href)) {
+          next[group.label] = true;
+        }
+      });
+      return next;
+    });
+  }, [pathname]);
+
+  const toggleGroup = useCallback((label: string) => {
+    setExpandedGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  }, []);
+
   useEffect(() => {
     if (!loading) {
       if (!user) {
         router.push('/login');
       } else if (employee && employee.role !== 'Admin' && employee.role !== 'Super Admin') {
-        // This is the critical security check.
-        // If the user is logged in but not an admin, redirect them.
         if (employee.role === 'GuestAdmin') {
           router.push('/guest-employer');
         } else {
@@ -130,24 +393,19 @@ export default function DashboardLayout({
     }
   }, [employee, companyId]);
 
-  const visibleNavItems = useMemo(() => {
+  // ─── Filter visible items per group based on permissions ───
+  const getVisibleItems = useCallback((items: NavItem[]) => {
     if (!company) return [];
-
-    // If company has specific modules enabled, use them
     if (company.enabledModules && company.enabledModules.length > 0) {
-      return navItems.filter(item => company.enabledModules?.includes(item.permission));
+      return items.filter(item => company.enabledModules?.includes(item.permission));
     }
-
-    // Fallback for older data structure or if enabledModules is not set: use admin role permissions
     if (employee?.role === 'Admin' && !employee.adminRoleId) {
-      return navItems;
+      return items;
     }
     if (adminRole) {
-      return navItems.filter(item => adminRole.permissions.includes(item.permission));
+      return items.filter(item => adminRole.permissions.includes(item.permission));
     }
-
-    // Default to a minimal set if no rules match
-    return navItems.filter(item => item.permission === 'dashboard');
+    return items.filter(item => item.permission === 'dashboard');
   }, [employee, adminRole, company]);
 
 
@@ -203,22 +461,20 @@ export default function DashboardLayout({
           </Link>
         </div>
         <ScrollArea className="flex-grow">
-          <nav className="flex flex-col gap-1 p-3">
-            {visibleNavItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary",
-                  (pathname.startsWith(item.href) && item.href !== "/dashboard") || pathname === item.href
-                    ? "bg-primary text-primary-foreground shadow-md hover:bg-primary hover:text-primary-foreground font-medium"
-                    : ""
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
+          <nav className="flex flex-col gap-0.5 p-3">
+            {navGroups.map((group) => {
+              const visibleItems = getVisibleItems(group.items);
+              return (
+                <SidebarGroup
+                  key={group.label}
+                  group={group}
+                  visibleItems={visibleItems}
+                  pathname={pathname}
+                  expanded={!!expandedGroups[group.label]}
+                  onToggle={() => toggleGroup(group.label)}
+                />
+              );
+            })}
           </nav>
         </ScrollArea>
         <div className="border-t p-4 bg-primary/5">
@@ -244,20 +500,20 @@ export default function DashboardLayout({
                 </Link>
               </div>
               <ScrollArea className="flex-grow">
-                <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
-                  {visibleNavItems.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-4 px-2.5",
-                        pathname === item.href ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <item.icon className="h-5 w-5" />
-                      {item.label}
-                    </Link>
-                  ))}
+                <nav className="flex flex-col gap-4 p-6 pt-0">
+                  {navGroups.map((group) => {
+                    const visibleItems = getVisibleItems(group.items);
+                    return (
+                      <MobileSidebarGroup
+                        key={group.label}
+                        group={group}
+                        visibleItems={visibleItems}
+                        pathname={pathname}
+                        expanded={!!expandedGroups[group.label]}
+                        onToggle={() => toggleGroup(group.label)}
+                      />
+                    );
+                  })}
                 </nav>
               </ScrollArea>
             </SheetContent>
