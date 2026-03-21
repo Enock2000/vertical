@@ -11,17 +11,20 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { ref, get, set, push } from 'firebase/database';
+import { ref, get, set, push, update } from 'firebase/database';
 import { db } from '@/lib/firebase';
 import {
   type Employee,
   type PayrollConfig,
   type PayrollRun,
   type PayrollRunEmployee,
+  type Loan,
+  type LeaveRequest,
+  type LoanRepayment,
   calculatePayroll,
   type AuditLog,
 } from '@/lib/data';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import * as XLSX from 'xlsx';
 
 const PayrollRunInputSchema = z.object({
@@ -92,6 +95,27 @@ const runPayrollFlow = ai.defineFlow(
         return { success: false, message: 'No active employees found to process payroll for.' };
       }
 
+      // 3b. Fetch all loans and leave requests for this company
+      const loansSnapshot = await get(ref(db, `companies/${companyId}/loans`));
+      const allLoans: Loan[] = loansSnapshot.val() ? Object.values(loansSnapshot.val()) : [];
+
+      const leaveSnapshot = await get(ref(db, `companies/${companyId}/leaveRequests`));
+      const allLeaveRequests: LeaveRequest[] = leaveSnapshot.val() ? Object.values(leaveSnapshot.val()) : [];
+
+      // Filter leave requests to the current pay month
+      const now = new Date();
+      const monthStart = startOfMonth(now);
+      const monthEnd = endOfMonth(now);
+      const currentMonthLeaves = allLeaveRequests.filter(l => {
+        if (l.status !== 'Approved') return false;
+        try {
+          const start = parseISO(l.startDate);
+          const end = parseISO(l.endDate);
+          // Leave overlaps with the current month
+          return start <= monthEnd && end >= monthStart;
+        } catch { return false; }
+      });
+
       // 4. Process payroll for each employee and create records
       let totalAmount = 0;
       let totalGross = 0;
@@ -106,7 +130,10 @@ const runPayrollFlow = ai.defineFlow(
           console.warn(`Skipping employee ${employee.name} (ID: ${employee.id}) due to missing bank details.`);
           continue; // Skip employees without bank details
         }
-        const payrollDetails = calculatePayroll(employee, config);
+        const payrollDetails = calculatePayroll(employee, config, {
+          activeLoans: allLoans.filter(l => l.employeeId === employee.id),
+          approvedLeaves: currentMonthLeaves.filter(l => l.employeeId === employee.id),
+        });
         totalAmount += payrollDetails.netPay;
         totalGross += payrollDetails.grossPay;
         totalNapsa += payrollDetails.employeeNapsaDeduction;
@@ -142,6 +169,37 @@ const runPayrollFlow = ai.defineFlow(
       };
 
       await set(newPayrollRunRef, payrollRunData);
+
+      // 5b. Auto-record loan repayments for each employee
+      for (const employee of activeEmployees.filter(e => e.id in payrollRunEmployees)) {
+        const empLoans = allLoans.filter(l => l.employeeId === employee.id && l.status === 'Active' && l.outstandingBalance > 0);
+        for (const loan of empLoans) {
+          const repaymentAmount = Math.min(Number(loan.monthlyDeduction) || 0, Number(loan.outstandingBalance) || 0);
+          if (repaymentAmount <= 0) continue;
+
+          // Record the repayment
+          const repaymentsRef = ref(db, `companies/${companyId}/loanRepayments`);
+          const newRepRef = push(repaymentsRef);
+          const repayment: LoanRepayment = {
+            id: newRepRef.key!,
+            companyId,
+            loanId: loan.id,
+            employeeId: employee.id,
+            employeeName: employee.name,
+            amount: repaymentAmount,
+            date: new Date().toISOString().split('T')[0],
+            method: 'Payroll Deduction',
+            notes: `Auto-deducted via payroll run ${payrollRunId}`,
+          };
+          await set(newRepRef, repayment);
+
+          // Update loan outstanding balance
+          const newBalance = Math.max(0, loan.outstandingBalance - repaymentAmount);
+          const loanUpdates: Record<string, any> = { outstandingBalance: newBalance };
+          if (newBalance <= 0) loanUpdates.status = 'Fully Paid';
+          await update(ref(db, `companies/${companyId}/loans/${loan.id}`), loanUpdates);
+        }
+      }
 
       // 6. Generate Enhanced ACH Excel File
       const workbook = XLSX.utils.book_new();
@@ -211,6 +269,9 @@ const runPayrollFlow = ai.defineFlow(
         'NAPSA (ZMW)',
         'NHIMA (ZMW)',
         'PAYE (ZMW)',
+        'Loan Deduction (ZMW)',
+        'Unpaid Leave Days',
+        'Unpaid Leave Ded. (ZMW)',
         'Other Deductions (ZMW)',
         'Total Deductions (ZMW)',
         'Net Pay (ZMW)',
@@ -244,6 +305,9 @@ const runPayrollFlow = ai.defineFlow(
           details.employeeNapsaDeduction.toFixed(2),
           details.employeeNhimaDeduction.toFixed(2),
           details.taxDeduction.toFixed(2),
+          (details.loanDeduction || 0).toFixed(2),
+          details.unpaidLeaveDays || 0,
+          (details.unpaidLeaveDeduction || 0).toFixed(2),
           (employee.deductions || 0).toFixed(2),
           details.totalDeductions.toFixed(2),
           details.netPay.toFixed(2),
@@ -276,6 +340,9 @@ const runPayrollFlow = ai.defineFlow(
         { wch: 12 }, // NAPSA
         { wch: 12 }, // NHIMA
         { wch: 12 }, // PAYE
+        { wch: 16 }, // Loan Deduction
+        { wch: 16 }, // Unpaid Leave Days
+        { wch: 18 }, // Unpaid Leave Ded.
         { wch: 16 }, // Other Deductions
         { wch: 16 }, // Total Deductions
         { wch: 14 }, // Net Pay
@@ -356,6 +423,9 @@ const runPayrollFlow = ai.defineFlow(
         'NHIMA Employee (ZMW)',
         'NHIMA Employer (ZMW)',
         'PAYE (ZMW)',
+        'Loan Deduction (ZMW)',
+        'Unpaid Leave Days',
+        'Unpaid Leave Ded. (ZMW)',
         'Other Deductions (ZMW)',
         'Total Employee Deductions (ZMW)'
       ];
@@ -380,6 +450,9 @@ const runPayrollFlow = ai.defineFlow(
           details.employeeNhimaDeduction.toFixed(2),
           employerNhima.toFixed(2),
           details.taxDeduction.toFixed(2),
+          (details.loanDeduction || 0).toFixed(2),
+          details.unpaidLeaveDays || 0,
+          (details.unpaidLeaveDeduction || 0).toFixed(2),
           (employee.deductions || 0).toFixed(2),
           details.totalDeductions.toFixed(2)
         ]);

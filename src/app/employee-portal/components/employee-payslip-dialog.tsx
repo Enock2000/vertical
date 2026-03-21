@@ -139,6 +139,18 @@ export function EmployeePayslipDialog({ employee, payrollDetails, companyName, p
                   <span>Income Tax (PAYE)</span>
                   <span>({currencyFormatter.format(payrollDetails.taxDeduction)})</span>
                 </div>
+                {(payrollDetails.loanDeduction || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span>Loan / Advance Deduction</span>
+                  <span>({currencyFormatter.format(payrollDetails.loanDeduction)})</span>
+                </div>
+                )}
+                {(payrollDetails.unpaidLeaveDeduction || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span>Unpaid Leave ({payrollDetails.unpaidLeaveDays} day{payrollDetails.unpaidLeaveDays !== 1 ? 's' : ''})</span>
+                  <span>({currencyFormatter.format(payrollDetails.unpaidLeaveDeduction)})</span>
+                </div>
+                )}
                 <div className="flex justify-between">
                   <span>Other Deductions</span>
                   <span>({currencyFormatter.format(employee.deductions)})</span>

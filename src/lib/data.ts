@@ -441,6 +441,9 @@ export type PayrollDetails = {
     employeeNhimaDeduction: number;
     employerNhimaContribution: number;
     taxDeduction: number;
+    loanDeduction: number;
+    unpaidLeaveDays: number;
+    unpaidLeaveDeduction: number;
     totalDeductions: number;
     netPay: number;
 }
@@ -970,7 +973,13 @@ export const getAdminUserIds = async (companyId: string): Promise<string[]> => {
     return [];
 };
 
-export const calculatePayroll = (employee: Employee, config: PayrollConfig): PayrollDetails => {
+export type PayrollCalcOptions = {
+    activeLoans?: Loan[];
+    approvedLeaves?: LeaveRequest[];
+    workingDaysInMonth?: number; // default 22
+};
+
+export const calculatePayroll = (employee: Employee, config: PayrollConfig, options?: PayrollCalcOptions): PayrollDetails => {
     // Defensive defaults for all numeric employee fields
     const salary = Number(employee.salary) || 0;
     const hourlyRate = Number(employee.hourlyRate) || 0;
@@ -989,6 +998,13 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
     const employerNhimaRate = Number(config.employerNhimaRate) || 1;
     const taxRate = Number(config.taxRate) || 0;
     const overtimeMultiplier = Number(config.overtimeMultiplier) || 1.5;
+    const workingDays = options?.workingDaysInMonth || 22;
+
+    // ─── Unpaid Leave proration ───
+    const unpaidLeaves = (options?.approvedLeaves || []).filter(
+        l => l.leaveType === 'Unpaid' && l.status === 'Approved'
+    );
+    const unpaidLeaveDays = unpaidLeaves.reduce((sum, l) => sum + (Number(l.leaveDays) || 0), 0);
 
     let basePay = 0;
     if (workerType === 'Salaried') {
@@ -996,18 +1012,30 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
     } else if (workerType === 'Hourly') {
         basePay = hourlyRate * hoursWorked;
     } else { // Contractor
-        basePay = salary; // Assuming salary field is used for contract amount
+        basePay = salary;
     }
+
+    // Calculate the deduction for unpaid leave (prorate base pay)
+    const unpaidLeaveDeduction = workerType === 'Salaried' && unpaidLeaveDays > 0
+        ? Math.round(((basePay / workingDays) * unpaidLeaveDays) * 100) / 100
+        : 0;
 
     const overtimePay = workerType === 'Hourly'
         ? overtime * hourlyRate * overtimeMultiplier
-        : overtime; // For salaried, assume 'overtime' is a flat amount
+        : overtime;
 
-    const grossPay = basePay + overtimePay + allowances + bonus + reimbursements;
+    const grossPay = basePay + overtimePay + allowances + bonus + reimbursements - unpaidLeaveDeduction;
+
+    // ─── Loan Deduction ───
+    const activeLoans = (options?.activeLoans || []).filter(l => l.status === 'Active' && l.outstandingBalance > 0);
+    const loanDeduction = activeLoans.reduce((sum, l) => {
+        // Don't deduct more than the outstanding balance
+        return sum + Math.min(Number(l.monthlyDeduction) || 0, Number(l.outstandingBalance) || 0);
+    }, 0);
 
     // For contractors, no statutory deductions are made
     if (workerType === 'Contractor') {
-        const totalDeductions = deductions;
+        const totalDeductions = deductions + loanDeduction;
         const netPay = grossPay - totalDeductions;
         return {
             basePay,
@@ -1018,6 +1046,9 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
             employeeNhimaDeduction: 0,
             employerNhimaContribution: 0,
             taxDeduction: 0,
+            loanDeduction,
+            unpaidLeaveDays,
+            unpaidLeaveDeduction,
             totalDeductions,
             netPay
         };
@@ -1031,7 +1062,7 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
     const taxablePay = grossPay - employeeNapsaDeduction;
     const taxDeduction = (taxablePay * (taxRate / 100));
 
-    const totalDeductions = employeeNapsaDeduction + employeeNhimaDeduction + taxDeduction + deductions;
+    const totalDeductions = employeeNapsaDeduction + employeeNhimaDeduction + taxDeduction + deductions + loanDeduction;
     const netPay = grossPay - totalDeductions;
 
     return {
@@ -1043,6 +1074,9 @@ export const calculatePayroll = (employee: Employee, config: PayrollConfig): Pay
         employeeNhimaDeduction,
         employerNhimaContribution,
         taxDeduction,
+        loanDeduction,
+        unpaidLeaveDays,
+        unpaidLeaveDeduction,
         totalDeductions,
         netPay
     };
